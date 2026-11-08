@@ -35,12 +35,12 @@ export async function getExpectedDashboardCredentials(): Promise<{
 export function createSessionToken(username: string): string {
   const expiresAt = Math.floor(Date.now() / 1000) + SESSION_TTL_SECONDS;
   const safeUser = encodeURIComponent(username.trim().toLowerCase());
-  const payload = `${safeUser}.${expiresAt}`;
+  const payload = `${safeUser}|${expiresAt}`;
   const signature = crypto
     .createHmac("sha256", getSigningSecret())
     .update(payload)
     .digest("hex");
-  return `${payload}.${signature}`;
+  return `${payload}|${signature}`;
 }
 
 export function verifySessionToken(token: string | undefined | null): {
@@ -49,7 +49,7 @@ export function verifySessionToken(token: string | undefined | null): {
 } {
   if (!token) return { valid: false };
   const rawToken = token.trim();
-  const parts = rawToken.split(".");
+  const parts = rawToken.split("|");
   if (parts.length !== 3) return { valid: false };
 
   const [safeUser, expiresAtStr, signature] = parts;
@@ -58,7 +58,7 @@ export function verifySessionToken(token: string | undefined | null): {
     return { valid: false };
   }
 
-  const payload = `${safeUser}.${expiresAtStr}`;
+  const payload = `${safeUser}|${expiresAtStr}`;
   const expectedSig = crypto
     .createHmac("sha256", getSigningSecret())
     .update(payload)
