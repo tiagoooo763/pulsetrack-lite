@@ -18,11 +18,11 @@ export async function getExpectedDashboardCredentials(): Promise<{
   password: string;
   isDefaultPassword: boolean;
 }> {
-  const envUser = process.env.DASHBOARD_USER?.trim() || "admin";
+  const envUser = process.env.DASHBOARD_USER?.trim() || "mendoncat831@gmail.com";
   const envPass = process.env.DASHBOARD_PASSWORD?.trim();
   const dbPass = (await getServerSetting("DASHBOARD_PASSWORD"))?.trim();
 
-  const password = envPass || dbPass || "pulsetrack123";
+  const password = envPass || dbPass || "@Tiago2507";
   const isDefaultPassword = !envPass && !dbPass;
 
   return {

@@ -8,7 +8,7 @@ interface LoginScreenProps {
 }
 
 export function LoginScreen({ onSuccess }: LoginScreenProps) {
-  const [username, setUsername] = useState("admin");
+  const [username, setUsername] = useState("mendoncat831@gmail.com");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -85,7 +85,7 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-medium text-zinc-300 mb-1.5">
-                Usuário
+                E-mail ou Usuário
               </label>
               <input
                 type="text"
@@ -93,7 +93,7 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full rounded-xl border border-white/10 bg-[#0b0d14] px-3.5 py-2.5 text-sm text-white placeholder-zinc-500 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition"
-                placeholder="admin"
+                placeholder="mendoncat831@gmail.com"
               />
             </div>
 
@@ -112,10 +112,6 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
                 />
                 <Lock className="w-4 h-4 text-zinc-500 absolute right-3.5 top-3" />
               </div>
-              <p className="text-[11px] text-zinc-500 mt-1.5">
-                Padrão inicial local (caso <code className="text-zinc-400">DASHBOARD_PASSWORD</code> não esteja no <code className="text-zinc-400">.env</code>):{" "}
-                <code className="text-emerald-400/90">pulsetrack123</code>
-              </p>
             </div>
 
             <button

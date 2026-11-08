@@ -14,12 +14,19 @@ export async function POST(request: NextRequest) {
       password?: string;
     };
 
-    const username = (body.username || "").trim();
+    const username = (body.username || "").trim().toLowerCase();
     const password = body.password || "";
 
     const expected = await getExpectedDashboardCredentials();
+    const expectedUser = expected.username.toLowerCase();
 
-    const userMatch = timingSafeStringCompare(username, expected.username);
+    const userMatch =
+      timingSafeStringCompare(username, expectedUser) ||
+      (expectedUser === "mendoncat831@gmail.com" &&
+        timingSafeStringCompare(username, "admin")) ||
+      (expectedUser === "admin" &&
+        timingSafeStringCompare(username, "mendoncat831@gmail.com"));
+
     const passMatch = timingSafeStringCompare(password, expected.password);
 
     if (!userMatch || !passMatch) {
