@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@libsql/client": "^0.14.0",
+    "gsap": "^3.15.1",
     "lucide-react": "^0.460.0",
     "next": "^15.5.29",
     "pg": "^8.13.1",

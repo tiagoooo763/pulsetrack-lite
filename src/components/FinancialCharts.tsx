@@ -13,6 +13,7 @@ import type {
   TransactionRecord,
 } from "@/lib/db";
 import { BarChart3, PieChart } from "lucide-react";
+import { SpotlightCard } from "./SpotlightCard";
 
 interface FinancialChartsProps {
   transactions: TransactionRecord[];
@@ -136,25 +137,25 @@ export function FinancialCharts({
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
       {/* Gráfico 1: Evolução Diária */}
-      <div className="lg:col-span-2 rounded-xl border border-white/10 bg-[#0c0c0e] p-5 flex flex-col justify-between">
+      <SpotlightCard className="lg:col-span-2 p-5 sm:p-6 flex flex-col justify-between bento-card">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center">
               <BarChart3 className="w-4 h-4 text-white" />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-white">
+              <h3 className="text-sm font-semibold text-white tracking-tight">
                 Evolução Diária de Vendas e Despesas
               </h3>
               <p className="text-xs text-zinc-400">
-                Vendas aprovadas vs. gastos no período
+                Receita líquida vs. custos operacionais
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4 text-xs">
+          <div className="flex items-center gap-4 text-xs font-mono">
             <span className="flex items-center gap-1.5 text-zinc-300">
-              <span className="w-2.5 h-2.5 rounded-sm bg-white inline-block" />
+              <span className="w-2.5 h-2.5 rounded-sm bg-white inline-block shadow-sm" />
               Receita Líquida
             </span>
             <span className="flex items-center gap-1.5 text-zinc-400">
@@ -165,7 +166,7 @@ export function FinancialCharts({
         </div>
 
         {dailySeries.length === 0 ? (
-          <div className="h-48 flex flex-col items-center justify-center border border-dashed border-white/10 rounded-lg text-center px-4">
+          <div className="h-48 flex flex-col items-center justify-center border border-dashed border-white/10 rounded-xl text-center px-4 bg-white/[0.01]">
             <p className="text-xs text-zinc-400">
               Nenhuma movimentação registrada no período selecionado.
             </p>
@@ -173,25 +174,30 @@ export function FinancialCharts({
         ) : (
           <div className="relative pt-2">
             {hoveredDayIndex !== null && dailySeries[hoveredDayIndex] && (
-              <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-[#050507] border border-white/10 px-3 py-2 text-xs">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-[#08080a] border border-white/15 px-3.5 py-2 text-xs shadow-lg">
                 <span className="font-medium text-white">
                   {formatDateBR(dailySeries[hoveredDayIndex].date)}
                 </span>
-                <div className="flex flex-wrap items-center gap-3 tabular-nums">
+                <div className="flex flex-wrap items-center gap-3 tabular-nums font-mono">
                   <span className="text-zinc-200">
                     Líquido: {formatBRL(dailySeries[hoveredDayIndex].netRevenue)}
                   </span>
                   <span className="text-zinc-400">
                     Despesas: {formatBRL(dailySeries[hoveredDayIndex].expenses)}
                   </span>
-                  <span
-                    className={
-                      dailySeries[hoveredDayIndex].profit >= 0
-                        ? "text-emerald-400 font-semibold"
-                        : "text-rose-400 font-semibold"
-                    }
-                  >
-                    Lucro: {formatBRL(dailySeries[hoveredDayIndex].profit)}
+                  <span>
+                    Lucro:{" "}
+                    <span
+                      className={
+                        dailySeries[hoveredDayIndex].profit > 0
+                          ? "text-emerald-400 font-semibold"
+                          : dailySeries[hoveredDayIndex].profit < 0
+                          ? "text-rose-400 font-semibold"
+                          : "text-zinc-300 font-semibold"
+                      }
+                    >
+                      {formatBRL(dailySeries[hoveredDayIndex].profit)}
+                    </span>
                   </span>
                 </div>
               </div>
@@ -200,11 +206,11 @@ export function FinancialCharts({
             <div className="h-48 flex items-end gap-2 sm:gap-3 pt-3 pb-6 px-1 border-b border-white/[0.08]">
               {dailySeries.map((day, idx) => {
                 const netHeightPct = Math.max(
-                  day.netRevenue > 0 ? 4 : 0,
+                  day.netRevenue > 0 ? 5 : 0,
                   Math.round((day.netRevenue / maxDailyValue) * 100)
                 );
                 const expHeightPct = Math.max(
-                  day.expenses > 0 ? 4 : 0,
+                  day.expenses > 0 ? 5 : 0,
                   Math.round((day.expenses / maxDailyValue) * 100)
                 );
                 const shortDate = day.date.slice(5).split("-").reverse().join("/");
@@ -216,19 +222,19 @@ export function FinancialCharts({
                     onMouseLeave={() => setHoveredDayIndex(null)}
                     className="flex-1 flex flex-col items-center h-full justify-end group cursor-pointer relative"
                   >
-                    <div className="w-full flex items-end justify-center gap-1 h-full">
+                    <div className="w-full flex items-end justify-center gap-1.5 h-full">
                       <div
                         style={{ height: `${netHeightPct}%` }}
-                        className="w-full max-w-[14px] rounded-t-sm bg-white transition-opacity group-hover:opacity-80"
+                        className="w-full max-w-[14px] rounded-t-sm bg-white transition-all duration-200 group-hover:bg-zinc-200 group-hover:scale-y-[1.03] origin-bottom shadow-sm"
                         title={`Receita Líquida: ${formatBRL(day.netRevenue)}`}
                       />
                       <div
                         style={{ height: `${expHeightPct}%` }}
-                        className="w-full max-w-[14px] rounded-t-sm bg-zinc-600 transition-opacity group-hover:opacity-80"
+                        className="w-full max-w-[14px] rounded-t-sm bg-zinc-600 transition-all duration-200 group-hover:bg-zinc-500 group-hover:scale-y-[1.03] origin-bottom"
                         title={`Despesas: ${formatBRL(day.expenses)}`}
                       />
                     </div>
-                    <span className="absolute -bottom-5 text-[10px] text-zinc-500 tabular-nums">
+                    <span className="absolute -bottom-5 text-[10px] text-zinc-500 font-mono tabular-nums group-hover:text-zinc-300 transition-colors">
                       {shortDate}
                     </span>
                   </div>
@@ -237,13 +243,13 @@ export function FinancialCharts({
             </div>
           </div>
         )}
-      </div>
+      </SpotlightCard>
 
       {/* Gráfico 2: Despesas e Formas de Pagamento */}
-      <div className="rounded-xl border border-white/10 bg-[#0c0c0e] p-5 flex flex-col justify-between space-y-4">
+      <SpotlightCard className="p-5 sm:p-6 flex flex-col justify-between space-y-4 bento-card">
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <div className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
+            <div className="w-7 h-7 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center">
               <PieChart className="w-3.5 h-3.5 text-zinc-300" />
             </div>
             <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-300">
@@ -256,7 +262,7 @@ export function FinancialCharts({
               Nenhuma venda aprovada.
             </p>
           ) : (
-            <div className="space-y-2.5">
+            <div className="space-y-3">
               {paymentMethodBreakdown.map((item) => (
                 <div key={item.method} className="space-y-1">
                   <div className="flex items-center justify-between text-xs">
@@ -268,9 +274,9 @@ export function FinancialCharts({
                       </span>
                     </span>
                   </div>
-                  <div className="w-full h-1.5 rounded-full bg-zinc-800 overflow-hidden">
+                  <div className="w-full h-1.5 rounded-full bg-zinc-800/80 overflow-hidden">
                     <div
-                      className="h-full rounded-full bg-white"
+                      className="h-full rounded-full bg-white transition-all duration-500"
                       style={{ width: `${item.percent}%` }}
                     />
                   </div>
@@ -305,7 +311,7 @@ export function FinancialCharts({
             )}
           </div>
         </div>
-      </div>
+      </SpotlightCard>
     </div>
   );
 }

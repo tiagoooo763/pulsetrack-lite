@@ -1,0 +1,25 @@
+/* Example typography tokens. Load your chosen fonts separately.
+   Works in plain CSS, React, Next.js and Tailwind projects. */
+:root {
+  --font-display: "Space Grotesk", "Arial", sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+  --type-hero: clamp(3rem, 8vw, 7rem);
+  --type-h1: clamp(2.25rem, 5vw, 4.5rem);
+  --type-h2: clamp(1.8rem, 3.5vw, 3.2rem);
+  --type-h3: clamp(1.35rem, 2.4vw, 2rem);
+  --type-body: clamp(1rem, 1.1vw, 1.125rem);
+  --type-small: 0.875rem;
+}
+body { font-family: var(--font-body); font-size: var(--type-body); line-height: 1.6; }
+.display-title {
+  font-family: var(--font-display);
+  font-size: var(--type-hero);
+  font-weight: 700;
+  letter-spacing: -0.055em;
+  line-height: 1.03;
+  text-wrap: balance;
+}
+h1 { font-family: var(--font-display); font-size: var(--type-h1); line-height: 1.07; letter-spacing: -0.04em; text-wrap: balance; }
+h2 { font-family: var(--font-display); font-size: var(--type-h2); line-height: 1.14; letter-spacing: -0.035em; text-wrap: balance; }
+h3 { font-family: var(--font-display); font-size: var(--type-h3); line-height: 1.2; }
+p, li { max-width: 72ch; }

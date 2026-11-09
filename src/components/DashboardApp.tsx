@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
   BalanceSnapshotRecord,
   ExpenseCategory,
@@ -19,6 +19,8 @@ import {
 } from "@/lib/format";
 import { FinancialCharts } from "./FinancialCharts";
 import { IntegrationAndGuideTab } from "./IntegrationAndGuideTab";
+import { SpotlightCard } from "./SpotlightCard";
+import { gsap } from "gsap";
 import {
   Activity,
   ArrowDownRight,
@@ -26,9 +28,7 @@ import {
   Banknote,
   Calendar,
   CheckCircle2,
-  CreditCard,
   DollarSign,
-  Filter,
   Landmark,
   LayoutDashboard,
   LogOut,
@@ -77,6 +77,8 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<ActiveTab>("overview");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const contentRef = useRef<HTMLDivElement>(null);
 
   // Filtro de período
   const [period, setPeriod] = useState<PeriodPreset>("30d");
@@ -132,6 +134,40 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
     fetchDashboard();
   }, [fetchDashboard]);
 
+  // Animação suave com GSAP ao trocar abas ou períodos (respeita reduced motion)
+  useEffect(() => {
+    if (typeof window === "undefined" || !contentRef.current) return;
+    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReduced) return;
+
+    const cards = contentRef.current.querySelectorAll(".bento-card");
+    if (cards.length > 0) {
+      gsap.fromTo(
+        cards,
+        { opacity: 0, y: 12 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.45,
+          stagger: 0.035,
+          ease: "power2.out",
+          clearProps: "all",
+        }
+      );
+    }
+  }, [activeTab, period]);
+
+  // Lock no body quando drawer mobile estiver aberto
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      if (mobileMenuOpen) {
+        document.body.style.overflow = "hidden";
+      } else {
+        document.body.style.overflow = "";
+      }
+    }
+  }, [mobileMenuOpen]);
+
   // Cálculo de intervalo de datas para os filtros
   const { startDate, endDate } = useMemo(() => {
     const now = new Date();
@@ -142,71 +178,77 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
       start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
     } else if (period === "7d") {
       start = new Date(now);
-      start.setDate(start.getDate() - 7);
+      start.setDate(now.getDate() - 7);
+      start.setHours(0, 0, 0, 0);
     } else if (period === "30d") {
       start = new Date(now);
-      start.setDate(start.getDate() - 30);
+      start.setDate(now.getDate() - 30);
+      start.setHours(0, 0, 0, 0);
     } else if (period === "month") {
       start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
     } else if (period === "custom") {
-      start = new Date(`${customFrom}T00:00:00`);
-      end = new Date(`${customTo}T23:59:59`);
-    } else {
-      start = null; // Tudo
+      if (customFrom) {
+        start = new Date(`${customFrom}T00:00:00`);
+      }
+      if (customTo) {
+        end = new Date(`${customTo}T23:59:59`);
+      }
+    } else if (period === "all") {
+      start = null;
     }
 
     return { startDate: start, endDate: end };
   }, [period, customFrom, customTo]);
 
-  // Transações filtradas pelo período
+  // Filtra transações pelo período
   const periodTransactions = useMemo(() => {
-    if (!data?.transactions) return [];
+    if (!data) return [];
     if (!startDate) return data.transactions;
     return data.transactions.filter((tx) => {
-      const dateToCompare = new Date(tx.paidAt || tx.createdAt);
-      return dateToCompare >= startDate && dateToCompare <= endDate;
+      const d = new Date(tx.paidAt || tx.createdAt);
+      return d >= startDate && d <= endDate;
     });
-  }, [data?.transactions, startDate, endDate]);
+  }, [data, startDate, endDate]);
 
-  // Transferências filtradas pelo período
+  // Filtra transferências pelo período
   const periodTransfers = useMemo(() => {
-    if (!data?.transfers) return [];
+    if (!data) return [];
     if (!startDate) return data.transfers;
-    return data.transfers.filter((tr) => {
-      const d = new Date(tr.createdAt);
+    return data.transfers.filter((tf) => {
+      const d = new Date(tf.updatedAt || tf.createdAt);
       return d >= startDate && d <= endDate;
     });
-  }, [data?.transfers, startDate, endDate]);
+  }, [data, startDate, endDate]);
 
-  // Despesas manuais filtradas pelo período
+  // Filtra despesas pelo período
   const periodExpenses = useMemo(() => {
-    if (!data?.expenses) return [];
+    if (!data) return [];
     if (!startDate) return data.expenses;
-    return data.expenses.filter((exp) => {
-      const d = new Date(`${exp.expenseDate}T12:00:00`);
+    return data.expenses.filter((e) => {
+      const d = new Date(`${e.expenseDate}T00:00:00`);
       return d >= startDate && d <= endDate;
     });
-  }, [data?.expenses, startDate, endDate]);
+  }, [data, startDate, endDate]);
 
   // Métricas Consolidadas do Dashboard
   const metrics = useMemo(() => {
     const approvedSales = periodTransactions.filter(
-      (tx) => tx.status === "COMPLETED"
+      (t) => t.status === "COMPLETED"
     );
     const pendingSales = periodTransactions.filter(
-      (tx) => tx.status === "PENDING"
+      (t) => t.status === "PENDING"
     );
     const refundedOrCanceledSales = periodTransactions.filter(
-      (tx) =>
-        tx.status === "REFUNDED" ||
-        tx.status === "CANCELED" ||
-        tx.status === "CHARGED_BACK"
+      (t) =>
+        t.status === "REFUNDED" ||
+        t.status === "CANCELED" ||
+        t.status === "CHARGED_BACK"
     );
 
-    const grossRevenue = approvedSales.reduce((acc, tx) => acc + tx.grossAmount, 0);
-    const pendingGross = pendingSales.reduce((acc, tx) => acc + tx.grossAmount, 0);
-    const checkoutFees = approvedSales.reduce((acc, tx) => acc + tx.feeAmount, 0);
-    const netRevenue = approvedSales.reduce((acc, tx) => acc + tx.netAmount, 0);
+    const grossRevenue = approvedSales.reduce((acc, t) => acc + t.grossAmount, 0);
+    const netRevenue = approvedSales.reduce((acc, t) => acc + t.netAmount, 0);
+    const checkoutFees = approvedSales.reduce((acc, t) => acc + t.feeAmount, 0);
+    const pendingGross = pendingSales.reduce((acc, t) => acc + t.grossAmount, 0);
 
     const approvalRate =
       periodTransactions.length > 0
@@ -214,17 +256,18 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
         : 0;
 
     const completedTransfers = periodTransfers.filter(
-      (tr) => tr.status === "COMPLETED"
-    );
-    const pendingTransfers = periodTransfers.filter(
-      (tr) => tr.status === "PENDING"
+      (tf) => tf.status === "COMPLETED"
     );
     const receivedAmount = completedTransfers.reduce(
-      (acc, tr) => acc + tr.receivedAmount,
+      (acc, tf) => acc + tf.amount,
       0
     );
+
+    const pendingTransfers = periodTransfers.filter(
+      (tf) => tf.status === "PENDING" || tf.status === "PROCESSING"
+    );
     const pendingTransferAmount = pendingTransfers.reduce(
-      (acc, tr) => acc + tr.amount,
+      (acc, tf) => acc + tf.amount,
       0
     );
 
@@ -392,7 +435,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
   if (loading || !data) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#050507] text-zinc-300">
-        <div className="flex items-center gap-3 text-sm">
+        <div className="flex items-center gap-3 text-sm font-medium">
           <RefreshCw className="w-4 h-4 animate-spin text-white" />
           <span>Carregando PulseTrack Lite...</span>
         </div>
@@ -444,13 +487,14 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
       {mobileMenuOpen && (
         <div
           onClick={() => setMobileMenuOpen(false)}
-          className="fixed inset-0 bg-black/80 z-40 md:hidden backdrop-blur-sm"
+          className="fixed inset-0 bg-black/80 z-40 md:hidden backdrop-blur-md transition-opacity duration-300"
+          aria-hidden="true"
         />
       )}
 
       {/* Sidebar Container */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 w-64 border-r border-white/10 bg-[#08080a] z-50 flex flex-col justify-between transition-transform duration-200 ease-in-out md:translate-x-0 ${
+        className={`fixed top-0 bottom-0 left-0 w-64 border-r border-white/10 bg-[#08080a] z-50 flex flex-col justify-between transition-transform duration-300 ease-in-out md:translate-x-0 ${
           mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -458,15 +502,15 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
           {/* Logo Header */}
           <div className="p-5 border-b border-white/[0.08] flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-white text-black flex items-center justify-center font-bold text-sm">
+              <div className="w-8 h-8 rounded-xl bg-white text-black flex items-center justify-center font-bold text-sm shadow-[0_0_15px_rgba(255,255,255,0.15)]">
                 <Activity className="w-4 h-4 text-black stroke-[2.8]" />
               </div>
               <div>
                 <div className="flex items-center gap-1.5">
-                  <span className="font-bold text-sm tracking-tight text-white">
+                  <span className="font-bold text-sm tracking-tight text-white font-sans">
                     PulseTrack
                   </span>
-                  <span className="text-[10px] uppercase font-semibold tracking-wider px-1.5 py-0.2 rounded bg-white/10 text-zinc-300">
+                  <span className="text-[10px] uppercase font-mono tracking-wider px-1.5 py-0.2 rounded bg-white/10 text-zinc-300 border border-white/10">
                     Lite
                   </span>
                 </div>
@@ -478,6 +522,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
               type="button"
               onClick={() => setMobileMenuOpen(false)}
               className="p-1 rounded-lg text-zinc-400 hover:text-white md:hidden"
+              aria-label="Fechar menu"
             >
               <X className="w-5 h-5" />
             </button>
@@ -485,7 +530,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
 
           {/* Navigation Items */}
           <div className="p-3 flex-1 space-y-1">
-            <div className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
+            <div className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
               Menu Principal
             </div>
             {navItems.map((item) => {
@@ -499,7 +544,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                     setActiveTab(item.id);
                     setMobileMenuOpen(false);
                   }}
-                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-medium transition ${
+                  className={`btn-pressable w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${
                     active
                       ? "bg-white text-black font-semibold shadow-sm"
                       : "text-zinc-400 hover:text-white hover:bg-white/[0.04]"
@@ -526,14 +571,14 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
 
             {/* Quick Actions in Sidebar */}
             <div className="pt-4 mt-4 border-t border-white/[0.08] px-3 space-y-2">
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 block">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 block">
                 Ações Rápidas
               </span>
               <button
                 type="button"
                 onClick={handleFetchOmegaPayBalance}
                 disabled={syncingBalance}
-                className="w-full flex items-center gap-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-2 text-xs font-medium text-white transition disabled:opacity-50"
+                className="btn-pressable w-full flex items-center gap-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-2 text-xs font-medium text-white transition disabled:opacity-50"
               >
                 <RefreshCw
                   className={`w-3.5 h-3.5 ${
@@ -548,7 +593,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
           </div>
 
           {/* User Profile & Logout Footer */}
-          <div className="p-4 border-t border-white/[0.08] bg-[#050507]/60">
+          <div className="p-4 border-t border-white/[0.08] bg-[#050507]/80">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5 overflow-hidden">
                 <div className="w-8 h-8 rounded-full bg-zinc-800 border border-white/10 flex items-center justify-center text-xs font-semibold text-white shrink-0">
@@ -559,15 +604,16 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                     mendoncat831@gmail.com
                   </span>
                   <span className="text-[10px] text-zinc-400 block">
-                    Administrador
+                    Administrador &bull; Supabase
                   </span>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={handleLogoutClick}
-                className="p-1.5 text-zinc-400 hover:text-white rounded-lg hover:bg-white/5 transition"
+                className="btn-pressable p-1.5 text-zinc-400 hover:text-white rounded-lg hover:bg-white/5 transition"
                 title="Sair"
+                aria-label="Encerrar sessão"
               >
                 <LogOut className="w-4 h-4" />
               </button>
@@ -585,21 +631,25 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
               type="button"
               onClick={() => setMobileMenuOpen(true)}
               className="p-2 -ml-2 rounded-lg text-zinc-400 hover:text-white md:hidden"
+              aria-label="Abrir menu de navegação"
             >
               <Menu className="w-5 h-5" />
             </button>
             <div>
-              <h2 className="text-base font-semibold text-white tracking-tight">
-                {activeTab === "overview" && "Visão Geral Financeira"}
-                {activeTab === "sales" && "Histórico de Transações"}
-                {activeTab === "expenses" && "Controle de Despesas Manuais"}
-                {activeTab === "integration" && "Integração & Documentação"}
-              </h2>
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse-subtle" />
+                <h2 className="text-sm sm:text-base font-semibold text-white tracking-tight">
+                  {activeTab === "overview" && "Visão Geral Financeira"}
+                  {activeTab === "sales" && "Histórico de Transações"}
+                  {activeTab === "expenses" && "Controle de Despesas Manuais"}
+                  {activeTab === "integration" && "Integração & Documentação"}
+                </h2>
+              </div>
             </div>
           </div>
 
           {/* Period Selector Tabs */}
-          <div className="flex flex-wrap items-center gap-1.5 bg-[#0c0c0e] border border-white/10 rounded-xl p-1 text-xs">
+          <div className="flex flex-wrap items-center gap-1 bg-[#0c0c0e] border border-white/10 rounded-xl p-1 text-xs">
             {(
               [
                 { id: "today", label: "Hoje" },
@@ -614,7 +664,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                 key={p.id}
                 type="button"
                 onClick={() => setPeriod(p.id)}
-                className={`px-3 py-1 rounded-lg transition ${
+                className={`btn-pressable px-3 py-1 rounded-lg transition-all ${
                   period === p.id
                     ? "bg-white text-black font-semibold shadow-sm"
                     : "text-zinc-400 hover:text-white"
@@ -647,7 +697,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
         <div className="px-4 sm:px-6 pt-4">
           {balanceNotice && (
             <div
-              className={`rounded-xl border p-3.5 text-xs flex items-center justify-between ${
+              className={`rounded-xl border p-3.5 text-xs flex items-center justify-between animate-fade-in-up ${
                 balanceNotice.type === "success"
                   ? "border-white/20 bg-white/5 text-zinc-200"
                   : "border-rose-500/30 bg-rose-500/10 text-rose-300"
@@ -666,14 +716,14 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
         </div>
 
         {/* Main Body */}
-        <main className="flex-1 p-4 sm:p-6 space-y-5">
+        <main ref={contentRef} className="flex-1 p-4 sm:p-6 space-y-5">
           {/* ==================== ABA 1: VISÃO GERAL ==================== */}
           {activeTab === "overview" && (
             <div className="space-y-4">
-              {/* LINHA 1 — 4 CARDS MESTRES ENCAIXADOS */}
+              {/* LINHA 1 — 4 CARDS MESTRES ENCAIXADOS COM SPOTLIGHT */}
               <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* 1. Faturamento Bruto */}
-                <div className="rounded-xl border border-white/10 bg-[#0c0c0e] p-5 flex flex-col justify-between">
+                <SpotlightCard className="p-5 flex flex-col justify-between bento-card">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-medium uppercase tracking-wider text-zinc-400">
                       Faturamento Bruto
@@ -695,10 +745,10 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                       </span>
                     )}
                   </div>
-                </div>
+                </SpotlightCard>
 
                 {/* 2. Receita Líquida */}
-                <div className="rounded-xl border border-white/10 bg-[#0c0c0e] p-5 flex flex-col justify-between">
+                <SpotlightCard className="p-5 flex flex-col justify-between bento-card">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-medium uppercase tracking-wider text-zinc-400">
                       Receita Líquida
@@ -716,28 +766,26 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                     <span>Após taxas do checkout</span>
                     <span className="text-zinc-300">Base do Lucro</span>
                   </div>
-                </div>
+                </SpotlightCard>
 
-                {/* 3. Lucro Estimado — HERÓI (NÚMERO VERDE SE LUCRO, VERMELHO SE PREJUÍZO) */}
-                <div className="rounded-xl border border-white/10 bg-[#0c0c0e] p-5 flex flex-col justify-between">
+                {/* 3. Lucro Estimado — HERÓI (NÚMERO VERDE SE LUCRO, VERMELHO SE PREJUÍZO — SOMENTE NO NÚMERO) */}
+                <SpotlightCard className="p-5 flex flex-col justify-between bento-card">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-medium uppercase tracking-wider text-zinc-400">
                       Lucro Estimado
                     </span>
                     <div className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
-                      {metrics.estimatedProfit >= 0 ? (
-                        <ArrowUpRight className="w-3.5 h-3.5 text-emerald-400" />
-                      ) : (
-                        <ArrowDownRight className="w-3.5 h-3.5 text-rose-400" />
-                      )}
+                      <TrendingUp className="w-3.5 h-3.5 text-zinc-300" />
                     </div>
                   </div>
                   <div className="my-3">
                     <div
                       className={`text-2xl sm:text-3xl font-semibold font-mono tabular-nums tracking-tight ${
-                        metrics.estimatedProfit >= 0
+                        metrics.estimatedProfit > 0
                           ? "text-emerald-400"
-                          : "text-rose-400"
+                          : metrics.estimatedProfit < 0
+                          ? "text-rose-400"
+                          : "text-zinc-300"
                       }`}
                     >
                       {formatBRL(metrics.estimatedProfit)}
@@ -749,10 +797,10 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                       Margem: {metrics.netMarginPct.toFixed(1)}%
                     </span>
                   </div>
-                </div>
+                </SpotlightCard>
 
                 {/* 4. Vendas Aprovadas */}
-                <div className="rounded-xl border border-white/10 bg-[#0c0c0e] p-5 flex flex-col justify-between">
+                <SpotlightCard className="p-5 flex flex-col justify-between bento-card">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-medium uppercase tracking-wider text-zinc-400">
                       Vendas Aprovadas
@@ -773,13 +821,13 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                     <span>{metrics.pendingCount} pendentes</span>
                     <span>{metrics.refundedOrCanceledCount} cancel./reemb.</span>
                   </div>
-                </div>
+                </SpotlightCard>
               </section>
 
               {/* LINHA 2 — SALDO OMEGAPAY & OPERACIONAL (4 CARDS ENCAIXADOS) */}
               <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* 5. Saldo Informado OmegaPay */}
-                <div className="rounded-xl border border-white/10 bg-[#0c0c0e] p-5 flex flex-col justify-between">
+                <SpotlightCard className="p-5 flex flex-col justify-between bento-card">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-medium uppercase tracking-wider text-zinc-400">
                       Saldo OmegaPay
@@ -833,10 +881,10 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                       </span>
                     )}
                   </div>
-                </div>
+                </SpotlightCard>
 
                 {/* 6. Valor Recebido / Transferido */}
-                <div className="rounded-xl border border-white/10 bg-[#0c0c0e] p-5 flex flex-col justify-between">
+                <SpotlightCard className="p-5 flex flex-col justify-between bento-card">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-medium uppercase tracking-wider text-zinc-400">
                       Valor Recebido
@@ -858,10 +906,10 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                       </span>
                     )}
                   </div>
-                </div>
+                </SpotlightCard>
 
                 {/* 7. Taxas do Checkout */}
-                <div className="rounded-xl border border-white/10 bg-[#0c0c0e] p-5 flex flex-col justify-between">
+                <SpotlightCard className="p-5 flex flex-col justify-between bento-card">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-medium uppercase tracking-wider text-zinc-400">
                       Taxas do Checkout
@@ -883,10 +931,10 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                         : "0%"}
                     </span>
                   </div>
-                </div>
+                </SpotlightCard>
 
                 {/* 8. Gastos com Anúncios & ROAS */}
-                <div className="rounded-xl border border-white/10 bg-[#0c0c0e] p-5 flex flex-col justify-between">
+                <SpotlightCard className="p-5 flex flex-col justify-between bento-card">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-medium uppercase tracking-wider text-zinc-400">
                       Anúncios &amp; ROAS
@@ -909,7 +957,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                       Outros: {formatBRL(metrics.toolsAndOtherExpenses)}
                     </span>
                   </div>
-                </div>
+                </SpotlightCard>
               </section>
 
               {/* GRÁFICOS FINANCEIROS */}
@@ -920,10 +968,10 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
 
               {/* ÚLTIMAS TRANSAÇÕES E RESUMO */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                <div className="lg:col-span-2 rounded-xl border border-white/10 bg-[#0c0c0e] p-5 space-y-4">
+                <SpotlightCard className="lg:col-span-2 p-5 sm:p-6 space-y-4 bento-card">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-sm font-semibold text-white">
+                      <h3 className="text-sm font-semibold text-white tracking-tight">
                         Últimas Transações
                       </h3>
                       <p className="text-xs text-zinc-400">
@@ -933,50 +981,50 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                     <button
                       type="button"
                       onClick={() => setActiveTab("sales")}
-                      className="text-xs text-white hover:underline font-medium"
+                      className="btn-pressable text-xs text-white hover:underline font-medium"
                     >
                       Ver todas &rarr;
                     </button>
                   </div>
 
                   {periodTransactions.length === 0 ? (
-                    <div className="py-8 text-center border border-dashed border-white/10 rounded-lg text-xs text-zinc-500">
+                    <div className="py-8 text-center border border-dashed border-white/10 rounded-xl text-xs text-zinc-500 bg-white/[0.01]">
                       Nenhuma transação no período selecionado.
                     </div>
                   ) : (
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
                       <table className="w-full text-left border-collapse text-xs">
                         <thead>
-                          <tr className="border-b border-white/10 text-zinc-500 uppercase tracking-wider text-[10px]">
-                            <th className="py-2.5 px-2 font-medium">Data</th>
-                            <th className="py-2.5 px-2 font-medium">Produto</th>
-                            <th className="py-2.5 px-2 font-medium">ID Transação</th>
-                            <th className="py-2.5 px-2 font-medium text-right">Bruto</th>
-                            <th className="py-2.5 px-2 font-medium text-right">Líquido</th>
-                            <th className="py-2.5 px-2 font-medium text-center">Status</th>
+                          <tr className="border-b border-white/10 bg-[#08080a] text-zinc-400 uppercase tracking-wider text-[10px]">
+                            <th className="py-2.5 px-3 font-medium">Data</th>
+                            <th className="py-2.5 px-3 font-medium">Produto</th>
+                            <th className="py-2.5 px-3 font-medium">ID Transação</th>
+                            <th className="py-2.5 px-3 font-medium text-right">Bruto</th>
+                            <th className="py-2.5 px-3 font-medium text-right">Líquido</th>
+                            <th className="py-2.5 px-3 font-medium text-center">Status</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-white/[0.04]">
+                        <tbody className="divide-y divide-white/[0.04] bg-[#0c0c0e]">
                           {periodTransactions.slice(0, 6).map((tx) => {
                             const meta = getTransactionStatusMeta(tx.status);
                             return (
-                              <tr key={tx.id} className="hover:bg-white/[0.02]">
-                                <td className="py-2.5 px-2 text-zinc-400 font-mono whitespace-nowrap">
+                              <tr key={tx.id} className="hover:bg-white/[0.03] transition-colors">
+                                <td className="py-2.5 px-3 text-zinc-400 font-mono whitespace-nowrap">
                                   {formatDateBR(tx.paidAt || tx.createdAt)}
                                 </td>
-                                <td className="py-2.5 px-2 text-white font-medium truncate max-w-[180px]">
+                                <td className="py-2.5 px-3 text-white font-medium truncate max-w-[180px]">
                                   {tx.productName}
                                 </td>
-                                <td className="py-2.5 px-2 text-zinc-400 font-mono">
+                                <td className="py-2.5 px-3 text-zinc-400 font-mono">
                                   {tx.id}
                                 </td>
-                                <td className="py-2.5 px-2 text-right text-zinc-300 font-mono">
+                                <td className="py-2.5 px-3 text-right text-zinc-300 font-mono">
                                   {formatBRL(tx.grossAmount)}
                                 </td>
-                                <td className="py-2.5 px-2 text-right text-white font-mono font-medium">
+                                <td className="py-2.5 px-3 text-right text-white font-mono font-medium">
                                   {formatBRL(tx.netAmount)}
                                 </td>
-                                <td className="py-2.5 px-2 text-center whitespace-nowrap">
+                                <td className="py-2.5 px-3 text-center whitespace-nowrap">
                                   <span
                                     className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium border ${meta.badgeClass}`}
                                   >
@@ -993,43 +1041,43 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                       </table>
                     </div>
                   )}
-                </div>
+                </SpotlightCard>
 
                 {/* Resumo Rápido de Despesas */}
-                <div className="rounded-xl border border-white/10 bg-[#0c0c0e] p-5 space-y-4 flex flex-col justify-between">
+                <SpotlightCard className="p-5 sm:p-6 space-y-4 flex flex-col justify-between bento-card">
                   <div>
                     <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-sm font-semibold text-white">
+                      <h3 className="text-sm font-semibold text-white tracking-tight">
                         Despesas do Período
                       </h3>
                       <button
                         type="button"
                         onClick={() => setActiveTab("expenses")}
-                        className="text-xs text-white hover:underline"
+                        className="btn-pressable text-xs text-white hover:underline"
                       >
                         + Lançar
                       </button>
                     </div>
                     <div className="space-y-2">
-                      <div className="flex justify-between text-xs py-1 border-b border-white/[0.05]">
+                      <div className="flex justify-between text-xs py-1.5 border-b border-white/[0.05]">
                         <span className="text-zinc-400">Meta Ads:</span>
                         <span className="font-mono text-white">
                           {formatBRL(metrics.metaAdsTotal)}
                         </span>
                       </div>
-                      <div className="flex justify-between text-xs py-1 border-b border-white/[0.05]">
+                      <div className="flex justify-between text-xs py-1.5 border-b border-white/[0.05]">
                         <span className="text-zinc-400">TikTok Ads:</span>
                         <span className="font-mono text-white">
                           {formatBRL(metrics.tiktokAdsTotal)}
                         </span>
                       </div>
-                      <div className="flex justify-between text-xs py-1 border-b border-white/[0.05]">
+                      <div className="flex justify-between text-xs py-1.5 border-b border-white/[0.05]">
                         <span className="text-zinc-400">Ferramentas / Outros:</span>
                         <span className="font-mono text-white">
                           {formatBRL(metrics.toolsAndOtherExpenses)}
                         </span>
                       </div>
-                      <div className="flex justify-between text-xs py-1.5 font-semibold">
+                      <div className="flex justify-between text-xs py-2 font-semibold">
                         <span className="text-zinc-200">Total de Despesas:</span>
                         <span className="font-mono text-white">
                           {formatBRL(metrics.totalExpenses)}
@@ -1039,22 +1087,22 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                   </div>
 
                   <div className="pt-3 border-t border-white/[0.08] text-[11px] text-zinc-500">
-                    O lucro estimado é calculado instantaneamente subtraindo as despesas cadastradas da receita líquida.
+                    O lucro estimado é calculado instantaneamente subtraindo as despesas da receita líquida.
                   </div>
-                </div>
+                </SpotlightCard>
               </div>
             </div>
           )}
 
           {/* ==================== ABA 2: HISTÓRICO DE VENDAS ==================== */}
           {activeTab === "sales" && (
-            <div className="rounded-xl border border-white/10 bg-[#0c0c0e] p-5 space-y-4">
+            <SpotlightCard className="p-5 sm:p-6 space-y-4 bento-card">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                  <h3 className="text-sm font-semibold text-white">
+                  <h3 className="text-sm font-semibold text-white tracking-tight">
                     Histórico Completo de Vendas
                   </h3>
-                  <p className="text-xs text-zinc-400">
+                  <p className="text-xs text-zinc-400 font-mono">
                     {filteredSalesTable.length} transações encontradas
                   </p>
                 </div>
@@ -1066,7 +1114,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                       value={salesSearch}
                       onChange={(e) => setSalesSearch(e.target.value)}
                       placeholder="Buscar por ID ou produto..."
-                      className="rounded-lg border border-white/10 bg-[#050507] pl-8 pr-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:border-white focus:outline-none"
+                      className="rounded-xl border border-white/10 bg-[#050507] pl-8 pr-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:border-white focus:ring-1 focus:ring-white/20 focus:outline-none transition-all"
                     />
                     <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-2.5 top-2.5" />
                   </div>
@@ -1074,7 +1122,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                   <select
                     value={salesStatusFilter}
                     onChange={(e) => setSalesStatusFilter(e.target.value)}
-                    className="rounded-lg border border-white/10 bg-[#050507] px-3 py-1.5 text-xs text-white focus:border-white focus:outline-none"
+                    className="rounded-xl border border-white/10 bg-[#050507] px-3 py-1.5 text-xs text-white focus:border-white focus:ring-1 focus:ring-white/20 focus:outline-none transition-all"
                   >
                     <option value="ALL">Todos os status</option>
                     <option value="COMPLETED">Aprovadas</option>
@@ -1087,14 +1135,14 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
               </div>
 
               {filteredSalesTable.length === 0 ? (
-                <div className="py-12 text-center border border-dashed border-white/10 rounded-lg text-xs text-zinc-500">
+                <div className="py-12 text-center border border-dashed border-white/10 rounded-xl text-xs text-zinc-500 bg-white/[0.01]">
                   Nenhuma transação encontrada com os filtros atuais.
                 </div>
               ) : (
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
                   <table className="w-full text-left border-collapse text-xs">
                     <thead>
-                      <tr className="border-b border-white/10 text-zinc-500 uppercase tracking-wider text-[10px]">
+                      <tr className="border-b border-white/10 bg-[#08080a] text-zinc-400 uppercase tracking-wider text-[10px]">
                         <th className="py-2.5 px-3 font-medium">Data</th>
                         <th className="py-2.5 px-3 font-medium">Produto</th>
                         <th className="py-2.5 px-3 font-medium">ID Transação</th>
@@ -1105,11 +1153,11 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                         <th className="py-2.5 px-3 font-medium text-center">Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-white/[0.04]">
+                    <tbody className="divide-y divide-white/[0.04] bg-[#0c0c0e]">
                       {filteredSalesTable.map((tx) => {
                         const meta = getTransactionStatusMeta(tx.status);
                         return (
-                          <tr key={tx.id} className="hover:bg-white/[0.02]">
+                          <tr key={tx.id} className="hover:bg-white/[0.03] transition-colors">
                             <td className="py-2.5 px-3 text-zinc-400 font-mono whitespace-nowrap">
                               {formatDateTimeBR(tx.paidAt || tx.createdAt)}
                             </td>
@@ -1148,16 +1196,16 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                   </table>
                 </div>
               )}
-            </div>
+            </SpotlightCard>
           )}
 
           {/* ==================== ABA 3: DESPESAS MANUAIS ==================== */}
           {activeTab === "expenses" && (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               {/* Formulário */}
-              <div className="rounded-xl border border-white/10 bg-[#0c0c0e] p-5 space-y-4">
+              <SpotlightCard className="p-5 sm:p-6 space-y-4 bento-card">
                 <div>
-                  <h3 className="text-sm font-semibold text-white">
+                  <h3 className="text-sm font-semibold text-white tracking-tight">
                     Adicionar Despesa Manual
                   </h3>
                   <p className="text-xs text-zinc-400">
@@ -1166,7 +1214,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                 </div>
 
                 {expenseError && (
-                  <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-2.5 text-xs text-rose-300">
+                  <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-2.5 text-xs text-rose-300">
                     {expenseError}
                   </div>
                 )}
@@ -1181,7 +1229,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                       onChange={(e) =>
                         setExpCategory(e.target.value as ExpenseCategory)
                       }
-                      className="w-full rounded-lg border border-white/10 bg-[#050507] px-3 py-2 text-xs text-white focus:border-white focus:outline-none"
+                      className="w-full rounded-xl border border-white/10 bg-[#050507] px-3 py-2 text-xs text-white focus:border-white focus:ring-1 focus:ring-white/20 focus:outline-none transition-all"
                     >
                       {Object.entries(EXPENSE_CATEGORIES).map(([k, v]) => (
                         <option key={k} value={k}>
@@ -1200,7 +1248,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                       value={expDescription}
                       onChange={(e) => setExpDescription(e.target.value)}
                       placeholder="Ex: Campanha Topo de Funil"
-                      className="w-full rounded-lg border border-white/10 bg-[#050507] px-3 py-2 text-xs text-white placeholder-zinc-600 focus:border-white focus:outline-none"
+                      className="w-full rounded-xl border border-white/10 bg-[#050507] px-3 py-2 text-xs text-white placeholder-zinc-600 focus:border-white focus:ring-1 focus:ring-white/20 focus:outline-none transition-all"
                     />
                   </div>
 
@@ -1215,7 +1263,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                       value={expAmount}
                       onChange={(e) => setExpAmount(e.target.value)}
                       placeholder="0,00"
-                      className="w-full rounded-lg border border-white/10 bg-[#050507] px-3 py-2 text-xs text-white font-mono focus:border-white focus:outline-none"
+                      className="w-full rounded-xl border border-white/10 bg-[#050507] px-3 py-2 text-xs text-white font-mono focus:border-white focus:ring-1 focus:ring-white/20 focus:outline-none transition-all"
                     />
                   </div>
 
@@ -1228,42 +1276,42 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                       required
                       value={expDate}
                       onChange={(e) => setExpDate(e.target.value)}
-                      className="w-full rounded-lg border border-white/10 bg-[#050507] px-3 py-2 text-xs text-white focus:border-white focus:outline-none"
+                      className="w-full rounded-xl border border-white/10 bg-[#050507] px-3 py-2 text-xs text-white focus:border-white focus:ring-1 focus:ring-white/20 focus:outline-none transition-all"
                     />
                   </div>
 
                   <button
                     type="submit"
                     disabled={submittingExpense}
-                    className="w-full rounded-lg bg-white text-black hover:bg-zinc-200 disabled:opacity-50 font-semibold text-xs py-2 px-4 transition"
+                    className="btn-pressable w-full rounded-xl bg-white text-black hover:bg-zinc-100 disabled:opacity-50 font-semibold text-xs py-2 px-4 shadow-sm transition"
                   >
                     {submittingExpense ? "Salvando..." : "Registrar Despesa"}
                   </button>
                 </form>
-              </div>
+              </SpotlightCard>
 
               {/* Lista de Despesas */}
-              <div className="lg:col-span-2 rounded-xl border border-white/10 bg-[#0c0c0e] p-5 space-y-4">
+              <SpotlightCard className="lg:col-span-2 p-5 sm:p-6 space-y-4 bento-card">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-sm font-semibold text-white">
+                    <h3 className="text-sm font-semibold text-white tracking-tight">
                       Despesas Registradas no Período
                     </h3>
-                    <p className="text-xs text-zinc-400">
+                    <p className="text-xs text-zinc-400 font-mono">
                       Total: {formatBRL(metrics.totalExpenses)}
                     </p>
                   </div>
                 </div>
 
                 {periodExpenses.length === 0 ? (
-                  <div className="py-12 text-center border border-dashed border-white/10 rounded-lg text-xs text-zinc-500">
+                  <div className="py-12 text-center border border-dashed border-white/10 rounded-xl text-xs text-zinc-500 bg-white/[0.01]">
                     Nenhuma despesa cadastrada no período selecionado.
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
                     <table className="w-full text-left border-collapse text-xs">
                       <thead>
-                        <tr className="border-b border-white/10 text-zinc-500 uppercase tracking-wider text-[10px]">
+                        <tr className="border-b border-white/10 bg-[#08080a] text-zinc-400 uppercase tracking-wider text-[10px]">
                           <th className="py-2 px-3 font-medium">Data</th>
                           <th className="py-2 px-3 font-medium">Categoria</th>
                           <th className="py-2 px-3 font-medium">Descrição</th>
@@ -1271,9 +1319,9 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                           <th className="py-2 px-3 font-medium text-center">Ações</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-white/[0.04]">
+                      <tbody className="divide-y divide-white/[0.04] bg-[#0c0c0e]">
                         {periodExpenses.map((exp) => (
-                          <tr key={exp.id} className="hover:bg-white/[0.02]">
+                          <tr key={exp.id} className="hover:bg-white/[0.03] transition-colors">
                             <td className="py-2.5 px-3 text-zinc-400 font-mono whitespace-nowrap">
                               {formatDateBR(exp.expenseDate)}
                             </td>
@@ -1292,8 +1340,9 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                               <button
                                 type="button"
                                 onClick={() => handleDeleteExpense(exp.id)}
-                                className="text-zinc-500 hover:text-rose-400 transition p-1"
+                                className="btn-pressable text-zinc-500 hover:text-rose-400 transition p-1"
                                 title="Excluir despesa"
+                                aria-label={`Excluir despesa ${exp.title}`}
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
@@ -1304,7 +1353,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                     </table>
                   </div>
                 )}
-              </div>
+              </SpotlightCard>
             </div>
           )}
 

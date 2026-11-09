@@ -16,6 +16,7 @@ import {
   AlertTriangle,
   RefreshCw,
 } from "lucide-react";
+import { SpotlightCard } from "./SpotlightCard";
 
 interface IntegrationStatus {
   hasApiCredentials: boolean;
@@ -36,7 +37,7 @@ export function IntegrationAndGuideTab({
   recentWebhooks,
   onRefreshDashboard,
 }: IntegrationAndGuideTabProps) {
-  // Formulário de credenciais (apenas envio ao servidor)
+  // Formulário de credenciais
   const [publicKey, setPublicKey] = useState("");
   const [secretKey, setSecretKey] = useState("");
   const [webhookToken, setWebhookToken] = useState("");
@@ -53,7 +54,7 @@ export function IntegrationAndGuideTab({
     useState<OmegaPayCredentialsResponse | null>(null);
   const [credTestError, setCredTestError] = useState<string | null>(null);
 
-  // Consulta pontual de transação / transferência (GET /gateway/transactions e GET /gateway/transfers)
+  // Consulta pontual de transação / transferência
   const [lookupType, setLookupType] = useState<"transaction" | "transfer">(
     "transaction"
   );
@@ -113,7 +114,7 @@ export function IntegrationAndGuideTab({
         setDashboardPassword("");
         setCredsFeedback({
           type: "success",
-          text: "Credenciais armazenadas no servidor com sucesso.",
+          text: "Credenciais armazenadas com segurança no servidor.",
         });
         await onRefreshDashboard();
       }
@@ -231,17 +232,17 @@ export function IntegrationAndGuideTab({
   return (
     <div className="space-y-4">
       {/* Endpoint Bar */}
-      <div className="rounded-xl border border-white/10 bg-[#0c0c0e] p-5">
+      <SpotlightCard className="p-5 sm:p-6 bento-card">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-white" />
+              <span className="w-2 h-2 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
               <span className="text-xs font-semibold uppercase tracking-wider text-white">
                 Endpoint Receptor de Webhooks (HTTP POST &bull; JSON)
               </span>
             </div>
             <p className="text-xs text-zinc-400 mt-1">
-              Cadastre esta URL em <code>Configurações &gt; Webhooks</code> no painel da OmegaPay
+              Cadastre esta URL em <code className="text-zinc-200">Configurações &gt; Webhooks</code> no painel da OmegaPay
             </p>
           </div>
 
@@ -252,7 +253,7 @@ export function IntegrationAndGuideTab({
             <button
               type="button"
               onClick={copyWebhookUrl}
-              className="flex items-center gap-1.5 rounded-lg bg-white text-black hover:bg-zinc-200 px-3 py-1.5 text-xs font-medium transition shrink-0"
+              className="btn-pressable flex items-center gap-1.5 rounded-lg bg-white text-black hover:bg-zinc-200 px-3 py-1.5 text-xs font-semibold shadow-sm transition shrink-0"
             >
               {copiedUrl ? (
                 <>
@@ -268,22 +269,22 @@ export function IntegrationAndGuideTab({
             </button>
           </div>
         </div>
-      </div>
+      </SpotlightCard>
 
       {/* Grid: Credenciais + Consultas */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Card 1: Credenciais no Servidor */}
-        <div className="rounded-xl border border-white/10 bg-[#0c0c0e] p-5 space-y-4">
+        <SpotlightCard className="p-5 sm:p-6 space-y-4 bento-card">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center">
                 <KeyRound className="w-4 h-4 text-white" />
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-white">
+                <h3 className="text-sm font-semibold text-white tracking-tight">
                   Credenciais da API OmegaPay
                 </h3>
-                <p className="text-xs text-zinc-400">
+                <p className="text-xs text-zinc-400 font-mono">
                   {integrationStatus.apiBaseUrl}
                 </p>
               </div>
@@ -293,7 +294,7 @@ export function IntegrationAndGuideTab({
               type="button"
               onClick={handleTestCredentials}
               disabled={testingCreds}
-              className="flex items-center gap-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-1.5 text-xs font-medium text-white transition disabled:opacity-50"
+              className="btn-pressable flex items-center gap-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-1.5 text-xs font-medium text-white transition disabled:opacity-50"
             >
               <RefreshCw
                 className={`w-3.5 h-3.5 ${
@@ -305,7 +306,7 @@ export function IntegrationAndGuideTab({
           </div>
 
           <div className="grid grid-cols-2 gap-3 text-xs">
-            <div className="rounded-lg bg-[#050507] border border-white/10 p-3">
+            <div className="rounded-xl bg-[#050507] border border-white/10 p-3">
               <span className="text-zinc-500 block">Chaves da API (GET)</span>
               <span className="font-medium mt-1 inline-block text-white">
                 {integrationStatus.hasApiCredentials
@@ -313,7 +314,7 @@ export function IntegrationAndGuideTab({
                   : "Pendentes"}
               </span>
             </div>
-            <div className="rounded-lg bg-[#050507] border border-white/10 p-3">
+            <div className="rounded-xl bg-[#050507] border border-white/10 p-3">
               <span className="text-zinc-500 block">Token do Webhook</span>
               <span className="font-medium mt-1 inline-block text-white">
                 {integrationStatus.hasWebhookToken
@@ -324,9 +325,9 @@ export function IntegrationAndGuideTab({
           </div>
 
           {credTestResult && (
-            <div className="rounded-lg border border-white/20 bg-white/[0.03] p-3 text-xs space-y-1">
+            <div className="rounded-xl border border-white/20 bg-white/[0.03] p-3 text-xs space-y-1">
               <div className="font-semibold text-white flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-white" />
                 <span>Credencial Válida: {credTestResult.name}</span>
               </div>
               <p className="text-zinc-400">
@@ -342,14 +343,14 @@ export function IntegrationAndGuideTab({
           )}
 
           {credTestError && (
-            <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300">
+            <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300">
               <strong>Retorno da OmegaPay:</strong> {credTestError}
             </div>
           )}
 
           {credsFeedback && (
             <div
-              className={`rounded-lg border p-3 text-xs ${
+              className={`rounded-xl border p-3 text-xs ${
                 credsFeedback.type === "success"
                   ? "border-white/20 bg-white/5 text-zinc-200"
                   : "border-rose-500/30 bg-rose-500/10 text-rose-300"
@@ -362,40 +363,40 @@ export function IntegrationAndGuideTab({
           <form onSubmit={handleSaveCredentials} className="space-y-3">
             <div>
               <label className="block text-xs font-medium text-zinc-300 mb-1">
-                Chave Pública (<code>x-public-key</code>)
+                Chave Pública (<code className="text-zinc-400">x-public-key</code>)
               </label>
               <input
                 type="password"
                 value={publicKey}
                 onChange={(e) => setPublicKey(e.target.value)}
                 placeholder="Deixe em branco para manter a atual"
-                className="w-full rounded-lg border border-white/10 bg-[#050507] px-3 py-2 text-xs text-white placeholder-zinc-600 focus:border-white focus:outline-none transition"
+                className="w-full rounded-xl border border-white/10 bg-[#050507] px-3 py-2 text-xs text-white placeholder-zinc-600 focus:border-white focus:ring-1 focus:ring-white/20 focus:outline-none transition-all"
               />
             </div>
 
             <div>
               <label className="block text-xs font-medium text-zinc-300 mb-1">
-                Chave Secreta (<code>x-secret-key</code>)
+                Chave Secreta (<code className="text-zinc-400">x-secret-key</code>)
               </label>
               <input
                 type="password"
                 value={secretKey}
                 onChange={(e) => setSecretKey(e.target.value)}
                 placeholder="Deixe em branco para manter a atual"
-                className="w-full rounded-lg border border-white/10 bg-[#050507] px-3 py-2 text-xs text-white placeholder-zinc-600 focus:border-white focus:outline-none transition"
+                className="w-full rounded-xl border border-white/10 bg-[#050507] px-3 py-2 text-xs text-white placeholder-zinc-600 focus:border-white focus:ring-1 focus:ring-white/20 focus:outline-none transition-all"
               />
             </div>
 
             <div>
               <label className="block text-xs font-medium text-zinc-300 mb-1">
-                Token de Validação do Webhook (<code>payload.token</code>)
+                Token de Validação do Webhook (<code className="text-zinc-400">payload.token</code>)
               </label>
               <input
                 type="password"
                 value={webhookToken}
                 onChange={(e) => setWebhookToken(e.target.value)}
                 placeholder="Token gerado no painel da OmegaPay"
-                className="w-full rounded-lg border border-white/10 bg-[#050507] px-3 py-2 text-xs text-white placeholder-zinc-600 focus:border-white focus:outline-none transition"
+                className="w-full rounded-xl border border-white/10 bg-[#050507] px-3 py-2 text-xs text-white placeholder-zinc-600 focus:border-white focus:ring-1 focus:ring-white/20 focus:outline-none transition-all"
               />
             </div>
 
@@ -408,29 +409,29 @@ export function IntegrationAndGuideTab({
                 value={dashboardPassword}
                 onChange={(e) => setDashboardPassword(e.target.value)}
                 placeholder="Mínimo de 6 caracteres"
-                className="w-full rounded-lg border border-white/10 bg-[#050507] px-3 py-2 text-xs text-white placeholder-zinc-600 focus:border-white focus:outline-none transition"
+                className="w-full rounded-xl border border-white/10 bg-[#050507] px-3 py-2 text-xs text-white placeholder-zinc-600 focus:border-white focus:ring-1 focus:ring-white/20 focus:outline-none transition-all"
               />
             </div>
 
             <button
               type="submit"
               disabled={savingCreds}
-              className="w-full rounded-lg bg-white text-black hover:bg-zinc-200 disabled:opacity-50 font-semibold text-xs py-2.5 px-4 transition"
+              className="btn-pressable w-full rounded-xl bg-white text-black hover:bg-zinc-100 disabled:opacity-50 font-semibold text-xs py-2.5 px-4 shadow-sm transition"
             >
               {savingCreds ? "Salvando..." : "Salvar Credenciais no Servidor"}
             </button>
           </form>
-        </div>
+        </SpotlightCard>
 
         {/* Card 2: Consulta Pontual na API */}
-        <div className="rounded-xl border border-white/10 bg-[#0c0c0e] p-5 space-y-4 flex flex-col justify-between">
+        <SpotlightCard className="p-5 sm:p-6 space-y-4 flex flex-col justify-between bento-card">
           <div className="space-y-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center">
                 <Search className="w-4 h-4 text-white" />
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-white">
+                <h3 className="text-sm font-semibold text-white tracking-tight">
                   Consulta Sob Demanda (GET)
                 </h3>
                 <p className="text-xs text-zinc-400">
@@ -450,7 +451,7 @@ export function IntegrationAndGuideTab({
                     onChange={(e) =>
                       setLookupType(e.target.value as "transaction" | "transfer")
                     }
-                    className="w-full rounded-lg border border-white/10 bg-[#050507] px-3 py-2 text-xs text-white focus:border-white focus:outline-none"
+                    className="w-full rounded-xl border border-white/10 bg-[#050507] px-3 py-2 text-xs text-white focus:border-white focus:ring-1 focus:ring-white/20 focus:outline-none transition-all"
                   >
                     <option value="transaction">Buscar transação</option>
                     <option value="transfer">Buscar transferência</option>
@@ -466,7 +467,7 @@ export function IntegrationAndGuideTab({
                     onChange={(e) =>
                       setLookupField(e.target.value as "id" | "clientIdentifier")
                     }
-                    className="w-full rounded-lg border border-white/10 bg-[#050507] px-3 py-2 text-xs text-white focus:border-white focus:outline-none"
+                    className="w-full rounded-xl border border-white/10 bg-[#050507] px-3 py-2 text-xs text-white focus:border-white focus:ring-1 focus:ring-white/20 focus:outline-none transition-all"
                   >
                     <option value="id">id (OmegaPay)</option>
                     <option value="clientIdentifier">clientIdentifier</option>
@@ -480,12 +481,12 @@ export function IntegrationAndGuideTab({
                   value={lookupValue}
                   onChange={(e) => setLookupValue(e.target.value)}
                   placeholder="ID da transação ou identificador"
-                  className="flex-1 rounded-lg border border-white/10 bg-[#050507] px-3 py-2 text-xs text-white placeholder-zinc-600 focus:border-white focus:outline-none"
+                  className="flex-1 rounded-xl border border-white/10 bg-[#050507] px-3 py-2 text-xs text-white placeholder-zinc-600 focus:border-white focus:ring-1 focus:ring-white/20 focus:outline-none transition-all"
                 />
                 <button
                   type="submit"
                   disabled={lookupLoading}
-                  className="rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white border border-white/10 text-xs font-medium px-4 py-2 transition shrink-0"
+                  className="btn-pressable rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white border border-white/10 text-xs font-medium px-4 py-2 transition shrink-0"
                 >
                   {lookupLoading ? "Buscando..." : "Consultar"}
                 </button>
@@ -493,43 +494,43 @@ export function IntegrationAndGuideTab({
             </form>
 
             {lookupError && (
-              <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300">
+              <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300">
                 {lookupError}
               </div>
             )}
 
             {lookupResult && (
-              <div className="rounded-lg border border-white/10 bg-[#050507] p-3 space-y-2">
+              <div className="rounded-xl border border-white/10 bg-[#050507] p-3 space-y-2">
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-white font-medium">Resposta Oficial</span>
                   <span className="text-zinc-500 font-mono">
                     ID: {String(lookupResult.id || "—")}
                   </span>
                 </div>
-                <pre className="text-[11px] text-zinc-300 font-mono overflow-x-auto max-h-40">
+                <pre className="text-[11px] text-zinc-300 font-mono overflow-x-auto max-h-40 p-2 bg-[#08080a] rounded-lg border border-white/5">
                   {JSON.stringify(lookupResult, null, 2)}
                 </pre>
               </div>
             )}
           </div>
 
-          <div className="rounded-lg bg-white/[0.02] border border-white/10 p-3 text-xs text-zinc-400 flex items-start gap-2.5">
+          <div className="rounded-xl bg-white/[0.02] border border-white/10 p-3 text-xs text-zinc-400 flex items-start gap-2.5">
             <AlertTriangle className="w-4 h-4 text-zinc-300 shrink-0 mt-0.5" />
             <div>
-              <strong>Aviso da Documentação:</strong> O PulseTrack Lite utiliza webhooks em tempo real e consultas sob demanda para evitar bloqueios por polling frequente.
+              <strong>Aviso da Documentação:</strong> O PulseTrack Lite utiliza webhooks em tempo real e consultas sob demanda para evitar bloqueios por excesso de requisições.
             </div>
           </div>
-        </div>
+        </SpotlightCard>
       </div>
 
       {/* Simulador Oficial de Webhooks */}
-      <div className="rounded-xl border border-white/10 bg-[#0c0c0e] p-5 space-y-4">
+      <SpotlightCard className="p-5 sm:p-6 space-y-4 bento-card">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center">
             <Terminal className="w-4 h-4 text-white" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-white">
+            <h3 className="text-sm font-semibold text-white tracking-tight">
               Testador Local de Webhooks OmegaPay
             </h3>
             <p className="text-xs text-zinc-400">
@@ -549,7 +550,7 @@ export function IntegrationAndGuideTab({
             <select
               value={simEvent}
               onChange={(e) => setSimEvent(e.target.value)}
-              className="w-full rounded-lg border border-white/10 bg-[#050507] px-3 py-2 text-xs text-white focus:border-white focus:outline-none"
+              className="w-full rounded-xl border border-white/10 bg-[#050507] px-3 py-2 text-xs text-white focus:border-white focus:ring-1 focus:ring-white/20 focus:outline-none transition-all"
             >
               <optgroup label="Pagamentos">
                 <option value="TRANSACTION_CREATED">TRANSACTION_CREATED (Criada)</option>
@@ -574,7 +575,7 @@ export function IntegrationAndGuideTab({
               type="text"
               value={simTxId}
               onChange={(e) => setSimTxId(e.target.value)}
-              className="w-full rounded-lg border border-white/10 bg-[#050507] px-3 py-2 text-xs text-white font-mono focus:border-white focus:outline-none"
+              className="w-full rounded-xl border border-white/10 bg-[#050507] px-3 py-2 text-xs text-white font-mono focus:border-white focus:ring-1 focus:ring-white/20 focus:outline-none transition-all"
             />
           </div>
 
@@ -586,7 +587,7 @@ export function IntegrationAndGuideTab({
               type="text"
               value={simProduct}
               onChange={(e) => setSimProduct(e.target.value)}
-              className="w-full rounded-lg border border-white/10 bg-[#050507] px-3 py-2 text-xs text-white focus:border-white focus:outline-none"
+              className="w-full rounded-xl border border-white/10 bg-[#050507] px-3 py-2 text-xs text-white focus:border-white focus:ring-1 focus:ring-white/20 focus:outline-none transition-all"
             />
           </div>
 
@@ -600,7 +601,7 @@ export function IntegrationAndGuideTab({
                 step="0.01"
                 value={simGross}
                 onChange={(e) => setSimGross(e.target.value)}
-                className="w-full rounded-lg border border-white/10 bg-[#050507] px-2.5 py-2 text-xs text-white font-mono focus:border-white focus:outline-none"
+                className="w-full rounded-xl border border-white/10 bg-[#050507] px-2.5 py-2 text-xs text-white font-mono focus:border-white focus:ring-1 focus:ring-white/20 focus:outline-none transition-all"
               />
             </div>
             <div>
@@ -612,7 +613,7 @@ export function IntegrationAndGuideTab({
                 step="0.01"
                 value={simFee}
                 onChange={(e) => setSimFee(e.target.value)}
-                className="w-full rounded-lg border border-white/10 bg-[#050507] px-2.5 py-2 text-xs text-white font-mono focus:border-white focus:outline-none"
+                className="w-full rounded-xl border border-white/10 bg-[#050507] px-2.5 py-2 text-xs text-white font-mono focus:border-white focus:ring-1 focus:ring-white/20 focus:outline-none transition-all"
               />
             </div>
           </div>
@@ -621,7 +622,7 @@ export function IntegrationAndGuideTab({
             <select
               value={simMethod}
               onChange={(e) => setSimMethod(e.target.value)}
-              className="rounded-lg border border-white/10 bg-[#050507] px-2 py-2 text-xs text-white focus:border-white focus:outline-none"
+              className="rounded-xl border border-white/10 bg-[#050507] px-2 py-2 text-xs text-white focus:border-white focus:ring-1 focus:ring-white/20 focus:outline-none transition-all"
             >
               <option value="PIX">PIX</option>
               <option value="CREDIT_CARD">Cartão</option>
@@ -630,7 +631,7 @@ export function IntegrationAndGuideTab({
             <button
               type="submit"
               disabled={simLoading}
-              className="flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-white text-black hover:bg-zinc-200 disabled:opacity-50 text-xs font-semibold py-2 px-3 transition"
+              className="btn-pressable flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-white text-black hover:bg-zinc-100 disabled:opacity-50 text-xs font-semibold py-2 px-3 shadow-sm transition"
             >
               <Send className="w-3.5 h-3.5" />
               <span>{simLoading ? "..." : "Disparar"}</span>
@@ -639,58 +640,58 @@ export function IntegrationAndGuideTab({
         </form>
 
         {simFeedback && (
-          <div className="rounded-lg border border-white/15 bg-white/5 p-3 text-xs text-zinc-200">
+          <div className="rounded-xl border border-white/15 bg-white/5 p-3 text-xs text-zinc-200">
             {simFeedback}
           </div>
         )}
-      </div>
+      </SpotlightCard>
 
       {/* Registro Auditável de Webhooks */}
-      <div className="rounded-xl border border-white/10 bg-[#0c0c0e] p-5 space-y-3">
+      <SpotlightCard className="p-5 sm:p-6 space-y-3 bento-card">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-white" />
-            <h3 className="text-sm font-semibold text-white">
+            <h3 className="text-sm font-semibold text-white tracking-tight">
               Histórico de Webhooks Recebidos
             </h3>
           </div>
-          <span className="text-xs text-zinc-500">
+          <span className="text-xs text-zinc-500 font-mono">
             Últimos {recentWebhooks.length} eventos
           </span>
         </div>
 
         {recentWebhooks.length === 0 ? (
-          <p className="text-xs text-zinc-500 py-4 text-center border border-dashed border-white/10 rounded-lg">
+          <p className="text-xs text-zinc-500 py-6 text-center border border-dashed border-white/10 rounded-xl bg-white/[0.01]">
             Nenhum evento registrado ainda.
           </p>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-white/10 text-zinc-500">
-                  <th className="py-2.5 px-3 font-medium">Recebido em</th>
-                  <th className="py-2.5 px-3 font-medium">Evento Oficial</th>
-                  <th className="py-2.5 px-3 font-medium">ID da Entidade</th>
-                  <th className="py-2.5 px-3 font-medium">Status Resultante</th>
-                  <th className="py-2.5 px-3 font-medium">Chave de Idempotência</th>
+                <tr className="border-b border-white/10 bg-[#08080a] text-zinc-400">
+                  <th className="py-2.5 px-3.5 font-medium">Recebido em</th>
+                  <th className="py-2.5 px-3.5 font-medium">Evento Oficial</th>
+                  <th className="py-2.5 px-3.5 font-medium">ID da Entidade</th>
+                  <th className="py-2.5 px-3.5 font-medium">Status Resultante</th>
+                  <th className="py-2.5 px-3.5 font-medium">Chave de Idempotência</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/[0.04]">
+              <tbody className="divide-y divide-white/[0.04] bg-[#0c0c0e]">
                 {recentWebhooks.map((ev) => (
-                  <tr key={ev.id} className="hover:bg-white/[0.02]">
-                    <td className="py-2.5 px-3 text-zinc-400 font-mono whitespace-nowrap">
+                  <tr key={ev.id} className="hover:bg-white/[0.03] transition-colors">
+                    <td className="py-2.5 px-3.5 text-zinc-400 font-mono whitespace-nowrap">
                       {formatDateTimeBR(ev.receivedAt)}
                     </td>
-                    <td className="py-2.5 px-3 font-mono text-white">
+                    <td className="py-2.5 px-3.5 font-mono text-white">
                       {ev.eventType}
                     </td>
-                    <td className="py-2.5 px-3 font-mono text-zinc-300">
+                    <td className="py-2.5 px-3.5 font-mono text-zinc-300">
                       {ev.entityId}
                     </td>
-                    <td className="py-2.5 px-3 font-mono text-zinc-400">
+                    <td className="py-2.5 px-3.5 font-mono text-zinc-400">
                       {ev.statusAfter || "—"}
                     </td>
-                    <td className="py-2.5 px-3 font-mono text-zinc-600 truncate max-w-[200px]">
+                    <td className="py-2.5 px-3.5 font-mono text-zinc-500 truncate max-w-[200px]">
                       {ev.dedupeKey}
                     </td>
                   </tr>
@@ -699,38 +700,38 @@ export function IntegrationAndGuideTab({
             </table>
           </div>
         )}
-      </div>
+      </SpotlightCard>
 
       {/* Guia Passo a Passo Oficial */}
-      <div className="rounded-xl border border-white/10 bg-[#0c0c0e] p-5 space-y-4">
+      <SpotlightCard className="p-5 sm:p-6 space-y-4 bento-card">
         <div className="flex items-center gap-2">
           <BookOpen className="w-4 h-4 text-white" />
-          <h3 className="text-sm font-semibold text-white">
+          <h3 className="text-sm font-semibold text-white tracking-tight">
             Guia Rápido: Conectar na OmegaPay
           </h3>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs text-zinc-400">
-          <div className="rounded-lg bg-[#050507] border border-white/10 p-4 space-y-1.5">
+          <div className="rounded-xl bg-[#050507] border border-white/10 p-4 space-y-1.5 hover:border-white/20 transition-colors">
             <span className="text-white font-medium block">1. Criar Webhook</span>
             <p className="leading-relaxed">
-              No painel da OmegaPay em <code>Configurações &gt; Webhooks</code>, clique em Criar, cole a URL acima e selecione os eventos oficiais.
+              No painel da OmegaPay em <code className="text-zinc-300">Configurações &gt; Webhooks</code>, clique em Criar, cole a URL acima e selecione os eventos oficiais.
             </p>
           </div>
-          <div className="rounded-lg bg-[#050507] border border-white/10 p-4 space-y-1.5">
+          <div className="rounded-xl bg-[#050507] border border-white/10 p-4 space-y-1.5 hover:border-white/20 transition-colors">
             <span className="text-white font-medium block">2. Copiar Credenciais</span>
             <p className="leading-relaxed">
-              Copie o Token de validação do webhook e as chaves <code>x-public-key</code> e <code>x-secret-key</code> em <code>Configurações &gt; Credenciais</code>.
+              Copie o Token de validação do webhook e as chaves <code className="text-zinc-300">x-public-key</code> e <code className="text-zinc-300">x-secret-key</code> em <code className="text-zinc-300">Configurações &gt; Credenciais</code>.
             </p>
           </div>
-          <div className="rounded-lg bg-[#050507] border border-white/10 p-4 space-y-1.5">
+          <div className="rounded-xl bg-[#050507] border border-white/10 p-4 space-y-1.5 hover:border-white/20 transition-colors">
             <span className="text-white font-medium block">3. Salvar e Conferir</span>
             <p className="leading-relaxed">
               Cole as chaves no formulário acima e clique em Salvar. As vendas e o saldo serão atualizados automaticamente no Supabase.
             </p>
           </div>
         </div>
-      </div>
+      </SpotlightCard>
     </div>
   );
 }

@@ -1,0 +1,34 @@
+/* Premium interaction recipes: opt-in classes, not a global UI override. */
+:root {
+  --ui-ink: #17191d;
+  --ui-surface: #ffffff;
+  --ui-accent: #2162f2;
+  --ui-line: #d9dfe8;
+  --ui-ease: cubic-bezier(.2,.8,.2,1);
+}
+.premium-button {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: .5rem; padding: .8rem 1.3rem; border-radius: .75rem;
+  background: var(--ui-ink); color: white; border: 1px solid transparent;
+  cursor: pointer; font: inherit; font-weight: 650;
+  transition: transform .22s var(--ui-ease), background-color .22s ease;
+}
+.premium-button:hover { transform: translateY(-2px); }
+.premium-button:active { transform: scale(.985); }
+.premium-button:focus-visible, .premium-card a:focus-visible {
+  outline: 3px solid var(--ui-accent); outline-offset: 4px;
+}
+.premium-button:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+.premium-card {
+  background: var(--ui-surface); border: 1px solid var(--ui-line);
+  border-radius: 1.25rem; padding: 1.5rem;
+  transition: transform .24s var(--ui-ease), border-color .24s ease;
+}
+.premium-card:has(a:hover), .premium-card:has(a:focus-visible) {
+  transform: translateY(-4px); border-color: var(--ui-accent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .premium-button, .premium-card { transition-duration: .01ms; }
+  .premium-button:hover, .premium-button:active,
+  .premium-card:has(a:hover), .premium-card:has(a:focus-visible) { transform: none; }
+}
