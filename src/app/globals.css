@@ -7,10 +7,11 @@
 }
 
 body {
-  background-color: #090b10;
-  color: #f3f4f6;
+  background-color: #050507;
+  color: #ededed;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .tabular-nums {
@@ -19,19 +20,19 @@ body {
 
 /* Custom subtle scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0d1017;
+  background: #050507;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #262b38;
+  background: #222226;
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #374151;
+  background: #333338;
 }

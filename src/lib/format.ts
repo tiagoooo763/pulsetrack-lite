@@ -54,45 +54,44 @@ export function getTransactionStatusMeta(status: OmegaPayTransactionStatus | str
     case "COMPLETED":
       return {
         label: "Aprovada",
-        badgeClass:
-          "bg-emerald-500/10 text-emerald-300 border-emerald-500/25",
+        badgeClass: "bg-white/[0.04] text-zinc-200 border-white/15",
         dotClass: "bg-emerald-400",
       };
     case "PENDING":
       return {
         label: "Pendente",
-        badgeClass: "bg-amber-500/10 text-amber-300 border-amber-500/25",
+        badgeClass: "bg-white/[0.03] text-zinc-300 border-white/10",
         dotClass: "bg-amber-400",
       };
     case "REFUNDED":
       return {
         label: "Reembolsada",
-        badgeClass: "bg-sky-500/10 text-sky-300 border-sky-500/25",
-        dotClass: "bg-sky-400",
+        badgeClass: "bg-white/[0.03] text-zinc-400 border-white/10",
+        dotClass: "bg-rose-400",
       };
     case "CANCELED":
       return {
         label: "Cancelada",
-        badgeClass: "bg-zinc-500/15 text-zinc-300 border-zinc-500/30",
-        dotClass: "bg-zinc-400",
+        badgeClass: "bg-white/[0.02] text-zinc-400 border-white/10",
+        dotClass: "bg-zinc-500",
       };
     case "CHARGED_BACK":
       return {
         label: "Chargeback",
-        badgeClass: "bg-rose-500/15 text-rose-300 border-rose-500/30",
+        badgeClass: "bg-rose-500/10 text-rose-300 border-rose-500/20",
         dotClass: "bg-rose-400",
       };
     case "FAILED":
       return {
         label: "Falhou",
-        badgeClass: "bg-red-500/10 text-red-300 border-red-500/25",
-        dotClass: "bg-red-400",
+        badgeClass: "bg-rose-500/10 text-rose-300 border-rose-500/20",
+        dotClass: "bg-rose-400",
       };
     default:
       return {
         label: status,
-        badgeClass: "bg-zinc-500/10 text-zinc-300 border-zinc-500/20",
-        dotClass: "bg-zinc-400",
+        badgeClass: "bg-white/[0.02] text-zinc-400 border-white/10",
+        dotClass: "bg-zinc-500",
       };
   }
 }
@@ -105,26 +104,25 @@ export function getTransferStatusMeta(status: OmegaPayTransferStatus | string): 
     case "COMPLETED":
       return {
         label: "Transferido",
-        badgeClass:
-          "bg-emerald-500/10 text-emerald-300 border-emerald-500/25",
+        badgeClass: "bg-white/[0.04] text-zinc-200 border-white/15",
       };
     case "PENDING":
     case "PROCESSING":
     case "TRANSFERRING":
       return {
         label: status === "PENDING" ? "Aguardando" : "Processando",
-        badgeClass: "bg-amber-500/10 text-amber-300 border-amber-500/25",
+        badgeClass: "bg-white/[0.03] text-zinc-300 border-white/10",
       };
     case "CANCELED":
     case "FAILED":
       return {
         label: status === "CANCELED" ? "Cancelada" : "Falhou",
-        badgeClass: "bg-rose-500/10 text-rose-300 border-rose-500/25",
+        badgeClass: "bg-rose-500/10 text-rose-300 border-rose-500/20",
       };
     default:
       return {
         label: status,
-        badgeClass: "bg-zinc-500/10 text-zinc-300 border-zinc-500/20",
+        badgeClass: "bg-white/[0.02] text-zinc-400 border-white/10",
       };
   }
 }
@@ -165,31 +163,31 @@ export const EXPENSE_CATEGORIES: Record<
   META_ADS: {
     label: "Meta Ads",
     isAdSpend: true,
-    color: "#3b82f6",
-    badgeClass: "bg-blue-500/10 text-blue-300 border-blue-500/25",
+    color: "#e4e4e7",
+    badgeClass: "bg-white/[0.04] text-zinc-200 border-white/10",
   },
   TIKTOK_ADS: {
     label: "TikTok Ads",
     isAdSpend: true,
-    color: "#ec4899",
-    badgeClass: "bg-pink-500/10 text-pink-300 border-pink-500/25",
+    color: "#a1a1aa",
+    badgeClass: "bg-white/[0.04] text-zinc-200 border-white/10",
   },
   OTHER_ADS: {
     label: "Outros Anúncios",
     isAdSpend: true,
-    color: "#8b5cf6",
-    badgeClass: "bg-purple-500/10 text-purple-300 border-purple-500/25",
+    color: "#71717a",
+    badgeClass: "bg-white/[0.04] text-zinc-300 border-white/10",
   },
   TOOLS: {
     label: "Ferramentas & SaaS",
     isAdSpend: false,
-    color: "#f59e0b",
-    badgeClass: "bg-amber-500/10 text-amber-300 border-amber-500/25",
+    color: "#52525b",
+    badgeClass: "bg-white/[0.04] text-zinc-300 border-white/10",
   },
   OTHER: {
     label: "Outras Despesas",
     isAdSpend: false,
-    color: "#71717a",
-    badgeClass: "bg-zinc-500/15 text-zinc-300 border-zinc-500/30",
+    color: "#3f3f46",
+    badgeClass: "bg-white/[0.04] text-zinc-400 border-white/10",
   },
 };

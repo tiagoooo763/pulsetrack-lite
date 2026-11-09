@@ -72,7 +72,7 @@ export function FinancialCharts({
       a.date.localeCompare(b.date)
     );
 
-    return sorted.slice(-14); // Mostra até os últimos 14 dias com movimentação no período
+    return sorted.slice(-14); // Últimos 14 dias com movimentação
   }, [transactions, expenses]);
 
   const maxDailyValue = useMemo(() => {
@@ -102,7 +102,6 @@ export function FinancialCharts({
       (cat) => ({
         category: cat,
         label: EXPENSE_CATEGORIES[cat].label,
-        color: EXPENSE_CATEGORIES[cat].color,
         amount: totals[cat],
         percent: grandTotal > 0 ? (totals[cat] / grandTotal) * 100 : 0,
       })
@@ -135,64 +134,61 @@ export function FinancialCharts({
   }, [transactions]);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-      {/* Gráfico 1: Evolução Diária (Receita Líquida x Despesas x Lucro) */}
-      <div className="lg:col-span-2 rounded-2xl border border-white/[0.07] bg-[#11141d] p-5 flex flex-col justify-between">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      {/* Gráfico 1: Evolução Diária */}
+      <div className="lg:col-span-2 rounded-xl border border-white/10 bg-[#0c0c0e] p-5 flex flex-col justify-between">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-              <BarChart3 className="w-4 h-4 text-emerald-400" />
+            <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
+              <BarChart3 className="w-4 h-4 text-white" />
             </div>
             <div>
               <h3 className="text-sm font-semibold text-white">
-                Evolução Diária: Receita Líquida vs. Despesas
+                Evolução Diária de Vendas e Despesas
               </h3>
               <p className="text-xs text-zinc-400">
-                Considera exclusivamente vendas efetivamente aprovadas (<code className="text-zinc-300">COMPLETED</code>)
+                Vendas aprovadas vs. gastos no período
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-4 text-xs">
             <span className="flex items-center gap-1.5 text-zinc-300">
-              <span className="w-2.5 h-2.5 rounded-sm bg-emerald-500 inline-block" />
+              <span className="w-2.5 h-2.5 rounded-sm bg-white inline-block" />
               Receita Líquida
             </span>
-            <span className="flex items-center gap-1.5 text-zinc-300">
-              <span className="w-2.5 h-2.5 rounded-sm bg-rose-500 inline-block" />
+            <span className="flex items-center gap-1.5 text-zinc-400">
+              <span className="w-2.5 h-2.5 rounded-sm bg-zinc-600 inline-block" />
               Despesas
             </span>
           </div>
         </div>
 
         {dailySeries.length === 0 ? (
-          <div className="h-56 flex flex-col items-center justify-center border border-dashed border-white/[0.06] rounded-xl text-center px-4">
-            <p className="text-sm text-zinc-400">
-              Nenhuma venda aprovada ou despesa registrada no período selecionado.
-            </p>
-            <p className="text-xs text-zinc-500 mt-1">
-              Receba webhooks da OmegaPay ou simule uma notificação na aba &ldquo;Integração &amp; Guia&rdquo;.
+          <div className="h-48 flex flex-col items-center justify-center border border-dashed border-white/10 rounded-lg text-center px-4">
+            <p className="text-xs text-zinc-400">
+              Nenhuma movimentação registrada no período selecionado.
             </p>
           </div>
         ) : (
-          <div className="relative pt-4">
+          <div className="relative pt-2">
             {hoveredDayIndex !== null && dailySeries[hoveredDayIndex] && (
-              <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-[#0b0d14] border border-white/10 px-3.5 py-2 text-xs">
-                <span className="font-medium text-zinc-200">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-[#050507] border border-white/10 px-3 py-2 text-xs">
+                <span className="font-medium text-white">
                   {formatDateBR(dailySeries[hoveredDayIndex].date)}
                 </span>
-                <div className="flex flex-wrap items-center gap-4 tabular-nums">
-                  <span className="text-emerald-400">
+                <div className="flex flex-wrap items-center gap-3 tabular-nums">
+                  <span className="text-zinc-200">
                     Líquido: {formatBRL(dailySeries[hoveredDayIndex].netRevenue)}
                   </span>
-                  <span className="text-rose-400">
+                  <span className="text-zinc-400">
                     Despesas: {formatBRL(dailySeries[hoveredDayIndex].expenses)}
                   </span>
                   <span
                     className={
                       dailySeries[hoveredDayIndex].profit >= 0
-                        ? "text-emerald-300 font-semibold"
-                        : "text-rose-300 font-semibold"
+                        ? "text-emerald-400 font-semibold"
+                        : "text-rose-400 font-semibold"
                     }
                   >
                     Lucro: {formatBRL(dailySeries[hoveredDayIndex].profit)}
@@ -201,7 +197,7 @@ export function FinancialCharts({
               </div>
             )}
 
-            <div className="h-52 flex items-end gap-2 sm:gap-3 pt-4 pb-6 px-2 border-b border-white/[0.06]">
+            <div className="h-48 flex items-end gap-2 sm:gap-3 pt-3 pb-6 px-1 border-b border-white/[0.08]">
               {dailySeries.map((day, idx) => {
                 const netHeightPct = Math.max(
                   day.netRevenue > 0 ? 4 : 0,
@@ -223,16 +219,16 @@ export function FinancialCharts({
                     <div className="w-full flex items-end justify-center gap-1 h-full">
                       <div
                         style={{ height: `${netHeightPct}%` }}
-                        className="w-full max-w-[18px] rounded-t-md bg-gradient-to-t from-emerald-600 to-emerald-400 transition-all duration-300 group-hover:brightness-110"
+                        className="w-full max-w-[14px] rounded-t-sm bg-white transition-opacity group-hover:opacity-80"
                         title={`Receita Líquida: ${formatBRL(day.netRevenue)}`}
                       />
                       <div
                         style={{ height: `${expHeightPct}%` }}
-                        className="w-full max-w-[18px] rounded-t-md bg-gradient-to-t from-rose-600 to-rose-400 transition-all duration-300 group-hover:brightness-110"
+                        className="w-full max-w-[14px] rounded-t-sm bg-zinc-600 transition-opacity group-hover:opacity-80"
                         title={`Despesas: ${formatBRL(day.expenses)}`}
                       />
                     </div>
-                    <span className="absolute -bottom-5 text-[10px] text-zinc-400 tabular-nums">
+                    <span className="absolute -bottom-5 text-[10px] text-zinc-500 tabular-nums">
                       {shortDate}
                     </span>
                   </div>
@@ -243,77 +239,71 @@ export function FinancialCharts({
         )}
       </div>
 
-      {/* Gráfico 2: Composição de Despesas & Métodos de Pagamento */}
-      <div className="rounded-2xl border border-white/[0.07] bg-[#11141d] p-5 flex flex-col justify-between space-y-5">
+      {/* Gráfico 2: Despesas e Formas de Pagamento */}
+      <div className="rounded-xl border border-white/10 bg-[#0c0c0e] p-5 flex flex-col justify-between space-y-4">
         <div>
-          <div className="flex items-center gap-2.5 mb-4">
-            <div className="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
-              <PieChart className="w-4 h-4 text-purple-400" />
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
+              <PieChart className="w-3.5 h-3.5 text-zinc-300" />
             </div>
-            <div>
-              <h3 className="text-sm font-semibold text-white">
-                Distribuição de Gastos &amp; Checkout
-              </h3>
-              <p className="text-xs text-zinc-400">
-                Despesas manuais e métodos aprovados
-              </p>
-            </div>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-300">
+              Formas de Pagamento
+            </h3>
           </div>
 
-          <div className="space-y-2.5">
-            <p className="text-[11px] font-medium uppercase tracking-wider text-zinc-400">
-              Despesas por Categoria
-            </p>
-            {expenseBreakdown.map((item) => (
-              <div key={item.category} className="space-y-1">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-zinc-300">{item.label}</span>
-                  <span className="text-zinc-200 font-medium tabular-nums">
-                    {formatBRL(item.amount)}{" "}
-                    <span className="text-zinc-500 text-[11px]">
-                      ({item.percent.toFixed(0)}%)
-                    </span>
-                  </span>
-                </div>
-                <div className="w-full h-1.5 rounded-full bg-white/[0.05] overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all duration-300"
-                    style={{
-                      width: `${Math.min(100, item.percent)}%`,
-                      backgroundColor: item.color,
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="pt-4 border-t border-white/[0.06] space-y-2.5">
-          <p className="text-[11px] font-medium uppercase tracking-wider text-zinc-400">
-            Receita Líquida por Método (OmegaPay)
-          </p>
           {paymentMethodBreakdown.length === 0 ? (
-            <p className="text-xs text-zinc-500">
-              Sem vendas aprovadas no período.
+            <p className="text-xs text-zinc-500 py-4 text-center">
+              Nenhuma venda aprovada.
             </p>
           ) : (
-            paymentMethodBreakdown.map((m) => (
-              <div
-                key={m.method}
-                className="flex items-center justify-between text-xs py-1"
-              >
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                  <span className="text-zinc-200 font-medium">{m.label}</span>
-                  <span className="text-zinc-500">({m.count}x)</span>
+            <div className="space-y-2.5">
+              {paymentMethodBreakdown.map((item) => (
+                <div key={item.method} className="space-y-1">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-zinc-300">{item.label}</span>
+                    <span className="text-white font-mono tabular-nums">
+                      {formatBRL(item.net)}{" "}
+                      <span className="text-zinc-500 text-[11px]">
+                        ({item.percent.toFixed(0)}%)
+                      </span>
+                    </span>
+                  </div>
+                  <div className="w-full h-1.5 rounded-full bg-zinc-800 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-white"
+                      style={{ width: `${item.percent}%` }}
+                    />
+                  </div>
                 </div>
-                <span className="text-emerald-300 font-medium tabular-nums">
-                  {formatBRL(m.net)} ({m.percent.toFixed(0)}%)
-                </span>
-              </div>
-            ))
+              ))}
+            </div>
           )}
+        </div>
+
+        <div className="pt-4 border-t border-white/[0.08]">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-2.5">
+            Distribuição de Despesas
+          </h4>
+          <div className="space-y-2">
+            {expenseBreakdown
+              .filter((e) => e.amount > 0)
+              .map((item) => (
+                <div
+                  key={item.category}
+                  className="flex items-center justify-between text-xs"
+                >
+                  <span className="text-zinc-400">{item.label}</span>
+                  <span className="text-zinc-200 font-mono tabular-nums">
+                    {formatBRL(item.amount)}
+                  </span>
+                </div>
+              ))}
+            {expenseBreakdown.every((e) => e.amount === 0) && (
+              <p className="text-xs text-zinc-500 text-center py-2">
+                Nenhum gasto cadastrado.
+              </p>
+            )}
+          </div>
         </div>
       </div>
     </div>
