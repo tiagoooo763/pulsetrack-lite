@@ -4,7 +4,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type {
   BalanceSnapshotRecord,
   ExpenseCategory,
-  GatewayId,
   ManualExpenseRecord,
   TransactionRecord,
   TransferRecord,
@@ -15,7 +14,6 @@ import {
   formatBRL,
   formatDateBR,
   formatDateTimeBR,
-  getGatewayMeta,
   getPaymentMethodLabel,
   getTransactionStatusMeta,
 } from "@/lib/format";
@@ -32,9 +30,7 @@ import {
   CheckCircle2,
   DollarSign,
   Edit3,
-  Globe,
   Landmark,
-  Layers,
   LayoutDashboard,
   LogOut,
   Megaphone,
@@ -55,8 +51,6 @@ import {
   X,
   Zap,
 } from "lucide-react";
-
-export type GatewayFilter = "ALL" | "OMEGAPAY" | "NEXUS";
 
 export interface QuickExpensePreset {
   category: ExpenseCategory;
@@ -112,9 +106,6 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
   const [activeTab, setActiveTab] = useState<ActiveTab>("overview");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // ABA DO NEGÓCIO: Seletor de Gateway Ativo (Todas / OmegaPay / Nexus)
-  const [selectedGateway, setSelectedGateway] = useState<GatewayFilter>("ALL");
-
   const contentRef = useRef<HTMLDivElement>(null);
 
   // Filtro de período
@@ -135,7 +126,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
     message: string;
   } | null>(null);
 
-  // Modal de Atualização de Saldo da Nexus Pay
+  // Modal para ajuste do Saldo da Nexus / Saldo Adicional
   const [nexusModalOpen, setNexusModalOpen] = useState(false);
   const [nexusAvailInput, setNexusAvailInput] = useState("");
   const [nexusPendInput, setNexusPendInput] = useState("");
@@ -145,11 +136,9 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
   // Filtros do Histórico de Vendas
   const [salesSearch, setSalesSearch] = useState("");
   const [salesStatusFilter, setSalesStatusFilter] = useState<string>("ALL");
-  const [salesGatewayFilter, setSalesGatewayFilter] = useState<GatewayFilter>("ALL");
 
   // Formulário de Despesas Manuais
   const [expCategory, setExpCategory] = useState<ExpenseCategory>("META_ADS");
-  const [expGateway, setExpGateway] = useState<"ALL" | GatewayId>("ALL");
   const [expDescription, setExpDescription] = useState("");
   const [expAmount, setExpAmount] = useState("");
   const [expDate, setExpDate] = useState(() => getTodayLocalDate());
@@ -232,7 +221,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
         }
       );
     }
-  }, [activeTab, period, selectedGateway]);
+  }, [activeTab, period]);
 
   // Lock no body quando drawer mobile estiver aberto
   useEffect(() => {
@@ -279,7 +268,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
     return { startDate: start, endDate: end };
   }, [period, customFrom, customTo]);
 
-  // 1. Filtra dados pelo período de data
+  // Filtra dados pelo período de data
   const periodTransactions = useMemo(() => {
     if (!data) return [];
     if (!startDate) return data.transactions;
@@ -311,38 +300,15 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
     });
   }, [data, startDate, endDate]);
 
-  // 2. ISOLAMENTO TOTAL POR GATEWAY SELECIONADO ("para não juntar com a da Ômega")
-  const gatewayFilteredTransactions = useMemo(() => {
-    if (selectedGateway === "ALL") return periodTransactions;
-    return periodTransactions.filter(
-      (tx) => (tx.gateway || "OMEGAPAY") === selectedGateway
-    );
-  }, [periodTransactions, selectedGateway]);
-
-  const gatewayFilteredTransfers = useMemo(() => {
-    if (selectedGateway === "ALL") return periodTransfers;
-    return periodTransfers.filter(
-      (tf) => (tf.gateway || "OMEGAPAY") === selectedGateway
-    );
-  }, [periodTransfers, selectedGateway]);
-
-  const gatewayFilteredExpenses = useMemo(() => {
-    if (selectedGateway === "ALL") return periodExpenses;
-    return periodExpenses.filter((e) => {
-      const g = e.gateway || "ALL";
-      return g === "ALL" || g === selectedGateway;
-    });
-  }, [periodExpenses, selectedGateway]);
-
-  // 3. Métricas Financeiras Isoladas por Gateway
+  // Métricas Consolidadas do Dashboard
   const metrics = useMemo(() => {
-    const approvedSales = gatewayFilteredTransactions.filter(
+    const approvedSales = periodTransactions.filter(
       (t) => t.status === "COMPLETED"
     );
-    const pendingSales = gatewayFilteredTransactions.filter(
+    const pendingSales = periodTransactions.filter(
       (t) => t.status === "PENDING"
     );
-    const refundedOrCanceledSales = gatewayFilteredTransactions.filter(
+    const refundedOrCanceledSales = periodTransactions.filter(
       (t) =>
         t.status === "REFUNDED" ||
         t.status === "CANCELED" ||
@@ -355,11 +321,11 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
     const pendingGross = pendingSales.reduce((acc, t) => acc + t.grossAmount, 0);
 
     const approvalRate =
-      gatewayFilteredTransactions.length > 0
-        ? (approvedSales.length / gatewayFilteredTransactions.length) * 100
+      periodTransactions.length > 0
+        ? (approvedSales.length / periodTransactions.length) * 100
         : 0;
 
-    const completedTransfers = gatewayFilteredTransfers.filter(
+    const completedTransfers = periodTransfers.filter(
       (tf) => tf.status === "COMPLETED"
     );
     const receivedAmount = completedTransfers.reduce(
@@ -367,7 +333,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
       0
     );
 
-    const pendingTransfers = gatewayFilteredTransfers.filter(
+    const pendingTransfers = periodTransfers.filter(
       (tf) => tf.status === "PENDING" || tf.status === "PROCESSING"
     );
     const pendingTransferAmount = pendingTransfers.reduce(
@@ -375,7 +341,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
       0
     );
 
-    const adExpenses = gatewayFilteredExpenses
+    const adExpenses = periodExpenses
       .filter(
         (e) =>
           e.category === "META_ADS" ||
@@ -384,19 +350,19 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
       )
       .reduce((acc, e) => acc + e.amount, 0);
 
-    const metaAdsTotal = gatewayFilteredExpenses
+    const metaAdsTotal = periodExpenses
       .filter((e) => e.category === "META_ADS")
       .reduce((acc, e) => acc + e.amount, 0);
 
-    const tiktokAdsTotal = gatewayFilteredExpenses
+    const tiktokAdsTotal = periodExpenses
       .filter((e) => e.category === "TIKTOK_ADS")
       .reduce((acc, e) => acc + e.amount, 0);
 
-    const toolsAndOtherExpenses = gatewayFilteredExpenses
+    const toolsAndOtherExpenses = periodExpenses
       .filter((e) => e.category === "TOOLS" || e.category === "OTHER")
       .reduce((acc, e) => acc + e.amount, 0);
 
-    const totalExpenses = gatewayFilteredExpenses.reduce((acc, e) => acc + e.amount, 0);
+    const totalExpenses = periodExpenses.reduce((acc, e) => acc + e.amount, 0);
 
     // Lucro estimado = Receita líquida - Despesas
     const estimatedProfit = netRevenue - totalExpenses;
@@ -406,7 +372,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
     const roasNet = adExpenses > 0 ? netRevenue / adExpenses : null;
     const roasGross = adExpenses > 0 ? grossRevenue / adExpenses : null;
 
-    // ROI: Retorno sobre Investimento como Multiplicador e Percentual Isolado
+    // ROI: Retorno sobre Investimento como Multiplicador e Percentual
     const roiMultiplier =
       totalExpenses > 0 ? netRevenue / totalExpenses : null;
     const roiGrossMultiplier =
@@ -419,7 +385,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
     return {
       grossRevenue,
       approvedCount: approvedSales.length,
-      totalTxCount: gatewayFilteredTransactions.length,
+      totalTxCount: periodTransactions.length,
       pendingCount: pendingSales.length,
       pendingGross,
       refundedOrCanceledCount: refundedOrCanceledSales.length,
@@ -442,133 +408,34 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
       roiGrossMultiplier,
       roiProfitPct,
     };
-  }, [gatewayFilteredTransactions, gatewayFilteredTransfers, gatewayFilteredExpenses]);
+  }, [periodTransactions, periodTransfers, periodExpenses]);
 
-  // Contadores rápidos por gateway para as abas
-  const gatewayCounts = useMemo(() => {
-    const total = periodTransactions.length;
-    const omega = periodTransactions.filter(
-      (t) => (t.gateway || "OMEGAPAY") === "OMEGAPAY"
-    ).length;
-    const nexus = periodTransactions.filter((t) => t.gateway === "NEXUS").length;
-    return { total, omega, nexus };
-  }, [periodTransactions]);
+  // Saldo OmegaPay Oficial
+  const omegaBal = data?.balances?.OMEGAPAY ?? data?.balance ?? null;
+  const omegaAvailable = omegaBal?.available ?? null;
+  const omegaPending = omegaBal?.pending ?? null;
+  const omegaFundLock = omegaBal?.fundLock ?? null;
+  const omegaTotal =
+    omegaAvailable !== null
+      ? omegaAvailable + (omegaPending ?? 0) + (omegaFundLock ?? 0)
+      : null;
 
-  // Informações de Saldo Isoladas de Acordo com o Gateway Selecionado
-  const activeBalanceInfo = useMemo(() => {
-    const omega = data?.balances?.OMEGAPAY ?? data?.balance ?? null;
-    const nexus = data?.balances?.NEXUS ?? null;
+  // Saldo Nexus / Adicional informado
+  const nexusBal = data?.balances?.NEXUS ?? null;
+  const nexusAvailable = nexusBal?.available ?? 0;
+  const nexusPending = nexusBal?.pending ?? 0;
+  const nexusTotal = nexusAvailable + nexusPending;
+  const hasNexusBalance = nexusTotal > 0;
 
-    if (selectedGateway === "OMEGAPAY") {
-      const available = omega?.available ?? null;
-      const pending = omega?.pending ?? null;
-      const fundLock = omega?.fundLock ?? null;
-      const total =
-        available !== null
-          ? available + (pending ?? 0) + (fundLock ?? 0)
-          : null;
-      return {
-        title: "Saldo OmegaPay",
-        subtitle: "GET /producer/balance",
-        available,
-        pending,
-        fundLock,
-        total,
-        fetchedAt: omega?.fetchedAt ?? null,
-        isNexus: false,
-        isOmega: true,
-        isConsolidated: false,
-      };
-    }
-
-    if (selectedGateway === "NEXUS") {
-      const available = nexus?.available ?? null;
-      const pending = nexus?.pending ?? null;
-      const fundLock = nexus?.fundLock ?? 0;
-      const total =
-        available !== null ? available + (pending ?? 0) : null;
-      return {
-        title: "Saldo Nexus Pay",
-        subtitle: "Webhook & API Nexus",
-        available,
-        pending,
-        fundLock,
-        total,
-        fetchedAt: nexus?.fetchedAt ?? null,
-        isNexus: true,
-        isOmega: false,
-        isConsolidated: false,
-      };
-    }
-
-    // "ALL" - Consolidado
-    const hasAny = omega?.available !== null && omega?.available !== undefined ||
-                   nexus?.available !== null && nexus?.available !== undefined;
-
-    if (!hasAny) {
-      return {
-        title: "Saldo Consolidado",
-        subtitle: "OmegaPay + Nexus",
-        available: null,
-        pending: null,
-        fundLock: null,
-        total: null,
-        fetchedAt: null,
-        isNexus: false,
-        isOmega: false,
-        isConsolidated: true,
-        omegaTotal: 0,
-        nexusTotal: 0,
-      };
-    }
-
-    const availOmega = omega?.available ?? 0;
-    const availNexus = nexus?.available ?? 0;
-    const pendOmega = omega?.pending ?? 0;
-    const pendNexus = nexus?.pending ?? 0;
-    const lockOmega = omega?.fundLock ?? 0;
-
-    const available = availOmega + availNexus;
-    const pending = pendOmega + pendNexus;
-    const fundLock = lockOmega;
-    const total = available + pending + fundLock;
-
-    const omegaTotal = availOmega + pendOmega + lockOmega;
-    const nexusTotal = availNexus + pendNexus;
-
-    return {
-      title: "Saldo Consolidado",
-      subtitle: "OmegaPay + Nexus Pay",
-      available,
-      pending,
-      fundLock,
-      total,
-      fetchedAt: nexus?.fetchedAt || omega?.fetchedAt || null,
-      isNexus: false,
-      isOmega: false,
-      isConsolidated: true,
-      omegaTotal,
-      nexusTotal,
-    };
-  }, [data, selectedGateway]);
+  // Saldo Geral Combinado
+  const combinedTotal = (omegaTotal ?? 0) + nexusTotal;
 
   // Filtro de busca na tabela de vendas
   const filteredSalesTable = useMemo(() => {
     return periodTransactions.filter((tx) => {
-      // Filtro de gateway na tabela
-      const txGateway = tx.gateway || "OMEGAPAY";
-      if (salesGatewayFilter !== "ALL" && txGateway !== salesGatewayFilter) {
-        return false;
-      }
-      // Se estiver na aba isolada de um gateway e não tiver filtro manual diferente
-      if (selectedGateway !== "ALL" && txGateway !== selectedGateway && salesGatewayFilter === "ALL") {
-        return false;
-      }
-      // Filtro de status
       if (salesStatusFilter !== "ALL" && tx.status !== salesStatusFilter) {
         return false;
       }
-      // Filtro de texto
       if (!salesSearch.trim()) return true;
       const q = salesSearch.toLowerCase();
       return (
@@ -577,7 +444,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
         (tx.clientIdentifier && tx.clientIdentifier.toLowerCase().includes(q))
       );
     });
-  }, [periodTransactions, salesStatusFilter, salesSearch, salesGatewayFilter, selectedGateway]);
+  }, [periodTransactions, salesStatusFilter, salesSearch]);
 
   // Consulta pontual de saldo OmegaPay
   async function handleFetchOmegaPayBalance() {
@@ -612,7 +479,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
     }
   }
 
-  // Atualização pontual de saldo da Nexus Pay
+  // Atualização pontual do saldo da Nexus Pay
   async function handleSaveNexusBalance(e: React.FormEvent) {
     e.preventDefault();
     setNexusBalanceError(null);
@@ -641,7 +508,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
         setNexusBalanceError(json.error || "Erro ao salvar saldo da Nexus.");
       } else {
         setNexusModalOpen(false);
-        setQuickSuccessNotice("Saldo da Nexus Pay atualizado com sucesso!");
+        setQuickSuccessNotice("Saldo da Nexus atualizado com sucesso!");
         setTimeout(() => setQuickSuccessNotice(null), 4000);
         await fetchDashboard();
       }
@@ -669,7 +536,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           category: expCategory,
-          gateway: expGateway,
+          gateway: "ALL",
           title:
             expDescription.trim() || EXPENSE_CATEGORIES[expCategory].label,
           amount: numericAmount,
@@ -704,7 +571,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           category: quickPreset.category,
-          gateway: selectedGateway, // vincula ao gateway atualmente selecionado
+          gateway: "ALL",
           title: quickPreset.title,
           amount: quickPreset.amount,
           expenseDate: getTodayLocalDate(),
@@ -845,7 +712,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
         }`}
       >
         <div className="flex flex-col h-full">
-          {/* Logo Header: Dashfy */}
+          {/* Logo Header */}
           <div className="p-5 border-b border-white/[0.08] flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-xl bg-white text-black flex items-center justify-center font-bold text-sm shadow-[0_0_15px_rgba(255,255,255,0.15)]">
@@ -860,7 +727,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                     Pro
                   </span>
                 </div>
-                <p className="text-[11px] text-zinc-400">Inteligência Multi-Gateway</p>
+                <p className="text-[11px] text-zinc-400">Inteligência Financeira</p>
               </div>
             </div>
 
@@ -915,89 +782,26 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
               );
             })}
 
-            {/* Gateways Ativos na Sidebar */}
+            {/* Quick Actions in Sidebar */}
             <div className="pt-4 mt-4 border-t border-white/[0.08] px-3 space-y-2">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 block">
-                Gateways Conectados
+                Ações Rápidas
               </span>
-              <div className="space-y-1.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedGateway("OMEGAPAY");
-                    setActiveTab("overview");
-                  }}
-                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition ${
-                    selectedGateway === "OMEGAPAY"
-                      ? "bg-white/10 text-white font-medium border border-white/20"
-                      : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.03]"
+              <button
+                type="button"
+                onClick={handleFetchOmegaPayBalance}
+                disabled={syncingBalance}
+                className="btn-pressable w-full flex items-center gap-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-2 text-xs font-medium text-white transition disabled:opacity-50"
+              >
+                <RefreshCw
+                  className={`w-3.5 h-3.5 ${
+                    syncingBalance ? "animate-spin" : ""
                   }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                    <span>OmegaPay</span>
-                  </div>
-                  <span className="text-[10px] font-mono text-zinc-400">
-                    {gatewayCounts.omega} tx
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedGateway("NEXUS");
-                    setActiveTab("overview");
-                  }}
-                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition ${
-                    selectedGateway === "NEXUS"
-                      ? "bg-white/10 text-white font-medium border border-white/20"
-                      : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.03]"
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-cyan-400" />
-                    <span>Nexus Pay</span>
-                  </div>
-                  <span className="text-[10px] font-mono text-zinc-400">
-                    {gatewayCounts.nexus} tx
-                  </span>
-                </button>
-              </div>
-
-              {/* Botões Rápidos de Sincronização */}
-              <div className="pt-2 space-y-1.5">
-                <button
-                  type="button"
-                  onClick={handleFetchOmegaPayBalance}
-                  disabled={syncingBalance}
-                  className="btn-pressable w-full flex items-center justify-center gap-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-2 text-xs font-medium text-white transition disabled:opacity-50"
-                  title="Consultar saldo na OmegaPay via API"
-                >
-                  <RefreshCw
-                    className={`w-3.5 h-3.5 ${syncingBalance ? "animate-spin" : ""}`}
-                  />
-                  <span className="truncate">
-                    {syncingBalance ? "Consultando..." : "Sincronizar Omega"}
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    const currentNexus = data?.balances?.NEXUS;
-                    if (currentNexus?.available !== undefined && currentNexus?.available !== null) {
-                      setNexusAvailInput(String(currentNexus.available));
-                      setNexusPendInput(String(currentNexus.pending ?? 0));
-                    }
-                    setNexusModalOpen(true);
-                  }}
-                  className="btn-pressable w-full flex items-center justify-center gap-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-2 text-xs font-medium text-zinc-300 hover:text-white transition"
-                  title="Atualizar saldo da Nexus Pay"
-                >
-                  <Edit3 className="w-3.5 h-3.5" />
-                  <span className="truncate">Definir Saldo Nexus</span>
-                </button>
-              </div>
+                />
+                <span className="truncate">
+                  {syncingBalance ? "Consultando..." : "Atualizar Saldo Omega"}
+                </span>
+              </button>
             </div>
           </div>
 
@@ -1013,7 +817,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                     mendoncat831@gmail.com
                   </span>
                   <span className="text-[10px] text-zinc-400 block">
-                    Dashfy &bull; Supabase Live
+                    Administrador &bull; Supabase Live
                   </span>
                 </div>
               </div>
@@ -1051,7 +855,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                   {activeTab === "overview" && "Visão Geral Financeira"}
                   {activeTab === "sales" && "Histórico de Transações"}
                   {activeTab === "expenses" && "Controle de Despesas Manuais"}
-                  {activeTab === "integration" && "Integração & Gateways"}
+                  {activeTab === "integration" && "Integração & Documentação"}
                 </h2>
               </div>
             </div>
@@ -1181,105 +985,6 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
 
         {/* Main Body */}
         <main ref={contentRef} className="flex-1 p-4 sm:p-6 space-y-5">
-          {/* ==================== ABAS DO NEGÓCIO (SELETOR DE GATEWAY ISOLADO) ==================== */}
-          <section className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-1.5 rounded-2xl bg-[#09090b] border border-white/[0.08]">
-            <div className="flex flex-wrap items-center gap-1.5">
-              {/* Aba 1: Todas (Consolidado) */}
-              <button
-                type="button"
-                onClick={() => setSelectedGateway("ALL")}
-                className={`btn-pressable flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${
-                  selectedGateway === "ALL"
-                    ? "bg-white text-black shadow-sm"
-                    : "text-zinc-400 hover:text-white hover:bg-white/[0.04]"
-                }`}
-              >
-                <Globe className="w-3.5 h-3.5" />
-                <span>Todas (Consolidado)</span>
-                <span
-                  className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
-                    selectedGateway === "ALL"
-                      ? "bg-black/10 text-black font-bold"
-                      : "bg-white/10 text-zinc-400"
-                  }`}
-                >
-                  {gatewayCounts.total}
-                </span>
-              </button>
-
-              {/* Aba 2: OmegaPay Isolada */}
-              <button
-                type="button"
-                onClick={() => setSelectedGateway("OMEGAPAY")}
-                className={`btn-pressable flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${
-                  selectedGateway === "OMEGAPAY"
-                    ? "bg-white text-black shadow-sm"
-                    : "text-zinc-400 hover:text-white hover:bg-white/[0.04]"
-                }`}
-              >
-                <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                <span>OmegaPay</span>
-                <span
-                  className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
-                    selectedGateway === "OMEGAPAY"
-                      ? "bg-black/10 text-black font-bold"
-                      : "bg-white/10 text-zinc-400"
-                  }`}
-                >
-                  {gatewayCounts.omega}
-                </span>
-              </button>
-
-              {/* Aba 3: Nexus Pay Isolada */}
-              <button
-                type="button"
-                onClick={() => setSelectedGateway("NEXUS")}
-                className={`btn-pressable flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${
-                  selectedGateway === "NEXUS"
-                    ? "bg-white text-black shadow-sm"
-                    : "text-zinc-400 hover:text-white hover:bg-white/[0.04]"
-                }`}
-              >
-                <span className="w-2 h-2 rounded-full bg-cyan-400" />
-                <span>Nexus Pay</span>
-                <span
-                  className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
-                    selectedGateway === "NEXUS"
-                      ? "bg-black/10 text-black font-bold"
-                      : "bg-white/10 text-zinc-400"
-                  }`}
-                >
-                  {gatewayCounts.nexus}
-                </span>
-              </button>
-            </div>
-
-            {/* Status visual de isolamento */}
-            <div className="flex items-center gap-2 px-3 py-1 text-xs text-zinc-400">
-              <span className="text-[11px] text-zinc-500">Visualizando:</span>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-white/10 bg-white/[0.04] text-white font-mono text-[11px]">
-                {selectedGateway === "ALL" && (
-                  <>
-                    <Globe className="w-3 h-3 text-zinc-400" />
-                    <span>Consolidado Geral</span>
-                  </>
-                )}
-                {selectedGateway === "OMEGAPAY" && (
-                  <>
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                    <span>OmegaPay Isolado</span>
-                  </>
-                )}
-                {selectedGateway === "NEXUS" && (
-                  <>
-                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-                    <span>Nexus Pay Isolado</span>
-                  </>
-                )}
-              </span>
-            </div>
-          </section>
-
           {/* ==================== ABA 1: VISÃO GERAL ==================== */}
           {activeTab === "overview" && (
             <div className="space-y-4">
@@ -1301,11 +1006,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                     </div>
                   </div>
                   <div className="text-[11px] text-zinc-400 pt-2 border-t border-white/[0.06] flex items-center justify-between">
-                    <span>
-                      {selectedGateway === "ALL"
-                        ? "Vendas aprovadas (Geral)"
-                        : `Aprovadas em ${selectedGateway === "NEXUS" ? "Nexus" : "Omega"}`}
-                    </span>
+                    <span>Vendas aprovadas</span>
                     {metrics.pendingGross > 0 && (
                       <span className="text-zinc-300 font-mono">
                         +{formatBRL(metrics.pendingGross)} pend.
@@ -1330,7 +1031,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                     </div>
                   </div>
                   <div className="text-[11px] text-zinc-400 pt-2 border-t border-white/[0.06] flex items-center justify-between">
-                    <span>Após taxas do gateway</span>
+                    <span>Após taxas do checkout</span>
                     <span className="text-zinc-300">Base do Lucro</span>
                   </div>
                 </SpotlightCard>
@@ -1391,102 +1092,83 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                 </SpotlightCard>
               </section>
 
-              {/* LINHA 2 — SALDO DO GATEWAY & OPERACIONAL (4 CARDS ENCAIXADOS) */}
+              {/* LINHA 2 — SALDO OMEGAPAY & OPERACIONAL (4 CARDS ENCAIXADOS) */}
               <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* 5. Saldo Informado do Gateway Ativo */}
+                {/* 5. Saldo da Conta (OmegaPay + Saldo Adicional Nexus Opcional) */}
                 <SpotlightCard className="p-5 flex flex-col justify-between bento-card">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-medium uppercase tracking-wider text-zinc-400">
-                        {activeBalanceInfo.title}
-                      </span>
-                      {selectedGateway === "NEXUS" && (
-                        <span className="w-2 h-2 rounded-full bg-cyan-400" />
-                      )}
-                      {selectedGateway === "OMEGAPAY" && (
-                        <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                      )}
-                    </div>
+                    <span className="text-xs font-medium uppercase tracking-wider text-zinc-400">
+                      Saldo da Conta
+                    </span>
                     <div className="flex items-center gap-1">
-                      {selectedGateway === "NEXUS" ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (activeBalanceInfo.available !== null) {
-                              setNexusAvailInput(String(activeBalanceInfo.available));
-                              setNexusPendInput(String(activeBalanceInfo.pending ?? 0));
-                            }
-                            setNexusModalOpen(true);
-                          }}
-                          className="btn-pressable p-1 text-zinc-400 hover:text-white rounded-lg hover:bg-white/5 transition"
-                          title="Atualizar saldo da Nexus Pay"
-                        >
-                          <Edit3 className="w-3.5 h-3.5" />
-                        </button>
-                      ) : selectedGateway === "OMEGAPAY" ? (
-                        <button
-                          type="button"
-                          onClick={handleFetchOmegaPayBalance}
-                          disabled={syncingBalance}
-                          className="btn-pressable p-1 text-zinc-400 hover:text-white rounded-lg hover:bg-white/5 transition disabled:opacity-50"
-                          title="Sincronizar saldo da OmegaPay via API"
-                        >
-                          <RefreshCw className={`w-3.5 h-3.5 ${syncingBalance ? "animate-spin" : ""}`} />
-                        </button>
-                      ) : null}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (nexusBal?.available !== undefined && nexusBal?.available !== null) {
+                            setNexusAvailInput(String(nexusBal.available));
+                            setNexusPendInput(String(nexusBal.pending ?? 0));
+                          }
+                          setNexusModalOpen(true);
+                        }}
+                        className="btn-pressable p-1 text-zinc-400 hover:text-white rounded-lg hover:bg-white/5 transition"
+                        title="Ajustar saldo adicional (ex: Nexus Pay)"
+                        aria-label="Ajustar saldo adicional"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleFetchOmegaPayBalance}
+                        disabled={syncingBalance}
+                        className="btn-pressable p-1 text-zinc-400 hover:text-white rounded-lg hover:bg-white/5 transition disabled:opacity-50"
+                        title="Sincronizar saldo da OmegaPay"
+                        aria-label="Sincronizar saldo OmegaPay"
+                      >
+                        <RefreshCw className={`w-3.5 h-3.5 ${syncingBalance ? "animate-spin" : ""}`} />
+                      </button>
                       <div className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
                         <Wallet className="w-3.5 h-3.5 text-white" />
                       </div>
                     </div>
                   </div>
 
-                  {activeBalanceInfo.available === null ? (
+                  {omegaAvailable === null && !hasNexusBalance ? (
                     <div className="my-2.5">
                       <span className="text-xs text-zinc-400">
-                        {selectedGateway === "NEXUS"
-                          ? "Saldo Nexus não configurado"
-                          : "Não sincronizado ainda"}
+                        Não sincronizado ainda
                       </span>
                       <p className="text-[11px] text-zinc-500 mt-1">
-                        {selectedGateway === "NEXUS" ? (
-                          <button
-                            type="button"
-                            onClick={() => setNexusModalOpen(true)}
-                            className="text-cyan-400 hover:underline font-medium"
-                          >
-                            Clique aqui para definir o saldo &rarr;
-                          </button>
-                        ) : (
-                          "Use o botão Atualizar Saldo na barra lateral."
-                        )}
+                        Use o botão Atualizar Saldo na barra lateral.
                       </p>
                     </div>
                   ) : (
                     <div className="my-2 space-y-1.5 text-xs">
                       <div className="flex justify-between items-center">
-                        <span className="text-zinc-400">Disponível:</span>
+                        <span className="text-zinc-400">Disponível Omega:</span>
                         <span className="font-mono text-white font-semibold">
-                          {formatBRL(activeBalanceInfo.available)}
+                          {formatBRL(omegaAvailable ?? 0)}
                         </span>
                       </div>
                       <div className="flex justify-between items-center text-[11px]">
-                        <span className="text-zinc-500">Pendente:</span>
+                        <span className="text-zinc-500">Pendente Omega:</span>
                         <span className="font-mono text-zinc-300">
-                          {formatBRL(activeBalanceInfo.pending ?? 0)}
+                          {formatBRL(omegaPending ?? 0)}
                         </span>
                       </div>
-                      {activeBalanceInfo.fundLock !== null && activeBalanceInfo.fundLock > 0 && (
+                      {omegaFundLock !== null && omegaFundLock > 0 && (
                         <div className="flex justify-between items-center text-[11px]">
-                          <span className="text-zinc-500">Retido:</span>
+                          <span className="text-zinc-500">Retido Omega:</span>
                           <span className="font-mono text-zinc-400">
-                            {formatBRL(activeBalanceInfo.fundLock)}
+                            {formatBRL(omegaFundLock)}
                           </span>
                         </div>
                       )}
-                      {activeBalanceInfo.isConsolidated && (
-                        <div className="flex justify-between items-center text-[10px] text-zinc-500 pt-1 border-t border-white/[0.04]">
-                          <span>Omega: {formatBRL(activeBalanceInfo.omegaTotal)}</span>
-                          <span>Nexus: {formatBRL(activeBalanceInfo.nexusTotal)}</span>
+                      {hasNexusBalance && (
+                        <div className="flex justify-between items-center text-[11px] pt-1 border-t border-white/[0.05] text-cyan-300">
+                          <span>Nexus Adicional:</span>
+                          <span className="font-mono font-medium">
+                            +{formatBRL(nexusTotal)}
+                          </span>
                         </div>
                       )}
                     </div>
@@ -1494,15 +1176,13 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
 
                   <div className="text-[11px] text-zinc-400 pt-2 border-t border-white/[0.06] flex items-center justify-between">
                     <span>
-                      {activeBalanceInfo.fetchedAt
-                        ? formatDateBR(activeBalanceInfo.fetchedAt)
-                        : activeBalanceInfo.subtitle}
+                      {omegaBal?.fetchedAt
+                        ? formatDateBR(omegaBal.fetchedAt)
+                        : "GET /producer/balance"}
                     </span>
-                    {activeBalanceInfo.total !== null && (
-                      <span className="font-mono text-white font-medium">
-                        Total: {formatBRL(activeBalanceInfo.total)}
-                      </span>
-                    )}
+                    <span className="font-mono text-white font-medium">
+                      Total: {formatBRL(hasNexusBalance ? combinedTotal : (omegaTotal ?? 0))}
+                    </span>
                   </div>
                 </SpotlightCard>
 
@@ -1531,22 +1211,12 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                   </div>
                 </SpotlightCard>
 
-                {/* 7. Retorno sobre Investimento (ROI) — ISOLADO PELO GATEWAY SELECIONADO */}
+                {/* 7. Retorno sobre Investimento (ROI) */}
                 <SpotlightCard className="p-5 flex flex-col justify-between bento-card">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-medium uppercase tracking-wider text-zinc-400">
-                        {selectedGateway === "ALL" && "ROI Consolidado"}
-                        {selectedGateway === "OMEGAPAY" && "ROI OmegaPay"}
-                        {selectedGateway === "NEXUS" && "ROI Nexus Pay"}
-                      </span>
-                      {selectedGateway === "NEXUS" && (
-                        <span className="w-2 h-2 rounded-full bg-cyan-400" />
-                      )}
-                      {selectedGateway === "OMEGAPAY" && (
-                        <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                      )}
-                    </div>
+                    <span className="text-xs font-medium uppercase tracking-wider text-zinc-400">
+                      ROI (Retorno do Inv.)
+                    </span>
                     <div className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
                       <Target className="w-3.5 h-3.5 text-white" />
                     </div>
@@ -1586,11 +1256,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                   </div>
                   <div className="text-[11px] text-zinc-400 pt-2 border-t border-white/[0.06] flex items-center justify-between">
                     <span>
-                      {selectedGateway === "NEXUS"
-                        ? "Isolado da Nexus Pay"
-                        : selectedGateway === "OMEGAPAY"
-                        ? "Isolado da OmegaPay"
-                        : "Receita Líq. / Despesas"}
+                      {metrics.totalExpenses > 0 ? "Receita Líq. / Despesas" : "Sem despesas"}
                     </span>
                     <span
                       className="text-zinc-300 font-mono"
@@ -1628,10 +1294,10 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                 </SpotlightCard>
               </section>
 
-              {/* GRÁFICOS FINANCEIROS (FILTRADOS POR GATEWAY) */}
+              {/* GRÁFICOS FINANCEIROS */}
               <FinancialCharts
-                transactions={gatewayFilteredTransactions}
-                expenses={gatewayFilteredExpenses}
+                transactions={periodTransactions}
+                expenses={periodExpenses}
               />
 
               {/* ÚLTIMAS TRANSAÇÕES E RESUMO */}
@@ -1639,13 +1305,8 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                 <SpotlightCard className="lg:col-span-2 p-5 sm:p-6 space-y-4 bento-card">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-sm font-semibold text-white tracking-tight flex items-center gap-2">
-                        <span>Últimas Transações</span>
-                        {selectedGateway !== "ALL" && (
-                          <span className="text-[11px] font-mono px-2 py-0.5 rounded-full border border-white/10 bg-white/5 text-zinc-300">
-                            {selectedGateway === "NEXUS" ? "Nexus Pay" : "OmegaPay"}
-                          </span>
-                        )}
+                      <h3 className="text-sm font-semibold text-white tracking-tight">
+                        Últimas Transações
                       </h3>
                       <p className="text-xs text-zinc-400">
                         Vendas registradas em tempo real via webhook
@@ -1660,9 +1321,9 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                     </button>
                   </div>
 
-                  {gatewayFilteredTransactions.length === 0 ? (
+                  {periodTransactions.length === 0 ? (
                     <div className="py-8 text-center border border-dashed border-white/10 rounded-xl text-xs text-zinc-500 bg-white/[0.01]">
-                      Nenhuma transação {selectedGateway !== "ALL" ? `na ${selectedGateway === "NEXUS" ? "Nexus Pay" : "OmegaPay"}` : ""} no período selecionado.
+                      Nenhuma transação no período selecionado.
                     </div>
                   ) : (
                     <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
@@ -1670,34 +1331,26 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                         <thead>
                           <tr className="border-b border-white/10 bg-[#08080a] text-zinc-400 uppercase tracking-wider text-[10px]">
                             <th className="py-2.5 px-3 font-medium">Data</th>
-                            <th className="py-2.5 px-3 font-medium">Gateway</th>
                             <th className="py-2.5 px-3 font-medium">Produto</th>
+                            <th className="py-2.5 px-3 font-medium">ID Transação</th>
                             <th className="py-2.5 px-3 font-medium text-right">Bruto</th>
                             <th className="py-2.5 px-3 font-medium text-right">Líquido</th>
                             <th className="py-2.5 px-3 font-medium text-center">Status</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-white/[0.04] bg-[#0c0c0e]">
-                          {gatewayFilteredTransactions.slice(0, 6).map((tx) => {
+                          {periodTransactions.slice(0, 6).map((tx) => {
                             const meta = getTransactionStatusMeta(tx.status);
-                            const gMeta = getGatewayMeta(tx.gateway);
                             return (
                               <tr key={tx.id} className="hover:bg-white/[0.03] transition-colors">
                                 <td className="py-2.5 px-3 text-zinc-400 font-mono whitespace-nowrap">
                                   {formatDateBR(tx.paidAt || tx.createdAt)}
                                 </td>
-                                <td className="py-2.5 px-3 whitespace-nowrap">
-                                  <span
-                                    className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium border ${gMeta.badgeClass}`}
-                                  >
-                                    <span
-                                      className={`w-1.5 h-1.5 rounded-full ${gMeta.dotClass}`}
-                                    />
-                                    {gMeta.name}
-                                  </span>
-                                </td>
                                 <td className="py-2.5 px-3 text-white font-medium truncate max-w-[180px]">
                                   {tx.productName}
+                                </td>
+                                <td className="py-2.5 px-3 text-zinc-400 font-mono">
+                                  {tx.id}
                                 </td>
                                 <td className="py-2.5 px-3 text-right text-zinc-300 font-mono">
                                   {formatBRL(tx.grossAmount)}
@@ -1800,7 +1453,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                   </div>
 
                   <div className="pt-3 border-t border-white/[0.08] text-[11px] text-zinc-500">
-                    O lucro e ROI são calculados isoladamente para cada gateway selecionado nas abas superiores.
+                    O lucro estimado é calculado instantaneamente subtraindo as despesas da receita líquida.
                   </div>
                 </SpotlightCard>
               </div>
@@ -1832,17 +1485,6 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                     <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-2.5 top-2.5" />
                   </div>
 
-                  {/* Filtro de Gateway */}
-                  <select
-                    value={salesGatewayFilter}
-                    onChange={(e) => setSalesGatewayFilter(e.target.value as GatewayFilter)}
-                    className="rounded-xl border border-white/10 bg-[#050507] px-3 py-1.5 text-xs text-white focus:border-white focus:ring-1 focus:ring-white/20 focus:outline-none transition-all"
-                  >
-                    <option value="ALL">Todos os Gateways</option>
-                    <option value="OMEGAPAY">⚡ OmegaPay</option>
-                    <option value="NEXUS">💠 Nexus Pay</option>
-                  </select>
-
                   <select
                     value={salesStatusFilter}
                     onChange={(e) => setSalesStatusFilter(e.target.value)}
@@ -1868,7 +1510,6 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                     <thead>
                       <tr className="border-b border-white/10 bg-[#08080a] text-zinc-400 uppercase tracking-wider text-[10px]">
                         <th className="py-2.5 px-3 font-medium">Data</th>
-                        <th className="py-2.5 px-3 font-medium">Gateway</th>
                         <th className="py-2.5 px-3 font-medium">Produto</th>
                         <th className="py-2.5 px-3 font-medium">ID Transação</th>
                         <th className="py-2.5 px-3 font-medium">Método</th>
@@ -1881,21 +1522,10 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                     <tbody className="divide-y divide-white/[0.04] bg-[#0c0c0e]">
                       {filteredSalesTable.map((tx) => {
                         const meta = getTransactionStatusMeta(tx.status);
-                        const gMeta = getGatewayMeta(tx.gateway);
                         return (
                           <tr key={tx.id} className="hover:bg-white/[0.03] transition-colors">
                             <td className="py-2.5 px-3 text-zinc-400 font-mono whitespace-nowrap">
                               {formatDateTimeBR(tx.paidAt || tx.createdAt)}
-                            </td>
-                            <td className="py-2.5 px-3 whitespace-nowrap">
-                              <span
-                                className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium border ${gMeta.badgeClass}`}
-                              >
-                                <span
-                                  className={`w-1.5 h-1.5 rounded-full ${gMeta.dotClass}`}
-                                />
-                                {gMeta.name}
-                              </span>
                             </td>
                             <td className="py-2.5 px-3 text-white font-medium max-w-[200px] truncate">
                               {tx.productName}
@@ -2004,26 +1634,6 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                 <form onSubmit={handleAddExpense} className="space-y-3">
                   <div>
                     <label className="block text-xs font-medium text-zinc-300 mb-1">
-                      Gateway Vinculado
-                    </label>
-                    <select
-                      value={expGateway}
-                      onChange={(e) =>
-                        setExpGateway(e.target.value as "ALL" | GatewayId)
-                      }
-                      className="w-full rounded-xl border border-white/10 bg-[#050507] px-3 py-2 text-xs text-white focus:border-white focus:ring-1 focus:ring-white/20 focus:outline-none transition-all"
-                    >
-                      <option value="ALL">🌐 Geral / Ambas</option>
-                      <option value="OMEGAPAY">⚡ Apenas OmegaPay</option>
-                      <option value="NEXUS">💠 Apenas Nexus Pay</option>
-                    </select>
-                    <p className="text-[10px] text-zinc-500 mt-1">
-                      Define se esta despesa entra no cálculo de ROI da OmegaPay, da Nexus ou de ambas.
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-zinc-300 mb-1">
                       Categoria
                     </label>
                     <select
@@ -2105,7 +1715,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                   </div>
                 </div>
 
-                {gatewayFilteredExpenses.length === 0 ? (
+                {periodExpenses.length === 0 ? (
                   <div className="py-12 text-center border border-dashed border-white/10 rounded-xl text-xs text-zinc-500 bg-white/[0.01]">
                     Nenhuma despesa cadastrada no período selecionado.
                   </div>
@@ -2115,7 +1725,6 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                       <thead>
                         <tr className="border-b border-white/10 bg-[#08080a] text-zinc-400 uppercase tracking-wider text-[10px]">
                           <th className="py-2 px-3 font-medium">Data</th>
-                          <th className="py-2 px-3 font-medium">Gateway</th>
                           <th className="py-2 px-3 font-medium">Categoria</th>
                           <th className="py-2 px-3 font-medium">Descrição</th>
                           <th className="py-2 px-3 font-medium text-right">Valor</th>
@@ -2123,15 +1732,10 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/[0.04] bg-[#0c0c0e]">
-                        {gatewayFilteredExpenses.map((exp) => (
+                        {periodExpenses.map((exp) => (
                           <tr key={exp.id} className="hover:bg-white/[0.03] transition-colors">
                             <td className="py-2.5 px-3 text-zinc-400 font-mono whitespace-nowrap">
                               {formatDateBR(exp.expenseDate)}
-                            </td>
-                            <td className="py-2.5 px-3 whitespace-nowrap">
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-medium border border-white/10 bg-white/[0.04] text-zinc-300">
-                                {exp.gateway === "NEXUS" ? "💠 Nexus Pay" : exp.gateway === "OMEGAPAY" ? "⚡ OmegaPay" : "🌐 Geral"}
-                              </span>
                             </td>
                             <td className="py-2.5 px-3">
                               <span className="px-2 py-0.5 rounded-full text-[10px] font-medium border border-white/10 bg-white/[0.04] text-zinc-300">
@@ -2176,7 +1780,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
         </main>
       </div>
 
-      {/* ==================== MODAL DE ATUALIZAÇÃO DE SALDO DA NEXUS PAY ==================== */}
+      {/* ==================== MODAL DE SALDO ADICIONAL / NEXUS ==================== */}
       {nexusModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
           <div className="w-full max-w-md rounded-2xl border border-white/15 bg-[#0c0c0e] p-5 sm:p-6 shadow-2xl space-y-5 animate-scale-up">
@@ -2187,10 +1791,10 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold text-white tracking-tight">
-                    Atualizar Saldo da Nexus Pay
+                    Saldo Adicional (Nexus Pay)
                   </h3>
                   <p className="text-[11px] text-zinc-400">
-                    Defina o saldo disponível e pendente da sua conta Nexus
+                    Defina o valor da Nexus para somar ao saldo geral
                   </p>
                 </div>
               </div>
@@ -2229,7 +1833,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                   />
                 </div>
                 <p className="text-[10px] text-zinc-500 mt-1">
-                  Valor liberado para saque na Nexus Pay.
+                  Valor liberado na Nexus Pay (se deixar 0, não soma nada).
                 </p>
               </div>
 
@@ -2250,13 +1854,10 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                     className="w-full rounded-xl border border-white/10 bg-[#050507] pl-9 pr-3 py-2 text-xs text-white font-mono focus:border-white focus:ring-1 focus:ring-white/20 focus:outline-none transition-all"
                   />
                 </div>
-                <p className="text-[10px] text-zinc-500 mt-1">
-                  Vendas com liberação futura ou aguardando compensação.
-                </p>
               </div>
 
               <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-[11px] text-zinc-400">
-                💠 O saldo salvo será exibido exclusivamente na aba <strong>Nexus Pay</strong> e somado no modo <strong>Consolidado</strong>, sem alterar o saldo da OmegaPay.
+                💡 Este valor é somado ao saldo da OmegaPay no card principal, dando a você a visão do saldo total da sua operação.
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/[0.08]">
@@ -2272,7 +1873,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                   disabled={savingNexusBalance}
                   className="btn-pressable px-4 py-2 rounded-xl bg-white text-black hover:bg-zinc-100 font-semibold text-xs shadow-sm transition disabled:opacity-50"
                 >
-                  {savingNexusBalance ? "Salvando..." : "Salvar Saldo Nexus"}
+                  {savingNexusBalance ? "Salvando..." : "Salvar Saldo"}
                 </button>
               </div>
             </form>
@@ -2364,7 +1965,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
               </div>
 
               <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-[11px] text-zinc-400">
-                💡 <strong className="text-zinc-200">Como funciona:</strong> Ao clicar no botão de ação rápida na barra superior ou no painel, este gasto é registrado para a data de hoje e as métricas de faturamento, lucro e ROI do gateway ativo são recalculadas na hora.
+                💡 <strong className="text-zinc-200">Como funciona:</strong> Ao clicar no botão de ação rápida na barra superior ou no painel, este gasto é registrado para a data de hoje e as métricas de faturamento, lucro e ROI são recalculadas na hora.
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/[0.08]">
