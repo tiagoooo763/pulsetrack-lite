@@ -48,6 +48,7 @@ import {
   X,
   Zap,
   SlidersHorizontal,
+  Target,
 } from "lucide-react";
 
 export interface QuickExpensePreset {
@@ -356,6 +357,13 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
     const roasNet = adExpenses > 0 ? netRevenue / adExpenses : null;
     const roasGross = adExpenses > 0 ? grossRevenue / adExpenses : null;
 
+    // ROI: Retorno sobre Investimento = (Lucro Estimado / Despesas Totais) * 100
+    // Multiplicador ROI = Receita Líquida / Despesas Totais
+    const roiPct =
+      totalExpenses > 0 ? (estimatedProfit / totalExpenses) * 100 : null;
+    const roiMultiplier =
+      totalExpenses > 0 ? netRevenue / totalExpenses : null;
+
     return {
       grossRevenue,
       approvedCount: approvedSales.length,
@@ -378,6 +386,8 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
       netMarginPct,
       roasNet,
       roasGross,
+      roiPct,
+      roiMultiplier,
     };
   }, [periodTransactions, periodTransfers, periodExpenses]);
 
@@ -1095,27 +1105,47 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                   </div>
                 </SpotlightCard>
 
-                {/* 7. Taxas do Checkout */}
+                {/* 7. Retorno sobre Investimento (ROI) */}
                 <SpotlightCard className="p-5 flex flex-col justify-between bento-card">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-medium uppercase tracking-wider text-zinc-400">
-                      Taxas do Checkout
+                      ROI (Retorno do Inv.)
                     </span>
                     <div className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
-                      <Percent className="w-3.5 h-3.5 text-white" />
+                      <Target className="w-3.5 h-3.5 text-white" />
                     </div>
                   </div>
-                  <div className="my-3">
-                    <div className="text-2xl sm:text-3xl font-semibold text-white font-mono tabular-nums tracking-tight">
-                      {formatBRL(metrics.checkoutFees)}
+                  <div className="my-3 flex items-baseline justify-between gap-2">
+                    <div
+                      className={`text-2xl sm:text-3xl font-semibold font-mono tabular-nums tracking-tight ${
+                        metrics.roiPct !== null
+                          ? metrics.roiPct > 0
+                            ? "text-emerald-400"
+                            : metrics.roiPct < 0
+                            ? "text-rose-400"
+                            : "text-zinc-200"
+                          : "text-zinc-400"
+                      }`}
+                    >
+                      {metrics.roiPct !== null
+                        ? `${metrics.roiPct >= 0 ? "+" : ""}${metrics.roiPct.toFixed(1)}%`
+                        : "—"}
                     </div>
+                    {metrics.roiMultiplier !== null && (
+                      <span className="text-xs font-mono font-medium text-zinc-300">
+                        {metrics.roiMultiplier.toFixed(2)}x
+                      </span>
+                    )}
                   </div>
                   <div className="text-[11px] text-zinc-400 pt-2 border-t border-white/[0.06] flex items-center justify-between">
-                    <span>Taxas OmegaPay</span>
-                    <span className="text-zinc-300 font-mono">
-                      {metrics.grossRevenue > 0
-                        ? `${((metrics.checkoutFees / metrics.grossRevenue) * 100).toFixed(1)}%`
-                        : "0%"}
+                    <span>
+                      {metrics.totalExpenses > 0 ? "Lucro / Despesas" : "Sem despesas"}
+                    </span>
+                    <span
+                      className="text-zinc-300 font-mono"
+                      title={`Taxas pagas no checkout: ${formatBRL(metrics.checkoutFees)}`}
+                    >
+                      Taxas: {formatBRL(metrics.checkoutFees)}
                     </span>
                   </div>
                 </SpotlightCard>
