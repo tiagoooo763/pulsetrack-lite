@@ -357,12 +357,13 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
     const roasNet = adExpenses > 0 ? netRevenue / adExpenses : null;
     const roasGross = adExpenses > 0 ? grossRevenue / adExpenses : null;
 
-    // ROI: Retorno sobre Investimento = (Lucro Estimado / Despesas Totais) * 100
-    // Multiplicador ROI = Receita Líquida / Despesas Totais
-    const roiPct =
-      totalExpenses > 0 ? (estimatedProfit / totalExpenses) * 100 : null;
+    // ROI: Retorno sobre Investimento como Multiplicador (ex: 1,5x)
+    // Multiplicador Líquido = Receita Líquida / Despesas Totais (ex: R$ 75 líq / R$ 50 gasto = 1,5x)
+    // Multiplicador Bruto = Faturamento Bruto / Despesas Totais
     const roiMultiplier =
       totalExpenses > 0 ? netRevenue / totalExpenses : null;
+    const roiGrossMultiplier =
+      totalExpenses > 0 ? grossRevenue / totalExpenses : null;
 
     return {
       grossRevenue,
@@ -386,8 +387,8 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
       netMarginPct,
       roasNet,
       roasGross,
-      roiPct,
       roiMultiplier,
+      roiGrossMultiplier,
     };
   }, [periodTransactions, periodTransfers, periodExpenses]);
 
@@ -1118,28 +1119,29 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                   <div className="my-3 flex items-baseline justify-between gap-2">
                     <div
                       className={`text-2xl sm:text-3xl font-semibold font-mono tabular-nums tracking-tight ${
-                        metrics.roiPct !== null
-                          ? metrics.roiPct > 0
+                        metrics.roiMultiplier !== null
+                          ? metrics.roiMultiplier >= 1
                             ? "text-emerald-400"
-                            : metrics.roiPct < 0
-                            ? "text-rose-400"
-                            : "text-zinc-200"
+                            : "text-rose-400"
                           : "text-zinc-400"
                       }`}
                     >
-                      {metrics.roiPct !== null
-                        ? `${metrics.roiPct >= 0 ? "+" : ""}${metrics.roiPct.toFixed(1)}%`
+                      {metrics.roiMultiplier !== null
+                        ? `${metrics.roiMultiplier.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 2 })}x`
                         : "—"}
                     </div>
-                    {metrics.roiMultiplier !== null && (
-                      <span className="text-xs font-mono font-medium text-zinc-300">
-                        {metrics.roiMultiplier.toFixed(2)}x
+                    {metrics.roiGrossMultiplier !== null && (
+                      <span
+                        className="text-xs font-mono font-medium text-zinc-400"
+                        title="ROI considerando faturamento bruto"
+                      >
+                        Bruto: {metrics.roiGrossMultiplier.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 2 })}x
                       </span>
                     )}
                   </div>
                   <div className="text-[11px] text-zinc-400 pt-2 border-t border-white/[0.06] flex items-center justify-between">
                     <span>
-                      {metrics.totalExpenses > 0 ? "Lucro / Despesas" : "Sem despesas"}
+                      {metrics.totalExpenses > 0 ? "Receita Líq. / Despesas" : "Sem despesas"}
                     </span>
                     <span
                       className="text-zinc-300 font-mono"
