@@ -5,6 +5,7 @@ import {
 } from "@/lib/auth";
 import {
   getLatestBalanceSnapshot,
+  getServerSetting,
   listManualExpenses,
   listRecentWebhookEvents,
   listTransactions,
@@ -25,6 +26,7 @@ export async function GET() {
     recentWebhooks,
     creds,
     dashCreds,
+    presetSetting,
   ] = await Promise.all([
     listTransactions(),
     listTransfers(),
@@ -33,7 +35,23 @@ export async function GET() {
     listRecentWebhookEvents(25),
     getOmegaPayServerCredentials(),
     getExpectedDashboardCredentials(),
+    getServerSetting("QUICK_EXPENSE_PRESET"),
   ]);
+
+  let quickExpensePreset = {
+    category: "META_ADS",
+    title: "Meta Ads",
+    amount: 50,
+  };
+
+  if (presetSetting) {
+    try {
+      const parsed = JSON.parse(presetSetting);
+      if (parsed && typeof parsed.amount === "number") {
+        quickExpensePreset = parsed;
+      }
+    } catch {}
+  }
 
   return NextResponse.json({
     transactions,
@@ -41,6 +59,7 @@ export async function GET() {
     expenses,
     balance,
     recentWebhooks,
+    quickExpensePreset,
     integrationStatus: {
       hasApiCredentials: creds.hasApiCredentials,
       hasWebhookToken: creds.hasWebhookToken,

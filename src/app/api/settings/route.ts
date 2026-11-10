@@ -165,6 +165,23 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    if (action === "save_quick_expense_preset") {
+      const preset = body.preset as Record<string, unknown>;
+      if (preset && typeof preset === "object") {
+        const amount = Number(preset.amount);
+        const title = String(preset.title || "Meta Ads").trim().slice(0, 100);
+        const category = String(preset.category || "META_ADS");
+        if (Number.isFinite(amount) && amount > 0) {
+          await setServerSetting(
+            "QUICK_EXPENSE_PRESET",
+            JSON.stringify({ amount, title, category })
+          );
+          return NextResponse.json({ ok: true, preset: { amount, title, category } });
+        }
+      }
+      return NextResponse.json({ error: "Preset inválido." }, { status: 400 });
+    }
+
     // Salvar credenciais no servidor
     const publicKey =
       typeof body.publicKey === "string" ? body.publicKey.trim() : undefined;

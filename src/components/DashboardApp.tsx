@@ -46,7 +46,23 @@ import {
   TrendingUp,
   Wallet,
   X,
+  Zap,
+  SlidersHorizontal,
 } from "lucide-react";
+
+export interface QuickExpensePreset {
+  category: ExpenseCategory;
+  title: string;
+  amount: number;
+}
+
+function getTodayLocalDate(): string {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
 
 type PeriodPreset = "today" | "7d" | "30d" | "month" | "all" | "custom";
 type ActiveTab = "overview" | "sales" | "expenses" | "integration";
@@ -66,6 +82,7 @@ interface DashboardPayload {
   balance: BalanceSnapshotRecord | null;
   recentWebhooks: WebhookEventRecord[];
   integrationStatus: IntegrationStatus;
+  quickExpensePreset?: QuickExpensePreset;
 }
 
 interface DashboardAppProps {
@@ -106,11 +123,42 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
   const [expCategory, setExpCategory] = useState<ExpenseCategory>("META_ADS");
   const [expDescription, setExpDescription] = useState("");
   const [expAmount, setExpAmount] = useState("");
-  const [expDate, setExpDate] = useState(() =>
-    new Date().toISOString().slice(0, 10)
-  );
+  const [expDate, setExpDate] = useState(() => getTodayLocalDate());
   const [submittingExpense, setSubmittingExpense] = useState(false);
   const [expenseError, setExpenseError] = useState<string | null>(null);
+
+  // Ação Rápida de Despesa Pré-definida
+  const [quickPreset, setQuickPreset] = useState<QuickExpensePreset>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const local = localStorage.getItem("pulsetrack_quick_preset");
+        if (local) return JSON.parse(local);
+      } catch {}
+    }
+    return {
+      category: "META_ADS",
+      title: "Meta Ads",
+      amount: 50,
+    };
+  });
+
+  const [quickModalOpen, setQuickModalOpen] = useState(false);
+  const [presetAmount, setPresetAmount] = useState(String(quickPreset.amount));
+  const [presetTitle, setPresetTitle] = useState(quickPreset.title);
+  const [presetCategory, setPresetCategory] = useState<ExpenseCategory>(quickPreset.category);
+  const [triggeringQuickExpense, setTriggeringQuickExpense] = useState(false);
+  const [savingPreset, setSavingPreset] = useState(false);
+  const [quickSuccessNotice, setQuickSuccessNotice] = useState<string | null>(null);
+
+  // Sincroniza preset salvo no servidor
+  useEffect(() => {
+    if (data?.quickExpensePreset) {
+      setQuickPreset(data.quickExpensePreset);
+      setPresetAmount(String(data.quickExpensePreset.amount));
+      setPresetTitle(data.quickExpensePreset.title);
+      setPresetCategory(data.quickExpensePreset.category);
+    }
+  }, [data?.quickExpensePreset]);
 
   const fetchDashboard = useCallback(async () => {
     try {
@@ -172,10 +220,10 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
   const { startDate, endDate } = useMemo(() => {
     const now = new Date();
     let start: Date | null = null;
-    let end: Date = now;
+    let end: Date = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
 
     if (period === "today") {
-      start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+      start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
     } else if (period === "7d") {
       start = new Date(now);
       start.setDate(now.getDate() - 7);
@@ -185,13 +233,15 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
       start.setDate(now.getDate() - 30);
       start.setHours(0, 0, 0, 0);
     } else if (period === "month") {
-      start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
+      start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
     } else if (period === "custom") {
       if (customFrom) {
-        start = new Date(`${customFrom}T00:00:00`);
+        const [fy, fm, fd] = customFrom.split("-").map(Number);
+        start = new Date(fy, fm - 1, fd, 0, 0, 0, 0);
       }
       if (customTo) {
-        end = new Date(`${customTo}T23:59:59`);
+        const [ty, tm, td] = customTo.split("-").map(Number);
+        end = new Date(ty, tm - 1, td, 23, 59, 59, 999);
       }
     } else if (period === "all") {
       start = null;
@@ -225,8 +275,12 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
     if (!data) return [];
     if (!startDate) return data.expenses;
     return data.expenses.filter((e) => {
-      const d = new Date(`${e.expenseDate}T00:00:00`);
-      return d >= startDate && d <= endDate;
+      if (!e.expenseDate) return false;
+      const parts = e.expenseDate.slice(0, 10).split("-");
+      if (parts.length !== 3) return false;
+      const [y, m, d] = parts.map(Number);
+      const expenseD = new Date(y, m - 1, d, 12, 0, 0);
+      return expenseD >= startDate && expenseD <= endDate;
     });
   }, [data, startDate, endDate]);
 
@@ -380,9 +434,10 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
   async function handleAddExpense(e: React.FormEvent) {
     e.preventDefault();
     setExpenseError(null);
-    const numericAmount = Number(expAmount.replace(",", "."));
+    const cleanAmount = expAmount.trim().replace(/\s/g, "").replace(",", ".");
+    const numericAmount = Number(cleanAmount);
     if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
-      setExpenseError("Informe um valor válido maior que zero.");
+      setExpenseError("Informe um valor válido maior que zero (ex: 50,00).");
       return;
     }
     setSubmittingExpense(true);
@@ -395,7 +450,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
           title:
             expDescription.trim() || EXPENSE_CATEGORIES[expCategory].label,
           amount: numericAmount,
-          expenseDate: expDate,
+          expenseDate: expDate || getTodayLocalDate(),
         }),
       });
       const json = await res.json();
@@ -404,12 +459,89 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
       } else {
         setExpDescription("");
         setExpAmount("");
+        setExpDate(getTodayLocalDate());
+        setQuickSuccessNotice("Despesa registrada com sucesso!");
+        setTimeout(() => setQuickSuccessNotice(null), 4000);
         await fetchDashboard();
       }
     } catch {
       setExpenseError("Erro ao salvar despesa no servidor.");
     } finally {
       setSubmittingExpense(false);
+    }
+  }
+
+  // Ação Rápida: Lança o gasto pré-configurado instantaneamente
+  async function handleQuickAddExpense() {
+    setTriggeringQuickExpense(true);
+    setExpenseError(null);
+    try {
+      const res = await fetch("/api/expenses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          category: quickPreset.category,
+          title: quickPreset.title,
+          amount: quickPreset.amount,
+          expenseDate: getTodayLocalDate(),
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.ok) {
+        setExpenseError(json.error || "Erro ao registrar gasto rápido.");
+      } else {
+        setQuickSuccessNotice(
+          `+ ${formatBRL(quickPreset.amount)} (${quickPreset.title}) lançado com sucesso!`
+        );
+        setTimeout(() => setQuickSuccessNotice(null), 4500);
+        await fetchDashboard();
+      }
+    } catch {
+      setExpenseError("Erro ao comunicar com o servidor.");
+    } finally {
+      setTriggeringQuickExpense(false);
+    }
+  }
+
+  // Salvar configuração do gasto rápido pré-definido
+  async function handleSaveQuickPreset(e: React.FormEvent) {
+    e.preventDefault();
+    const cleanAmount = Number(presetAmount.trim().replace(/\s/g, "").replace(",", "."));
+    if (!Number.isFinite(cleanAmount) || cleanAmount <= 0) {
+      alert("Informe um valor válido maior que zero.");
+      return;
+    }
+
+    const newPreset: QuickExpensePreset = {
+      category: presetCategory,
+      title: presetTitle.trim() || EXPENSE_CATEGORIES[presetCategory].label,
+      amount: cleanAmount,
+    };
+
+    setQuickPreset(newPreset);
+    try {
+      localStorage.setItem("pulsetrack_quick_preset", JSON.stringify(newPreset));
+    } catch {}
+
+    setSavingPreset(true);
+    try {
+      await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "save_quick_expense_preset",
+          preset: newPreset,
+        }),
+      });
+      setQuickSuccessNotice(
+        `Ação rápida configurada para + ${formatBRL(newPreset.amount)} (${newPreset.title})`
+      );
+      setTimeout(() => setQuickSuccessNotice(null), 4000);
+    } catch {
+      // Já salvo no localStorage
+    } finally {
+      setSavingPreset(false);
+      setQuickModalOpen(false);
     }
   }
 
@@ -648,53 +780,108 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
             </div>
           </div>
 
-          {/* Period Selector Tabs */}
-          <div className="flex flex-wrap items-center gap-1 bg-[#0c0c0e] border border-white/10 rounded-xl p-1 text-xs">
-            {(
-              [
-                { id: "today", label: "Hoje" },
-                { id: "7d", label: "7D" },
-                { id: "30d", label: "30D" },
-                { id: "month", label: "Mês" },
-                { id: "all", label: "Tudo" },
-                { id: "custom", label: "Custom" },
-              ] as { id: PeriodPreset; label: string }[]
-            ).map((p) => (
+          {/* Ação Rápida de Adição de Gasto + Seletor de Períodos */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Botão de Ação Rápida: Adiciona gasto pré-definido com 1 clique */}
+            <div className="flex items-center rounded-xl border border-amber-500/30 bg-amber-500/10 p-0.5 shadow-sm">
               <button
-                key={p.id}
                 type="button"
-                onClick={() => setPeriod(p.id)}
-                className={`btn-pressable px-3 py-1 rounded-lg transition-all ${
-                  period === p.id
-                    ? "bg-white text-black font-semibold shadow-sm"
-                    : "text-zinc-400 hover:text-white"
-                }`}
+                onClick={handleQuickAddExpense}
+                disabled={triggeringQuickExpense}
+                title={`Clique para lançar imediatamente: + ${formatBRL(quickPreset.amount)} (${quickPreset.title})`}
+                className="btn-pressable flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-amber-300 hover:text-amber-200 hover:bg-amber-500/15 rounded-lg transition-all disabled:opacity-50"
               >
-                {p.label}
+                <Zap
+                  className={`w-3.5 h-3.5 text-amber-400 fill-amber-400 ${
+                    triggeringQuickExpense ? "animate-spin" : ""
+                  }`}
+                />
+                <span className="whitespace-nowrap">
+                  {triggeringQuickExpense
+                    ? "Lançando..."
+                    : `+ ${formatBRL(quickPreset.amount)} ${quickPreset.title}`}
+                </span>
               </button>
-            ))}
-            {period === "custom" && (
-              <div className="flex items-center gap-1 pl-1">
-                <input
-                  type="date"
-                  value={customFrom}
-                  onChange={(e) => setCustomFrom(e.target.value)}
-                  className="rounded-lg border border-white/10 bg-[#050507] px-2 py-0.5 text-xs text-white"
-                />
-                <span className="text-zinc-500">-</span>
-                <input
-                  type="date"
-                  value={customTo}
-                  onChange={(e) => setCustomTo(e.target.value)}
-                  className="rounded-lg border border-white/10 bg-[#050507] px-2 py-0.5 text-xs text-white"
-                />
-              </div>
-            )}
+              <button
+                type="button"
+                onClick={() => {
+                  setPresetAmount(String(quickPreset.amount));
+                  setPresetTitle(quickPreset.title);
+                  setPresetCategory(quickPreset.category);
+                  setQuickModalOpen(true);
+                }}
+                title="Editar valor, nome e categoria do gasto pré-definido"
+                className="btn-pressable p-1.5 text-amber-400/80 hover:text-amber-200 hover:bg-amber-500/20 rounded-lg transition-all"
+                aria-label="Editar configuração de gasto rápido"
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Period Selector Tabs */}
+            <div className="flex flex-wrap items-center gap-1 bg-[#0c0c0e] border border-white/10 rounded-xl p-1 text-xs">
+              {(
+                [
+                  { id: "today", label: "Hoje" },
+                  { id: "7d", label: "7D" },
+                  { id: "30d", label: "30D" },
+                  { id: "month", label: "Mês" },
+                  { id: "all", label: "Tudo" },
+                  { id: "custom", label: "Custom" },
+                ] as { id: PeriodPreset; label: string }[]
+              ).map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setPeriod(p.id)}
+                  className={`btn-pressable px-3 py-1 rounded-lg transition-all ${
+                    period === p.id
+                      ? "bg-white text-black font-semibold shadow-sm"
+                      : "text-zinc-400 hover:text-white"
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+              {period === "custom" && (
+                <div className="flex items-center gap-1 pl-1">
+                  <input
+                    type="date"
+                    value={customFrom}
+                    onChange={(e) => setCustomFrom(e.target.value)}
+                    className="rounded-lg border border-white/10 bg-[#050507] px-2 py-0.5 text-xs text-white"
+                  />
+                  <span className="text-zinc-500">-</span>
+                  <input
+                    type="date"
+                    value={customTo}
+                    onChange={(e) => setCustomTo(e.target.value)}
+                    className="rounded-lg border border-white/10 bg-[#050507] px-2 py-0.5 text-xs text-white"
+                  />
+                </div>
+              )}
+            </div>
           </div>
         </header>
 
         {/* Notices */}
-        <div className="px-4 sm:px-6 pt-4">
+        <div className="px-4 sm:px-6 pt-4 space-y-2">
+          {quickSuccessNotice && (
+            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 text-xs flex items-center justify-between text-emerald-300 animate-fade-in-up">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>{quickSuccessNotice}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setQuickSuccessNotice(null)}
+                className="text-emerald-400 hover:text-emerald-200 ml-3"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
           {balanceNotice && (
             <div
               className={`rounded-xl border p-3.5 text-xs flex items-center justify-between animate-fade-in-up ${
@@ -1084,6 +1271,38 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                         </span>
                       </div>
                     </div>
+
+                    {/* Botão de Ação Rápida no Card */}
+                    <div className="mt-3 pt-3 border-t border-white/[0.06] flex items-center justify-between gap-2">
+                      <span className="text-[11px] text-zinc-400 flex items-center gap-1">
+                        <Zap className="w-3 h-3 text-amber-400 fill-amber-400" />
+                        Gasto rápido:
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={handleQuickAddExpense}
+                          disabled={triggeringQuickExpense}
+                          className="btn-pressable flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 rounded-lg transition-all"
+                          title="Lançar gasto pré-definido hoje"
+                        >
+                          <span>+ {formatBRL(quickPreset.amount)}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPresetAmount(String(quickPreset.amount));
+                            setPresetTitle(quickPreset.title);
+                            setPresetCategory(quickPreset.category);
+                            setQuickModalOpen(true);
+                          }}
+                          className="btn-pressable p-1 text-zinc-400 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition-all"
+                          title="Configurar valor pré-definido"
+                        >
+                          <SlidersHorizontal className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="pt-3 border-t border-white/[0.08] text-[11px] text-zinc-500">
@@ -1213,6 +1432,52 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                   </p>
                 </div>
 
+                {/* Banner de Lançamento Rápido Pré-definido */}
+                <div className="p-3.5 rounded-xl border border-amber-500/30 bg-amber-500/10 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-amber-300 flex items-center gap-1.5">
+                      <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                      Ação Rápida Pré-definida
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPresetAmount(String(quickPreset.amount));
+                        setPresetTitle(quickPreset.title);
+                        setPresetCategory(quickPreset.category);
+                        setQuickModalOpen(true);
+                      }}
+                      className="text-[11px] text-amber-400 hover:text-amber-200 underline font-medium"
+                    >
+                      Editar valor
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-zinc-400">
+                    Lança um gasto de{" "}
+                    <strong className="text-white">
+                      {formatBRL(quickPreset.amount)}
+                    </strong>{" "}
+                    em{" "}
+                    <strong className="text-white">
+                      {quickPreset.title}
+                    </strong>{" "}
+                    para hoje com apenas 1 clique:
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleQuickAddExpense}
+                    disabled={triggeringQuickExpense}
+                    className="btn-pressable w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-200 text-xs font-semibold transition disabled:opacity-50"
+                  >
+                    <Zap className={`w-3.5 h-3.5 fill-amber-400 ${triggeringQuickExpense ? "animate-spin" : ""}`} />
+                    <span>
+                      {triggeringQuickExpense
+                        ? "Lançando..."
+                        : `Lançar Agora (+ ${formatBRL(quickPreset.amount)})`}
+                    </span>
+                  </button>
+                </div>
+
                 {expenseError && (
                   <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-2.5 text-xs text-rose-300">
                     {expenseError}
@@ -1254,15 +1519,15 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
 
                   <div>
                     <label className="block text-xs font-medium text-zinc-300 mb-1">
-                      Valor (R$)
+                      Valor (R$) *
                     </label>
                     <input
-                      type="number"
-                      step="0.01"
+                      type="text"
+                      inputMode="decimal"
                       required
                       value={expAmount}
                       onChange={(e) => setExpAmount(e.target.value)}
-                      placeholder="0,00"
+                      placeholder="Ex: 50,00 ou 100.00"
                       className="w-full rounded-xl border border-white/10 bg-[#050507] px-3 py-2 text-xs text-white font-mono focus:border-white focus:ring-1 focus:ring-white/20 focus:outline-none transition-all"
                     />
                   </div>
@@ -1367,6 +1632,114 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
           )}
         </main>
       </div>
+
+      {/* ==================== MODAL DE CONFIGURAÇÃO DE GASTO RÁPIDO ==================== */}
+      {quickModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-md rounded-2xl border border-white/15 bg-[#0c0c0e] p-5 sm:p-6 shadow-2xl space-y-5 animate-scale-up">
+            <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center">
+                  <Zap className="w-4 h-4 text-amber-400 fill-amber-400" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-white tracking-tight">
+                    Editar Botão de Gasto Rápido
+                  </h3>
+                  <p className="text-[11px] text-zinc-400">
+                    Defina o valor e detalhes para adicionar com 1 clique
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setQuickModalOpen(false)}
+                className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveQuickPreset} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-zinc-300 mb-1">
+                  Valor Pré-definido (R$) *
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-2.5 text-xs font-mono text-zinc-500">
+                    R$
+                  </span>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    required
+                    value={presetAmount}
+                    onChange={(e) => setPresetAmount(e.target.value)}
+                    placeholder="50,00"
+                    className="w-full rounded-xl border border-white/10 bg-[#050507] pl-9 pr-3 py-2 text-xs text-white font-mono focus:border-white focus:ring-1 focus:ring-white/20 focus:outline-none transition-all"
+                  />
+                </div>
+                <p className="text-[10px] text-zinc-500 mt-1">
+                  Ex: 50,00 ou 100,00 (valor que será adicionado a cada clique)
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-zinc-300 mb-1">
+                  Categoria
+                </label>
+                <select
+                  value={presetCategory}
+                  onChange={(e) =>
+                    setPresetCategory(e.target.value as ExpenseCategory)
+                  }
+                  className="w-full rounded-xl border border-white/10 bg-[#050507] px-3 py-2 text-xs text-white focus:border-white focus:ring-1 focus:ring-white/20 focus:outline-none transition-all"
+                >
+                  {Object.entries(EXPENSE_CATEGORIES).map(([k, v]) => (
+                    <option key={k} value={k}>
+                      {v.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-zinc-300 mb-1">
+                  Título / Nome da Despesa
+                </label>
+                <input
+                  type="text"
+                  value={presetTitle}
+                  onChange={(e) => setPresetTitle(e.target.value)}
+                  placeholder="Ex: Meta Ads Diário"
+                  className="w-full rounded-xl border border-white/10 bg-[#050507] px-3 py-2 text-xs text-white placeholder-zinc-600 focus:border-white focus:ring-1 focus:ring-white/20 focus:outline-none transition-all"
+                />
+              </div>
+
+              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-[11px] text-zinc-400">
+                💡 <strong className="text-zinc-200">Como funciona:</strong> Ao clicar no botão de ação rápida na barra superior ou no painel, este gasto é registrado para a data de hoje e as métricas de faturamento, lucro e ROAS são recalculadas na hora.
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/[0.08]">
+                <button
+                  type="button"
+                  onClick={() => setQuickModalOpen(false)}
+                  className="px-3 py-2 rounded-xl text-xs font-medium text-zinc-400 hover:text-white transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingPreset}
+                  className="btn-pressable px-4 py-2 rounded-xl bg-white text-black hover:bg-zinc-100 font-semibold text-xs shadow-sm transition disabled:opacity-50"
+                >
+                  {savingPreset ? "Salvando..." : "Salvar Pré-definição"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

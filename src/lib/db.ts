@@ -2,7 +2,14 @@ import fs from "fs";
 import path from "path";
 import crypto from "crypto";
 import { createClient, type Client as LibSqlClient } from "@libsql/client";
-import { Pool } from "pg";
+import { Pool, types as pgTypes } from "pg";
+
+// Garante que colunas DATE do PostgreSQL retornem strings 'YYYY-MM-DD' sem distorção de fuso horário
+try {
+  pgTypes.setTypeParser(1082, (val: string) => val);
+} catch {
+  // Ignora se types não estiver acessível
+}
 import {
   type OmegaPayBalanceResponse,
   type OmegaPayTransactionStatus,
@@ -818,13 +825,32 @@ function mapTransferRow(row: Record<string, unknown>): TransferRecord {
 }
 
 function mapExpenseRow(row: Record<string, unknown>): ManualExpenseRecord {
+  let expenseDateStr = "";
+  if (typeof row.expense_date === "string") {
+    expenseDateStr = row.expense_date.slice(0, 10);
+  } else if (row.expense_date instanceof Date) {
+    const y = row.expense_date.getFullYear();
+    const m = String(row.expense_date.getMonth() + 1).padStart(2, "0");
+    const d = String(row.expense_date.getDate()).padStart(2, "0");
+    expenseDateStr = `${y}-${m}-${d}`;
+  } else {
+    expenseDateStr = String(row.expense_date || "").slice(0, 10);
+  }
+
+  let createdAtStr = "";
+  if (row.created_at instanceof Date) {
+    createdAtStr = row.created_at.toISOString();
+  } else {
+    createdAtStr = String(row.created_at || "");
+  }
+
   return {
     id: String(row.id),
     category: String(row.category || "OTHER") as ExpenseCategory,
     title: String(row.title),
     amount: Number(row.amount || 0),
-    expenseDate: String(row.expense_date),
+    expenseDate: expenseDateStr,
     notes: row.notes ? String(row.notes) : null,
-    createdAt: String(row.created_at),
+    createdAt: createdAtStr,
   };
 }
