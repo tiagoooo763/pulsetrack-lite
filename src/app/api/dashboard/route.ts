@@ -4,7 +4,7 @@ import {
   isAuthenticated,
 } from "@/lib/auth";
 import {
-  getLatestBalanceSnapshot,
+  getAllBalanceSnapshots,
   getServerSetting,
   listManualExpenses,
   listRecentWebhookEvents,
@@ -22,20 +22,24 @@ export async function GET() {
     transactions,
     transfers,
     expenses,
-    balance,
+    balances,
     recentWebhooks,
     creds,
     dashCreds,
     presetSetting,
+    nexusApiKey,
+    nexusWebhookToken,
   ] = await Promise.all([
     listTransactions(),
     listTransfers(),
     listManualExpenses(),
-    getLatestBalanceSnapshot(),
-    listRecentWebhookEvents(25),
+    getAllBalanceSnapshots(),
+    listRecentWebhookEvents(30),
     getOmegaPayServerCredentials(),
     getExpectedDashboardCredentials(),
     getServerSetting("QUICK_EXPENSE_PRESET"),
+    getServerSetting("NEXUS_API_KEY"),
+    getServerSetting("NEXUS_WEBHOOK_TOKEN"),
   ]);
 
   let quickExpensePreset = {
@@ -57,7 +61,8 @@ export async function GET() {
     transactions,
     transfers,
     expenses,
-    balance,
+    balance: balances.OMEGAPAY, // retrocompatibilidade
+    balances,
     recentWebhooks,
     quickExpensePreset,
     integrationStatus: {
@@ -66,6 +71,11 @@ export async function GET() {
       source: creds.source,
       apiBaseUrl: creds.baseUrl,
       isDefaultPassword: dashCreds.isDefaultPassword,
+      nexus: {
+        hasApiCredentials: Boolean(nexusApiKey),
+        hasWebhookToken: Boolean(nexusWebhookToken || process.env.NEXUS_WEBHOOK_TOKEN),
+        apiBaseUrl: "https://api.nexuspay.com.br",
+      },
     },
   });
 }

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAuthenticated } from "@/lib/auth";
-import { setServerSetting } from "@/lib/db";
+import { setServerSetting, saveBalanceSnapshot } from "@/lib/db";
 import { getOmegaPayServerCredentials } from "@/lib/omegapay-client";
 import { processOmegaPayWebhook } from "@/lib/webhook-processor";
+import { processNexusWebhook } from "@/lib/nexus-processor";
 import { safeLog } from "@/lib/sanitize";
 
 export async function POST(request: NextRequest) {
@@ -14,6 +15,7 @@ export async function POST(request: NextRequest) {
     const body = (await request.json()) as Record<string, unknown>;
     const action = typeof body.action === "string" ? body.action : "save_credentials";
 
+    // Simulação de Webhook OmegaPay
     if (action === "simulate_webhook") {
       const event = String(body.event || "TRANSACTION_PAID");
       const txId = String(body.transactionId || `tr_${Date.now().toString(36)}`);
@@ -165,6 +167,84 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Simulação de Webhook Nexus Pay
+    if (action === "simulate_nexus_webhook") {
+      const event = String(body.event || "TRANSACTION_PAID");
+      const txId = String(body.transactionId || `nex_${Date.now().toString(36)}`);
+      const productName = String(body.productName || "Mentoria Nexus Pro");
+      const grossAmount = Number(body.grossAmount ?? 197);
+      const feeAmount = Number(body.feeAmount ?? 9.85);
+      const netAmount = Math.max(0, Number((grossAmount - feeAmount).toFixed(2)));
+      const paymentMethod = String(body.paymentMethod || "PIX");
+
+      const simulatedPayload = {
+        event,
+        data: {
+          id: txId,
+          order_id: `ord_${txId}`,
+          status: event.includes("PAID") ? "paid" : event.includes("REFUND") ? "refunded" : "pending",
+          amount: grossAmount,
+          fee: feeAmount,
+          net_amount: netAmount,
+          payment_method: paymentMethod,
+          product: {
+            name: productName,
+          },
+          customer: {
+            name: "Cliente Nexus Teste",
+            email: "nexus.cliente@exemplo.com",
+          },
+          created_at: new Date().toISOString(),
+        },
+      };
+
+      const result = await processNexusWebhook(simulatedPayload);
+      return NextResponse.json({
+        ok: result.ok,
+        result,
+      });
+    }
+
+    // Atualização manual de Saldo Nexus
+    if (action === "update_nexus_balance") {
+      const available = Number(body.available ?? 0);
+      const pending = Number(body.pending ?? 0);
+      const fundLock = Number(body.fundLock ?? 0);
+
+      const saved = await saveBalanceSnapshot(
+        { available, pending, fundLock },
+        "NEXUS"
+      );
+
+      return NextResponse.json({
+        ok: true,
+        balance: saved,
+      });
+    }
+
+    // Salvar credenciais exclusivas da Nexus
+    if (action === "save_nexus_credentials") {
+      const nexusApiKey = typeof body.nexusApiKey === "string" ? body.nexusApiKey.trim() : undefined;
+      const nexusSecretKey = typeof body.nexusSecretKey === "string" ? body.nexusSecretKey.trim() : undefined;
+      const nexusWebhookToken = typeof body.nexusWebhookToken === "string" ? body.nexusWebhookToken.trim() : undefined;
+
+      if (nexusApiKey !== undefined && nexusApiKey !== "") {
+        await setServerSetting("NEXUS_API_KEY", nexusApiKey);
+      }
+      if (nexusSecretKey !== undefined && nexusSecretKey !== "") {
+        await setServerSetting("NEXUS_SECRET_KEY", nexusSecretKey);
+      }
+      if (nexusWebhookToken !== undefined && nexusWebhookToken !== "") {
+        await setServerSetting("NEXUS_WEBHOOK_TOKEN", nexusWebhookToken);
+      }
+
+      return NextResponse.json({
+        ok: true,
+        message: "Credenciais da Nexus salvas com sucesso no servidor.",
+      });
+    }
+
+    // Preset rápido de despesa
     if (action === "save_quick_expense_preset") {
       const preset = body.preset as Record<string, unknown>;
       if (preset && typeof preset === "object") {
@@ -182,7 +262,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Preset inválido." }, { status: 400 });
     }
 
-    // Salvar credenciais no servidor
+    // Salvar credenciais padrão / OmegaPay
     const publicKey =
       typeof body.publicKey === "string" ? body.publicKey.trim() : undefined;
     const secretKey =

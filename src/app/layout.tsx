@@ -15,9 +15,9 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PulseTrack Lite — Inteligência Financeira & OmegaPay",
+  title: "Dashfy — Inteligência Financeira Multi-Gateway (OmegaPay & Nexus)",
   description:
-    "Dashboard financeiro minimalista e de alta precisão integrado aos webhooks e endpoints oficiais da OmegaPay.",
+    "Dashboard financeiro minimalista de alta precisão com suporte multi-gateway oficial para OmegaPay e Nexus Pay.",
 };
 
 export const viewport: Viewport = {

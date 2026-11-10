@@ -99,14 +99,14 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
           </div>
           <div className="flex items-center gap-2">
             <span className="text-xl font-bold tracking-tight text-white font-sans">
-              PulseTrack
+              Dashfy
             </span>
             <span className="text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 rounded-full bg-white/10 text-zinc-300 border border-white/10">
-              Lite
+              Pro
             </span>
           </div>
           <p className="text-xs text-zinc-400 mt-1">
-            Gestão Financeira &bull; OmegaPay v1
+            Gestão Multi-Gateway &bull; OmegaPay &amp; Nexus Pay
           </p>
         </div>
 

@@ -16,6 +16,14 @@ import {
   type OmegaPayTransferStatus,
 } from "./omegapay-types";
 
+export type {
+  OmegaPayBalanceResponse,
+  OmegaPayTransactionStatus,
+  OmegaPayTransferStatus,
+};
+
+export type GatewayId = "OMEGAPAY" | "NEXUS";
+
 export type ExpenseCategory =
   | "META_ADS"
   | "TIKTOK_ADS"
@@ -25,6 +33,7 @@ export type ExpenseCategory =
 
 export interface TransactionRecord {
   id: string;
+  gateway: GatewayId;
   clientIdentifier: string | null;
   orderId: string | null;
   productId: string | null;
@@ -45,6 +54,7 @@ export interface TransactionRecord {
 
 export interface TransferRecord {
   id: string;
+  gateway: GatewayId;
   clientIdentifier: string | null;
   amount: number;
   receivedAmount: number;
@@ -59,6 +69,7 @@ export interface TransferRecord {
 
 export interface ManualExpenseRecord {
   id: string;
+  gateway: "ALL" | GatewayId;
   category: ExpenseCategory;
   title: string;
   amount: number;
@@ -69,6 +80,7 @@ export interface ManualExpenseRecord {
 
 export interface WebhookEventRecord {
   id: string;
+  gateway: GatewayId;
   dedupeKey: string;
   eventType: string;
   entityId: string;
@@ -78,6 +90,7 @@ export interface WebhookEventRecord {
 }
 
 export interface BalanceSnapshotRecord extends OmegaPayBalanceResponse {
+  gateway: GatewayId;
   fetchedAt: string | null;
 }
 
@@ -161,6 +174,7 @@ export async function getDb(): Promise<DbExecutor> {
       await db.execute(`
         CREATE TABLE IF NOT EXISTS transactions (
           id TEXT PRIMARY KEY,
+          gateway TEXT NOT NULL DEFAULT 'OMEGAPAY',
           client_identifier TEXT,
           order_id TEXT,
           product_id TEXT,
@@ -183,6 +197,7 @@ export async function getDb(): Promise<DbExecutor> {
       await db.execute(`
         CREATE TABLE IF NOT EXISTS transfers (
           id TEXT PRIMARY KEY,
+          gateway TEXT NOT NULL DEFAULT 'OMEGAPAY',
           client_identifier TEXT,
           amount REAL NOT NULL DEFAULT 0,
           received_amount REAL NOT NULL DEFAULT 0,
@@ -199,6 +214,7 @@ export async function getDb(): Promise<DbExecutor> {
       await db.execute(`
         CREATE TABLE IF NOT EXISTS webhook_events (
           id TEXT PRIMARY KEY,
+          gateway TEXT NOT NULL DEFAULT 'OMEGAPAY',
           dedupe_key TEXT NOT NULL UNIQUE,
           event_type TEXT NOT NULL,
           entity_id TEXT NOT NULL,
@@ -211,6 +227,7 @@ export async function getDb(): Promise<DbExecutor> {
       await db.execute(`
         CREATE TABLE IF NOT EXISTS manual_expenses (
           id TEXT PRIMARY KEY,
+          gateway TEXT NOT NULL DEFAULT 'ALL',
           category TEXT NOT NULL,
           title TEXT NOT NULL,
           amount REAL NOT NULL,
@@ -223,6 +240,7 @@ export async function getDb(): Promise<DbExecutor> {
       await db.execute(`
         CREATE TABLE IF NOT EXISTS balance_snapshots (
           id INTEGER PRIMARY KEY,
+          gateway TEXT NOT NULL DEFAULT 'OMEGAPAY',
           available REAL NOT NULL DEFAULT 0,
           pending REAL NOT NULL DEFAULT 0,
           fund_lock REAL NOT NULL DEFAULT 0,
@@ -237,6 +255,23 @@ export async function getDb(): Promise<DbExecutor> {
           updated_at TEXT NOT NULL
         )
       `);
+
+      // Migração segura para bancos existentes (SQLite e PostgreSQL)
+      try {
+        await db.execute(`ALTER TABLE transactions ADD COLUMN gateway TEXT NOT NULL DEFAULT 'OMEGAPAY'`);
+      } catch {}
+      try {
+        await db.execute(`ALTER TABLE transfers ADD COLUMN gateway TEXT NOT NULL DEFAULT 'OMEGAPAY'`);
+      } catch {}
+      try {
+        await db.execute(`ALTER TABLE manual_expenses ADD COLUMN gateway TEXT NOT NULL DEFAULT 'ALL'`);
+      } catch {}
+      try {
+        await db.execute(`ALTER TABLE balance_snapshots ADD COLUMN gateway TEXT NOT NULL DEFAULT 'OMEGAPAY'`);
+      } catch {}
+      try {
+        await db.execute(`ALTER TABLE webhook_events ADD COLUMN gateway TEXT NOT NULL DEFAULT 'OMEGAPAY'`);
+      } catch {}
 
       return db;
     })();
@@ -329,6 +364,7 @@ export async function checkWebhookEventExists(dedupeKey: string): Promise<boolea
 
 export async function insertWebhookEvent(params: {
   dedupeKey: string;
+  gateway?: GatewayId;
   eventType: string;
   entityId: string;
   statusAfter: string | null;
@@ -342,12 +378,14 @@ export async function insertWebhookEvent(params: {
 
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
+  const gateway = params.gateway || "OMEGAPAY";
   try {
     await db.execute(
-      `INSERT INTO webhook_events (id, dedupe_key, event_type, entity_id, status_after, sanitized_payload, received_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO webhook_events (id, gateway, dedupe_key, event_type, entity_id, status_after, sanitized_payload, received_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
+        gateway,
         params.dedupeKey,
         params.eventType,
         params.entityId,
@@ -368,6 +406,7 @@ export async function insertWebhookEvent(params: {
 
 export async function upsertTransaction(input: {
   id: string;
+  gateway?: GatewayId;
   clientIdentifier?: string | null;
   orderId?: string | null;
   productId?: string | null;
@@ -428,9 +467,12 @@ export async function upsertTransaction(input: {
       existing.paidAt ||
       (finalStatus === "COMPLETED" ? now : null);
 
+    const gateway = input.gateway || existing.gateway || "OMEGAPAY";
+
     await db.execute(
       `UPDATE transactions
-       SET client_identifier = ?,
+       SET gateway = ?,
+           client_identifier = ?,
            order_id = ?,
            product_id = ?,
            product_name = ?,
@@ -447,6 +489,7 @@ export async function upsertTransaction(input: {
            updated_at = ?
        WHERE id = ?`,
       [
+        gateway,
         input.clientIdentifier ?? existing.clientIdentifier,
         input.orderId ?? existing.orderId,
         input.productId ?? existing.productId,
@@ -484,19 +527,21 @@ export async function upsertTransaction(input: {
   const createdAt = input.createdAt || now;
   const paidAt =
     input.paidAt || (input.status === "COMPLETED" ? createdAt : null);
+  const gateway = input.gateway || "OMEGAPAY";
 
   await db.execute(
     `INSERT INTO transactions (
-      id, client_identifier, order_id, product_id, product_name,
+      id, gateway, client_identifier, order_id, product_id, product_name,
       offer_code, payment_method, currency, gross_amount, fee_amount,
       net_amount, status, last_event, installments, created_at, paid_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       input.id,
+      gateway,
       input.clientIdentifier ?? null,
       input.orderId ?? null,
       input.productId ?? null,
-      input.productName || "Produto OmegaPay",
+      input.productName || (gateway === "NEXUS" ? "Produto Nexus Pay" : "Produto OmegaPay"),
       input.offerCode ?? null,
       input.paymentMethod || "PIX",
       input.currency || "BRL",
@@ -521,6 +566,7 @@ export async function upsertTransaction(input: {
 
 export async function upsertTransfer(input: {
   id: string;
+  gateway?: GatewayId;
   clientIdentifier?: string | null;
   amount: number;
   receivedAmount?: number | null;
@@ -550,9 +596,11 @@ export async function upsertTransfer(input: {
 
   if (existingRows.length > 0) {
     const existing = mapTransferRow(existingRows[0]);
+    const gateway = input.gateway || existing.gateway || "OMEGAPAY";
     await db.execute(
       `UPDATE transfers
-       SET client_identifier = ?,
+       SET gateway = ?,
+           client_identifier = ?,
            amount = ?,
            received_amount = ?,
            fee_amount = ?,
@@ -563,6 +611,7 @@ export async function upsertTransfer(input: {
            updated_at = ?
        WHERE id = ?`,
       [
+        gateway,
         input.clientIdentifier ?? existing.clientIdentifier,
         amount > 0 ? amount : existing.amount,
         receivedAmount > 0 ? receivedAmount : existing.receivedAmount,
@@ -582,13 +631,16 @@ export async function upsertTransfer(input: {
     return mapTransferRow(updated[0]);
   }
 
+  const gateway = input.gateway || "OMEGAPAY";
+
   await db.execute(
     `INSERT INTO transfers (
-      id, client_identifier, amount, received_amount, fee_amount,
+      id, gateway, client_identifier, amount, received_amount, fee_amount,
       currency, status, last_event, message, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       input.id,
+      gateway,
       input.clientIdentifier ?? null,
       amount,
       receivedAmount,
@@ -635,6 +687,7 @@ export async function listManualExpenses(): Promise<ManualExpenseRecord[]> {
 
 export async function createManualExpense(input: {
   category: ExpenseCategory;
+  gateway?: "ALL" | GatewayId;
   title: string;
   amount: number;
   expenseDate: string;
@@ -643,12 +696,14 @@ export async function createManualExpense(input: {
   const db = await getDb();
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
+  const gateway = input.gateway || "ALL";
 
   await db.execute(
-    `INSERT INTO manual_expenses (id, category, title, amount, expense_date, notes, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO manual_expenses (id, gateway, category, title, amount, expense_date, notes, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
+      gateway,
       input.category,
       input.title.trim(),
       Number(input.amount),
@@ -680,6 +735,7 @@ export async function listRecentWebhookEvents(
   );
   return rows.map((row) => ({
     id: String(row.id),
+    gateway: (String(row.gateway || "OMEGAPAY").toUpperCase() === "NEXUS" ? "NEXUS" : "OMEGAPAY") as GatewayId,
     dedupeKey: String(row.dedupe_key),
     eventType: String(row.event_type),
     entityId: String(row.entity_id),
@@ -690,31 +746,43 @@ export async function listRecentWebhookEvents(
 }
 
 export async function saveBalanceSnapshot(
-  balance: OmegaPayBalanceResponse
+  balance: OmegaPayBalanceResponse & { gateway?: GatewayId },
+  explicitGateway?: GatewayId
 ): Promise<BalanceSnapshotRecord> {
   const db = await getDb();
   const now = new Date().toISOString();
+  const gateway: GatewayId =
+    explicitGateway ||
+    (balance.gateway && String(balance.gateway).toUpperCase() === "NEXUS" ? "NEXUS" : "OMEGAPAY");
+  const id = gateway === "OMEGAPAY" ? 1 : 2;
+
   const existing = await db.query(
-    `SELECT id FROM balance_snapshots WHERE id = 1 LIMIT 1`
+    `SELECT id FROM balance_snapshots WHERE gateway = ? OR (gateway IS NULL AND id = ?) LIMIT 1`,
+    [gateway, id]
   );
 
   if (existing.length > 0) {
+    const existingId = Number(existing[0].id);
     await db.execute(
       `UPDATE balance_snapshots
-       SET available = ?, pending = ?, fund_lock = ?, fetched_at = ?
-       WHERE id = 1`,
+       SET gateway = ?, available = ?, pending = ?, fund_lock = ?, fetched_at = ?
+       WHERE id = ?`,
       [
+        gateway,
         Number(balance.available || 0),
         Number(balance.pending || 0),
         Number(balance.fundLock || 0),
         now,
+        existingId,
       ]
     );
   } else {
     await db.execute(
-      `INSERT INTO balance_snapshots (id, available, pending, fund_lock, fetched_at)
-       VALUES (1, ?, ?, ?, ?)`,
+      `INSERT INTO balance_snapshots (id, gateway, available, pending, fund_lock, fetched_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
       [
+        id,
+        gateway,
         Number(balance.available || 0),
         Number(balance.pending || 0),
         Number(balance.fundLock || 0),
@@ -724,6 +792,7 @@ export async function saveBalanceSnapshot(
   }
 
   return {
+    gateway,
     available: Number(balance.available || 0),
     pending: Number(balance.pending || 0),
     fundLock: Number(balance.fundLock || 0),
@@ -731,13 +800,18 @@ export async function saveBalanceSnapshot(
   };
 }
 
-export async function getLatestBalanceSnapshot(): Promise<BalanceSnapshotRecord> {
+export async function getLatestBalanceSnapshot(
+  gateway: GatewayId = "OMEGAPAY"
+): Promise<BalanceSnapshotRecord> {
   const db = await getDb();
+  const id = gateway === "OMEGAPAY" ? 1 : 2;
   const rows = await db.query(
-    `SELECT * FROM balance_snapshots WHERE id = 1 LIMIT 1`
+    `SELECT * FROM balance_snapshots WHERE gateway = ? OR (gateway IS NULL AND id = ?) ORDER BY id ASC LIMIT 1`,
+    [gateway, id]
   );
   if (rows.length === 0) {
     return {
+      gateway,
       available: 0,
       pending: 0,
       fundLock: 0,
@@ -746,10 +820,22 @@ export async function getLatestBalanceSnapshot(): Promise<BalanceSnapshotRecord>
   }
   const r = rows[0];
   return {
+    gateway: (String(r.gateway || gateway).toUpperCase() === "NEXUS" ? "NEXUS" : "OMEGAPAY") as GatewayId,
     available: Number(r.available || 0),
     pending: Number(r.pending || 0),
     fundLock: Number(r.fund_lock || 0),
     fetchedAt: r.fetched_at ? String(r.fetched_at) : null,
+  };
+}
+
+export async function getAllBalanceSnapshots(): Promise<Record<GatewayId, BalanceSnapshotRecord>> {
+  const [omega, nexus] = await Promise.all([
+    getLatestBalanceSnapshot("OMEGAPAY"),
+    getLatestBalanceSnapshot("NEXUS"),
+  ]);
+  return {
+    OMEGAPAY: omega,
+    NEXUS: nexus,
   };
 }
 
@@ -789,10 +875,11 @@ export async function setServerSetting(
 function mapTransactionRow(row: Record<string, unknown>): TransactionRecord {
   return {
     id: String(row.id),
+    gateway: (String(row.gateway || "OMEGAPAY").toUpperCase() === "NEXUS" ? "NEXUS" : "OMEGAPAY") as GatewayId,
     clientIdentifier: row.client_identifier ? String(row.client_identifier) : null,
     orderId: row.order_id ? String(row.order_id) : null,
     productId: row.product_id ? String(row.product_id) : null,
-    productName: String(row.product_name || "Produto OmegaPay"),
+    productName: String(row.product_name || "Produto"),
     offerCode: row.offer_code ? String(row.offer_code) : null,
     paymentMethod: String(row.payment_method || "PIX"),
     currency: String(row.currency || "BRL"),
@@ -811,6 +898,7 @@ function mapTransactionRow(row: Record<string, unknown>): TransactionRecord {
 function mapTransferRow(row: Record<string, unknown>): TransferRecord {
   return {
     id: String(row.id),
+    gateway: (String(row.gateway || "OMEGAPAY").toUpperCase() === "NEXUS" ? "NEXUS" : "OMEGAPAY") as GatewayId,
     clientIdentifier: row.client_identifier ? String(row.client_identifier) : null,
     amount: Number(row.amount || 0),
     receivedAmount: Number(row.received_amount || 0),
@@ -844,8 +932,13 @@ function mapExpenseRow(row: Record<string, unknown>): ManualExpenseRecord {
     createdAtStr = String(row.created_at || "");
   }
 
+  const rawGw = String(row.gateway || "ALL").toUpperCase();
+  const gateway: "ALL" | GatewayId =
+    rawGw === "NEXUS" ? "NEXUS" : rawGw === "OMEGAPAY" ? "OMEGAPAY" : "ALL";
+
   return {
     id: String(row.id),
+    gateway,
     category: String(row.category || "OTHER") as ExpenseCategory,
     title: String(row.title),
     amount: Number(row.amount || 0),

@@ -191,3 +191,26 @@ export const EXPENSE_CATEGORIES: Record<
     badgeClass: "bg-white/[0.04] text-zinc-400 border-white/10",
   },
 };
+
+export function getGatewayMeta(gateway: string | null | undefined): {
+  id: "OMEGAPAY" | "NEXUS";
+  name: string;
+  badgeClass: string;
+  dotClass: string;
+} {
+  const upper = String(gateway || "OMEGAPAY").toUpperCase();
+  if (upper === "NEXUS") {
+    return {
+      id: "NEXUS",
+      name: "Nexus Pay",
+      badgeClass: "bg-white/[0.04] text-zinc-200 border-white/10",
+      dotClass: "bg-cyan-400",
+    };
+  }
+  return {
+    id: "OMEGAPAY",
+    name: "OmegaPay",
+    badgeClass: "bg-white/[0.04] text-zinc-200 border-white/10",
+    dotClass: "bg-emerald-400",
+  };
+}

@@ -9,6 +9,7 @@ import {
 
 const createExpenseSchema = z.object({
   category: z.enum(["META_ADS", "TIKTOK_ADS", "OTHER_ADS", "TOOLS", "OTHER"]).default("OTHER"),
+  gateway: z.enum(["ALL", "OMEGAPAY", "NEXUS"]).default("ALL"),
   title: z.string().min(1, "Informe uma descrição para a despesa.").max(120),
   amount: z.number().positive("O valor da despesa deve ser maior que zero."),
   expenseDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida (use YYYY-MM-DD)."),
@@ -71,6 +72,7 @@ export async function POST(request: NextRequest) {
 
     const expense = await createManualExpense({
       category: parsed.data.category as ExpenseCategory,
+      gateway: parsed.data.gateway,
       title: parsed.data.title,
       amount: parsed.data.amount,
       expenseDate: parsed.data.expenseDate,
