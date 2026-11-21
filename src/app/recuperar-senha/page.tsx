@@ -68,7 +68,9 @@ export default function RecuperarSenhaPage() {
 
       <div className="w-full max-w-md relative z-10">
         <div className="flex flex-col items-center text-center mb-8">
-          <DashfyBrand size="lg" className="mb-3" />
+          <Link href="/" aria-label="Voltar para a página inicial da Dashfy">
+            <DashfyBrand size="lg" className="mb-3" />
+          </Link>
           <p className="text-xs text-zinc-400 mt-1">
             Recuperação segura de acesso
           </p>
@@ -106,7 +108,7 @@ export default function RecuperarSenhaPage() {
               </div>
 
               <Link
-                href="/"
+                href="/login"
                 className="btn-pressable w-full inline-flex items-center justify-center gap-2 rounded-xl bg-white hover:bg-zinc-100 text-black font-semibold text-sm py-2.5 px-4"
               >
                 <ArrowLeft className="w-4 h-4" />
@@ -156,7 +158,7 @@ export default function RecuperarSenhaPage() {
 
           <div className="mt-5 pt-4 border-t border-white/[0.08] flex items-center justify-between text-xs">
             <Link
-              href="/"
+              href="/login"
               className="inline-flex items-center gap-1.5 text-zinc-400 hover:text-white transition"
             >
               <ArrowLeft className="w-3.5 h-3.5" />

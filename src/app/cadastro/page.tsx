@@ -85,8 +85,8 @@ export default function CadastroPage() {
         return;
       }
 
-      if (data.autoSignedIn) {
-        router.push("/");
+      if (data.autoSignedIn || data.requiresEmailConfirmation === false) {
+        router.push("/dashboard");
         router.refresh();
         return;
       }
@@ -118,7 +118,9 @@ export default function CadastroPage() {
       <div className="w-full max-w-md relative z-10">
         {/* Brand */}
         <div className="flex flex-col items-center text-center mb-7">
-          <DashfyBrand size="lg" className="mb-3" />
+          <Link href="/" aria-label="Voltar para a página inicial da Dashfy">
+            <DashfyBrand size="lg" className="mb-3" />
+          </Link>
           <p className="text-xs text-zinc-400 mt-1">
             Crie seu workspace exclusivo na Dashfy
           </p>
@@ -143,7 +145,7 @@ export default function CadastroPage() {
                 </p>
               </div>
               <Link
-                href="/"
+                href="/login"
                 className="btn-pressable w-full inline-flex items-center justify-center gap-2 rounded-xl bg-white hover:bg-zinc-100 text-black font-semibold text-sm py-2.5 px-4"
               >
                 <ArrowLeft className="w-4 h-4" />
@@ -333,7 +335,7 @@ export default function CadastroPage() {
               <div className="mt-5 pt-4 border-t border-white/[0.08] flex items-center justify-between text-xs">
                 <span className="text-zinc-400">Já possui conta?</span>
                 <Link
-                  href="/"
+                  href="/login"
                   className="inline-flex items-center gap-1 text-white font-medium hover:underline"
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />

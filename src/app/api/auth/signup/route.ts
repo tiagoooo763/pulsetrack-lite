@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
 
     const origin = request.headers.get("origin") || new URL(request.url).origin;
     const appUrl = getPublicAppUrl(origin);
-    const emailRedirectTo = `${appUrl}/auth/callback?next=/`;
+    const emailRedirectTo = `${appUrl}/auth/callback?next=/dashboard`;
 
     const companyName = parsed.data.companyName || "Dashfy Workspace";
 
@@ -148,6 +148,7 @@ export async function POST(request: NextRequest) {
       {
         ok: true,
         requiresEmailConfirmation,
+        autoSignedIn: !requiresEmailConfirmation,
         message: requiresEmailConfirmation
           ? "Conta criada! Enviamos um link de confirmação para o seu e-mail. Confirme para acessar seu painel."
           : "Conta criada com sucesso! Redirecionando para o seu painel...",

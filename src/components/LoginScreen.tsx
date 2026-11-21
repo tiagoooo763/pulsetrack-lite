@@ -4,7 +4,6 @@ import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import {
   Lock,
-  ShieldCheck,
   ArrowRight,
   AlertCircle,
   CheckCircle2,
@@ -127,9 +126,11 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
       <div className="w-full max-w-md relative z-10">
         {/* Brand */}
         <div ref={brandRef} className="flex flex-col items-center text-center mb-8">
-          <DashfyBrand size="lg" className="mb-3" />
+          <Link href="/" aria-label="Voltar para a página inicial da Dashfy">
+            <DashfyBrand size="lg" className="mb-3" />
+          </Link>
           <p className="text-xs text-zinc-400 mt-1">
-            Gestão Financeira &bull; Operação TikTok &amp; OmegaPay
+            Análise de Marketing Digital &amp; Gestão Financeira
           </p>
         </div>
 
@@ -266,12 +267,24 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
                 <Lock className="w-3.5 h-3.5 text-zinc-400" />
                 Supabase Auth &amp; RLS
               </span>
-              <span className="flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-zinc-400" />
-                Dados Isolados por Conta
-              </span>
+              <Link
+                href="/"
+                className="text-zinc-400 hover:text-white transition-colors"
+              >
+                &larr; Página inicial
+              </Link>
             </div>
           </SpotlightCard>
+
+          <div className="mt-4 flex items-center justify-center gap-4 text-[11px] text-zinc-500">
+            <Link href="/privacidade" className="hover:text-zinc-300 transition">
+              Política de Privacidade
+            </Link>
+            <span>&bull;</span>
+            <Link href="/termos" className="hover:text-zinc-300 transition">
+              Termos de Uso
+            </Link>
+          </div>
         </div>
       </div>
     </div>

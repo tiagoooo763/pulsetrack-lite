@@ -4,13 +4,13 @@ import { claimLegacyDataForOwner, ensureUserProfile } from "@/lib/db";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 function getSafeNextPath(rawNext: string | null): string {
-  if (!rawNext) return "/";
+  if (!rawNext) return "/dashboard";
   const trimmed = rawNext.trim();
   // Impede open redirect: aceita apenas caminhos relativos internos começando com '/'
   if (!trimmed.startsWith("/") || trimmed.startsWith("//")) {
-    return "/";
+    return "/dashboard";
   }
-  return trimmed;
+  return trimmed === "/" ? "/dashboard" : trimmed;
 }
 
 const VALID_OTP_TYPES = new Set<EmailOtpType>([
@@ -36,14 +36,14 @@ export async function GET(request: NextRequest) {
   const errorDesc = url.searchParams.get("error_description");
 
   if (errorDesc) {
-    const failUrl = new URL("/", url.origin);
+    const failUrl = new URL("/login", url.origin);
     failUrl.searchParams.set("auth_error", errorDesc);
     return NextResponse.redirect(failUrl);
   }
 
   const supabase = await createSupabaseServerClient();
   if (!supabase) {
-    const failUrl = new URL("/", url.origin);
+    const failUrl = new URL("/login", url.origin);
     failUrl.searchParams.set(
       "auth_error",
       "Autenticação Supabase não configurada neste servidor."
@@ -97,13 +97,10 @@ export async function GET(request: NextRequest) {
     await claimLegacyDataForOwner(verifiedUser.id, email);
 
     const targetUrl = new URL(nextPath, url.origin);
-    if (nextPath === "/" && otpType !== "recovery") {
-      targetUrl.searchParams.set("confirmed", "1");
-    }
     return NextResponse.redirect(targetUrl);
   }
 
-  const fallback = new URL("/", url.origin);
+  const fallback = new URL("/login", url.origin);
   fallback.searchParams.set(
     "auth_error",
     "Link de autenticação inválido ou expirado. Tente novamente."
