@@ -1,20 +1,12 @@
 -- ============================================================================
 -- Dashfy — Migração Não-Destrutiva Multi-Usuário + Supabase Auth + RLS
 -- Projeto Supabase: xtdumjninvilhirpplkv
---
--- IMPORTANTE:
--- - NÃO executa DROP TABLE nem apaga dados existentes.
--- - Todos os registros já existentes são preservados sob o proprietário legado
---   ('legacy:mendoncat831@gmail.com') e vinculados automaticamente ao UUID real
---   no primeiro login dessa conta via Supabase Auth.
--- - Aplica Row Level Security (RLS) com princípio do menor privilégio em todas
---   as tabelas públicas existentes.
 -- ============================================================================
 
 -- 1. Tabela de Perfis (1:1 com auth.users, criação automática sem duplicatas)
 CREATE TABLE IF NOT EXISTS public.profiles (
   id TEXT PRIMARY KEY,
-  email TEXT NOT NULL,
+  email TEXT NOT NULL DEFAULT '',
   display_name TEXT NOT NULL DEFAULT '',
   company_name TEXT NOT NULL DEFAULT 'Dashfy Workspace',
   role TEXT NOT NULL DEFAULT 'user',
@@ -22,8 +14,16 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS email TEXT NOT NULL DEFAULT '';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS display_name TEXT NOT NULL DEFAULT '';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS company_name TEXT NOT NULL DEFAULT 'Dashfy Workspace';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'user';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+
 CREATE UNIQUE INDEX IF NOT EXISTS idx_profiles_email_lower
-  ON public.profiles (LOWER(email));
+  ON public.profiles (LOWER(email))
+  WHERE email <> '';
 
 -- Função & Trigger idempotente para criar perfil automaticamente ao cadastrar no Supabase Auth
 CREATE OR REPLACE FUNCTION public.handle_new_auth_user()
@@ -49,7 +49,7 @@ BEGIN
   );
 
   INSERT INTO public.profiles (id, email, display_name, company_name, created_at, updated_at)
-  VALUES (NEW.id::TEXT, LOWER(COALESCE(NEW.email, '')), v_display_name, v_company_name, NOW(), NOW())
+  VALUES (NEW.id, LOWER(COALESCE(NEW.email, '')), v_display_name, v_company_name, NOW(), NOW())
   ON CONFLICT DO NOTHING;
 
   RETURN NEW;
@@ -107,7 +107,7 @@ ALTER TABLE IF EXISTS public.webhook_events
 ALTER TABLE IF EXISTS public.balance_snapshots
   ADD COLUMN IF NOT EXISTS user_id TEXT NOT NULL DEFAULT 'legacy:mendoncat831@gmail.com';
 
--- 5. Índices de performance (criados apenas nas tabelas existentes)
+-- 5. Índices de performance (apenas nas tabelas existentes)
 DO $$
 BEGIN
   IF to_regclass('public.transactions') IS NOT NULL THEN
@@ -136,27 +136,25 @@ END
 $$;
 
 -- 6. ROW LEVEL SECURITY (RLS) — PRINCÍPIO DO MENOR PRIVILÉGIO
--- Profiles: acesso restrito ao próprio usuário autenticado
 REVOKE ALL ON TABLE public.profiles FROM anon;
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "profiles_select_own" ON public.profiles;
 CREATE POLICY "profiles_select_own"
   ON public.profiles FOR SELECT TO authenticated
-  USING (auth.uid()::TEXT = id);
+  USING (auth.uid()::TEXT = id::TEXT);
 
 DROP POLICY IF EXISTS "profiles_insert_own" ON public.profiles;
 CREATE POLICY "profiles_insert_own"
   ON public.profiles FOR INSERT TO authenticated
-  WITH CHECK (auth.uid()::TEXT = id);
+  WITH CHECK (auth.uid()::TEXT = id::TEXT);
 
 DROP POLICY IF EXISTS "profiles_update_own" ON public.profiles;
 CREATE POLICY "profiles_update_own"
   ON public.profiles FOR UPDATE TO authenticated
-  USING (auth.uid()::TEXT = id)
-  WITH CHECK (auth.uid()::TEXT = id);
+  USING (auth.uid()::TEXT = id::TEXT)
+  WITH CHECK (auth.uid()::TEXT = id::TEXT);
 
--- server_settings: bloqueado totalmente para anon e authenticated (somente backend)
 DO $$
 BEGIN
   IF to_regclass('public.server_settings') IS NOT NULL THEN
@@ -168,7 +166,6 @@ BEGIN
 END
 $$;
 
--- Demais tabelas de operação: RLS estrita garantindo auth.uid()::TEXT = user_id
 DO $$
 DECLARE
   tbl TEXT;
@@ -192,25 +189,25 @@ BEGIN
 
       EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', tbl || '_select_own', tbl);
       EXECUTE format(
-        'CREATE POLICY %I ON public.%I FOR SELECT TO authenticated USING (auth.uid()::TEXT = user_id)',
+        'CREATE POLICY %I ON public.%I FOR SELECT TO authenticated USING (auth.uid()::TEXT = user_id::TEXT)',
         tbl || '_select_own', tbl
       );
 
       EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', tbl || '_insert_own', tbl);
       EXECUTE format(
-        'CREATE POLICY %I ON public.%I FOR INSERT TO authenticated WITH CHECK (auth.uid()::TEXT = user_id)',
+        'CREATE POLICY %I ON public.%I FOR INSERT TO authenticated WITH CHECK (auth.uid()::TEXT = user_id::TEXT)',
         tbl || '_insert_own', tbl
       );
 
       EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', tbl || '_update_own', tbl);
       EXECUTE format(
-        'CREATE POLICY %I ON public.%I FOR UPDATE TO authenticated USING (auth.uid()::TEXT = user_id) WITH CHECK (auth.uid()::TEXT = user_id)',
+        'CREATE POLICY %I ON public.%I FOR UPDATE TO authenticated USING (auth.uid()::TEXT = user_id::TEXT) WITH CHECK (auth.uid()::TEXT = user_id::TEXT)',
         tbl || '_update_own', tbl
       );
 
       EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', tbl || '_delete_own', tbl);
       EXECUTE format(
-        'CREATE POLICY %I ON public.%I FOR DELETE TO authenticated USING (auth.uid()::TEXT = user_id)',
+        'CREATE POLICY %I ON public.%I FOR DELETE TO authenticated USING (auth.uid()::TEXT = user_id::TEXT)',
         tbl || '_delete_own', tbl
       );
     END IF;
