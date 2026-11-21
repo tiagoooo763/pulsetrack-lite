@@ -16,6 +16,7 @@ import {
   type SummaryFilterState,
 } from "@/lib/dashfy-types";
 import {
+  computeGeneralOverview,
   computeOmegaPaySummary,
   computeTikTokSummary,
   getDateRange,
@@ -24,6 +25,7 @@ import {
 } from "@/lib/dashfy-metrics";
 import { formatBRL } from "@/lib/format";
 import { Sidebar } from "./dashfy/Sidebar";
+import { GeneralOverviewView } from "./dashfy/GeneralOverviewView";
 import { SummaryView } from "./dashfy/SummaryView";
 import { TikTokAdsView } from "./dashfy/TikTokAdsView";
 import { UtmsView } from "./dashfy/UtmsView";
@@ -105,13 +107,18 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
         const saved = localStorage.getItem("dashfy_nav_location");
         if (saved) {
           const parsed = JSON.parse(saved) as NavigationLocation;
-          if (parsed && (parsed.kind === "dashboard" || parsed.kind === "global")) {
+          if (
+            parsed &&
+            (parsed.kind === "general" ||
+              parsed.kind === "dashboard" ||
+              parsed.kind === "global")
+          ) {
             return parsed;
           }
         }
       } catch {}
     }
-    return { kind: "dashboard", dashboardId: "omegapay", tabId: "resumo" };
+    return { kind: "general" };
   });
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => {
@@ -324,6 +331,48 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
     activeFees,
   ]);
 
+  // ==================== RESUMO CONSOLIDADO (DASH GERAL) ====================
+  const generalOverview = useMemo(() => {
+    if (!data) {
+      return computeGeneralOverview({
+        dashboards,
+        omegaTransactions: [],
+        omegaTransfers: [],
+        tiktokCampaigns: [],
+        expenses: [],
+        customFees: [],
+      });
+    }
+    const periodOmegaTx = data.transactions.filter(
+      (tx) =>
+        (tx.gateway || "OMEGAPAY") === "OMEGAPAY" &&
+        isDateInRange(tx.paidAt || tx.createdAt, startDate, endDate)
+    );
+    const periodOmegaTf = data.transfers.filter(
+      (tf) =>
+        (tf.gateway || "OMEGAPAY") === "OMEGAPAY" &&
+        isDateInRange(tf.updatedAt || tf.createdAt, startDate, endDate)
+    );
+    const periodTikTok = (data.tiktokCampaigns || []).filter((c) =>
+      isDateInRange(c.statDate, startDate, endDate)
+    );
+    const periodExp = data.expenses.filter((e) =>
+      isDateInRange(e.expenseDate, startDate, endDate)
+    );
+    const periodFees = (data.customFees || []).filter((f) =>
+      isDateInRange(f.feeDate, startDate, endDate)
+    );
+
+    return computeGeneralOverview({
+      dashboards,
+      omegaTransactions: periodOmegaTx,
+      omegaTransfers: periodOmegaTf,
+      tiktokCampaigns: periodTikTok,
+      expenses: periodExp,
+      customFees: periodFees,
+    });
+  }, [data, dashboards, startDate, endDate]);
+
   const filterOptions = useMemo(() => {
     if (!data) {
       return {
@@ -464,13 +513,15 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
       : null;
 
   const pageTitle =
-    location.kind === "global"
-      ? location.pageId === "minha_conta"
-        ? "Minha conta"
-        : location.pageId === "configuracoes"
-          ? "Configurações"
-          : "Suporte"
-      : activeTabDef?.label || "Resumo";
+    location.kind === "general"
+      ? "Dash Geral"
+      : location.kind === "global"
+        ? location.pageId === "minha_conta"
+          ? "Minha conta"
+          : location.pageId === "configuracoes"
+            ? "Configurações"
+            : "Suporte"
+        : activeTabDef?.label || "Resumo";
 
   const quickPreset = data.quickExpensePreset || {
     category: "META_ADS" as const,
@@ -488,6 +539,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
         mobileOpen={mobileMenuOpen}
         userEmail={data.profile.username}
         userName={data.profile.displayName}
+        onSelectGeneral={() => setLocation({ kind: "general" })}
         onSelectDashboardTab={(dashboardId, tabId) => {
           setLocation({ kind: "dashboard", dashboardId, tabId });
           if (dashboardId !== activeDashboardId) {
@@ -609,6 +661,18 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
 
         {/* CONTEÚDO DA PÁGINA ATIVA */}
         <main ref={contentRef} className="flex-1 p-4 sm:p-6">
+          {location.kind === "general" && (
+            <GeneralOverviewView
+              summary={generalOverview}
+              filters={filters}
+              onFiltersChange={setFilters}
+              omegaBalance={data.balances?.OMEGAPAY ?? data.balance}
+              onOpenOperation={(dashboardId, tabId) =>
+                setLocation({ kind: "dashboard", dashboardId, tabId })
+              }
+            />
+          )}
+
           {location.kind === "global" && (
             <GlobalPagesView
               pageId={location.pageId}

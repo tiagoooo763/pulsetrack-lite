@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
+  computeGeneralOverview,
   computeOmegaPaySummary,
   computeTikTokSummary,
   parseTikTokCsv,
@@ -146,5 +147,92 @@ describe("Dashfy — Separação de Operações (TikTok vs OmegaPay) & CSV Parse
     expect(summary.pendingAmount).toBe(500);
     expect(summary.approvalRate).toBe(50);
     expect(summary.productBreakdown[0].productName).toBe("Mentoria VIP");
+  });
+
+  it("consolida todas as operações no Dash Geral sem duplicar vendas OmegaPay", () => {
+    const general = computeGeneralOverview({
+      dashboards: [
+        { id: "tiktok", name: "TikTok 01", mode: "tiktok" },
+        { id: "omegapay", name: "Omega Principal", mode: "omegapay" },
+        { id: "operacao_3", name: "TikTok 02", mode: "tiktok" },
+      ],
+      omegaTransactions: [
+        {
+          id: "tx_g1",
+          gateway: "OMEGAPAY",
+          clientIdentifier: null,
+          orderId: "o1",
+          productId: "p1",
+          productName: "Produto Omega",
+          offerCode: null,
+          paymentMethod: "PIX",
+          currency: "BRL",
+          grossAmount: 400,
+          feeAmount: 20,
+          netAmount: 380,
+          status: "COMPLETED",
+          lastEvent: "TRANSACTION_PAID",
+          installments: 1,
+          createdAt: "2026-11-21T10:00:00Z",
+          paidAt: "2026-11-21T10:00:00Z",
+          updatedAt: "2026-11-21T10:00:00Z",
+        },
+      ],
+      omegaTransfers: [],
+      tiktokCampaigns: [
+        {
+          id: "c_g1",
+          dashboardId: "tiktok",
+          adAccount: "Conta 1",
+          campaignName: "Camp 1",
+          adgroupName: "G1",
+          adName: "Ad1",
+          productName: "P1",
+          utmSource: "tiktok",
+          utmMedium: "cpc",
+          utmCampaign: "c1",
+          utmContent: "a1",
+          statDate: "2026-11-21",
+          spend: 100,
+          impressions: 5000,
+          clicks: 100,
+          conversions: 2,
+          attributedRevenue: 300,
+          status: "ACTIVE",
+          createdAt: "2026-11-21T10:00:00Z",
+          updatedAt: "2026-11-21T10:00:00Z",
+        },
+        {
+          id: "c_g2",
+          dashboardId: "operacao_3",
+          adAccount: "Conta 2",
+          campaignName: "Camp 2",
+          adgroupName: "G2",
+          adName: "Ad2",
+          productName: "P2",
+          utmSource: "tiktok",
+          utmMedium: "cpc",
+          utmCampaign: "c2",
+          utmContent: "a2",
+          statDate: "2026-11-21",
+          spend: 50,
+          impressions: 3000,
+          clicks: 60,
+          conversions: 1,
+          attributedRevenue: 200,
+          status: "ACTIVE",
+          createdAt: "2026-11-21T10:00:00Z",
+          updatedAt: "2026-11-21T10:00:00Z",
+        },
+      ],
+      expenses: [],
+      customFees: [],
+    });
+
+    expect(general.operations).toHaveLength(3);
+    expect(general.grossRevenue).toBe(900); // 400 + 300 + 200
+    expect(general.adExpenses).toBe(150); // 100 + 50
+    expect(general.profit).toBe(730); // (380 + 300 + 200) - 150
+    expect(general.totalApprovedOrders).toBe(4); // 1 + 2 + 1
   });
 });

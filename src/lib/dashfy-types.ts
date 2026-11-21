@@ -50,6 +50,7 @@ export type OperationTabId = TikTokTabId | OmegaPayTabId;
 export type GlobalPageId = "minha_conta" | "configuracoes" | "suporte";
 
 export type NavigationLocation =
+  | { kind: "general" }
   | { kind: "dashboard"; dashboardId: DashboardOperationId; tabId: OperationTabId }
   | { kind: "global"; pageId: GlobalPageId };
 

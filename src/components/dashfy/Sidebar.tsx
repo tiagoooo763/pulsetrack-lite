@@ -12,6 +12,7 @@ import {
   HelpCircle,
   Landmark,
   LayoutDashboard,
+  LayoutGrid,
   Layers,
   Link2,
   LogOut,
@@ -48,6 +49,7 @@ interface SidebarProps {
   mobileOpen: boolean;
   userEmail: string;
   userName: string;
+  onSelectGeneral: () => void;
   onSelectDashboardTab: (dashboardId: DashboardOperationId, tabId: OperationTabId) => void;
   onUpdateDashboardConfig: (
     dashboardId: string,
@@ -101,6 +103,7 @@ export function Sidebar({
   mobileOpen,
   userEmail,
   userName,
+  onSelectGeneral,
   onSelectDashboardTab,
   onUpdateDashboardConfig,
   onSelectGlobalPage,
@@ -207,12 +210,11 @@ export function Sidebar({
           <button
             type="button"
             onClick={() => {
-              const targetDash = activeDashboardId || dashboards[0]?.id || "tiktok";
-              onSelectDashboardTab(targetDash, "resumo");
+              onSelectGeneral();
               onCloseMobile();
             }}
             className="flex items-center focus:outline-none"
-            aria-label="Ir para o Resumo Dashfy"
+            aria-label="Ir para o Dash Geral"
           >
             <DashfyBrand collapsed={collapsed} size="md" />
           </button>
@@ -256,6 +258,28 @@ export function Sidebar({
 
         {/* MENU PRINCIPAL */}
         <nav className="flex-1 overflow-y-auto p-3 space-y-4">
+          {/* ABA DASH GERAL — RESUMO DE TODAS AS OPERAÇÕES */}
+          <div className="space-y-1">
+            <button
+              type="button"
+              onClick={() => {
+                onSelectGeneral();
+                onCloseMobile();
+              }}
+              title="Dash Geral (Todas as Operações)"
+              className={`btn-pressable w-full flex items-center ${
+                collapsed ? "justify-center px-2 py-2.5" : "gap-2.5 px-3 py-2.5"
+              } rounded-xl text-xs font-medium transition-all ${
+                location.kind === "general"
+                  ? "bg-white text-black font-semibold shadow-sm"
+                  : "text-zinc-300 hover:text-white hover:bg-white/[0.04]"
+              }`}
+            >
+              <LayoutGrid className="w-4 h-4 shrink-0" />
+              {!collapsed && <span className="truncate">Dash Geral</span>}
+            </button>
+          </div>
+
           <div className="space-y-1">
             {!collapsed ? (
               <button

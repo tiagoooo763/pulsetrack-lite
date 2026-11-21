@@ -1,5 +1,6 @@
 import type {
   CustomFeeRecord,
+  DashboardConfigRecord,
   ManualExpenseRecord,
   TikTokCampaignRecord,
   TransactionRecord,
@@ -558,6 +559,177 @@ export function parseTikTokCsv(csvText: string): ParsedTikTokCsvRow[] {
   }
 
   return rows;
+}
+
+export interface OperationComparisonRow {
+  dashboardId: string;
+  name: string;
+  mode: "tiktok" | "omegapay";
+  metrics: OperationSummaryMetrics;
+  revenueSharePct: number;
+}
+
+export interface GeneralOverviewSummary {
+  grossRevenue: number;
+  netRevenue: number;
+  adExpenses: number;
+  otherExpenses: number;
+  totalFees: number;
+  profit: number;
+  roas: number | null;
+  roiMultiplier: number | null;
+  roiPct: number | null;
+  marginPct: number;
+  totalApprovedOrders: number;
+  totalPendingAmount: number;
+  totalPendingCount: number;
+  operations: OperationComparisonRow[];
+  dailySeries: DailySeriesPoint[];
+}
+
+/**
+ * Consolida todas as operações configuradas no Dash Geral sem duplicar vendas OmegaPay.
+ */
+export function computeGeneralOverview(params: {
+  dashboards: DashboardConfigRecord[];
+  omegaTransactions: TransactionRecord[];
+  omegaTransfers: TransferRecord[];
+  tiktokCampaigns: TikTokCampaignRecord[];
+  expenses: ManualExpenseRecord[];
+  customFees: CustomFeeRecord[];
+}): GeneralOverviewSummary {
+  const {
+    dashboards,
+    omegaTransactions,
+    omegaTransfers,
+    tiktokCampaigns,
+    expenses,
+    customFees,
+  } = params;
+
+  const perOp = dashboards.map((dash) => {
+    const opExpenses = expenses.filter((e) => e.dashboardId === dash.id);
+    const opFees = customFees.filter((f) => f.dashboardId === dash.id);
+
+    if (dash.mode === "tiktok") {
+      const opCampaigns = tiktokCampaigns.filter(
+        (c) => (c.dashboardId || "tiktok") === dash.id
+      );
+      return {
+        dashboardId: dash.id,
+        name: dash.name,
+        mode: dash.mode,
+        metrics: computeTikTokSummary(opCampaigns, opExpenses, opFees),
+      };
+    }
+
+    return {
+      dashboardId: dash.id,
+      name: dash.name,
+      mode: dash.mode,
+      metrics: computeOmegaPaySummary(
+        omegaTransactions,
+        omegaTransfers,
+        opExpenses,
+        opFees
+      ),
+    };
+  });
+
+  // Grand total consolidado sem duplicar transações OmegaPay caso haja mais de 1 aba OmegaPay
+  let omegaCounted = false;
+  let grossRevenue = 0;
+  let netRevenue = 0;
+  let adExpenses = 0;
+  let otherExpenses = 0;
+  let totalFees = 0;
+  let totalApprovedOrders = 0;
+  let totalPendingAmount = 0;
+  let totalPendingCount = 0;
+
+  const dayMap = new Map<string, DailySeriesPoint>();
+  const mergeDaily = (series: DailySeriesPoint[]) => {
+    for (const d of series) {
+      const cur = dayMap.get(d.date) || {
+        date: d.date,
+        grossRevenue: 0,
+        netRevenue: 0,
+        expenses: 0,
+        profit: 0,
+      };
+      cur.grossRevenue += d.grossRevenue;
+      cur.netRevenue += d.netRevenue;
+      cur.expenses += d.expenses;
+      cur.profit = cur.netRevenue - cur.expenses;
+      dayMap.set(d.date, cur);
+    }
+  };
+
+  for (const op of perOp) {
+    if (op.mode === "tiktok") {
+      grossRevenue += op.metrics.grossRevenue;
+      netRevenue += op.metrics.netRevenue;
+      adExpenses += op.metrics.adExpenses;
+      otherExpenses += op.metrics.otherExpenses;
+      totalFees += op.metrics.checkoutOrPlatformFees + op.metrics.customFeesTotal;
+      totalApprovedOrders += op.metrics.approvedCount;
+      mergeDaily(op.metrics.dailySeries);
+    } else {
+      if (!omegaCounted) {
+        omegaCounted = true;
+        grossRevenue += op.metrics.grossRevenue;
+        netRevenue += op.metrics.netRevenue;
+        totalFees += op.metrics.checkoutOrPlatformFees + op.metrics.customFeesTotal;
+        totalApprovedOrders += op.metrics.approvedCount;
+        totalPendingAmount += op.metrics.pendingAmount;
+        totalPendingCount += op.metrics.pendingCount;
+        mergeDaily(op.metrics.dailySeries);
+      } else {
+        // Apenas deduz taxas/despesas extras dessa aba adicional sem duplicar receita OmegaPay
+        totalFees += op.metrics.customFeesTotal;
+        netRevenue = Math.max(0, netRevenue - op.metrics.customFeesTotal);
+      }
+      adExpenses += op.metrics.adExpenses;
+      otherExpenses += op.metrics.otherExpenses;
+    }
+  }
+
+  const totalInvestment = adExpenses + otherExpenses;
+  const profit = netRevenue - totalInvestment;
+  const marginPct = grossRevenue > 0 ? (profit / grossRevenue) * 100 : 0;
+  const roas = adExpenses > 0 ? grossRevenue / adExpenses : null;
+  const roiMultiplier = totalInvestment > 0 ? netRevenue / totalInvestment : null;
+  const roiPct = totalInvestment > 0 ? (profit / totalInvestment) * 100 : null;
+
+  const operations: OperationComparisonRow[] = perOp.map((op) => ({
+    ...op,
+    revenueSharePct:
+      grossRevenue > 0
+        ? Math.min(100, (op.metrics.grossRevenue / grossRevenue) * 100)
+        : 0,
+  }));
+
+  const dailySeries = Array.from(dayMap.values())
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(-14);
+
+  return {
+    grossRevenue,
+    netRevenue,
+    adExpenses,
+    otherExpenses,
+    totalFees,
+    profit,
+    roas,
+    roiMultiplier,
+    roiPct,
+    marginPct,
+    totalApprovedOrders,
+    totalPendingAmount,
+    totalPendingCount,
+    operations,
+    dailySeries,
+  };
 }
 
 export function downloadCsvFile(
