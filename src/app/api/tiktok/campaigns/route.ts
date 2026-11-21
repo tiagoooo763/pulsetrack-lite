@@ -9,6 +9,7 @@ import {
 } from "@/lib/db";
 
 const singleCampaignSchema = z.object({
+  dashboardId: z.string().min(1).max(60).optional().default("tiktok"),
   adAccount: z.string().max(120).optional().default("Conta Principal TikTok"),
   campaignName: z.string().min(1, "Informe o nome da campanha.").max(160),
   adgroupName: z.string().max(160).optional().default("Conjunto Padrão"),
@@ -87,6 +88,7 @@ export async function POST(request: NextRequest) {
       }
 
       const parsed = singleCampaignSchema.safeParse({
+        dashboardId: String(obj.dashboardId || raw.dashboardId || "tiktok").trim(),
         adAccount: String(obj.adAccount || "Conta Principal TikTok").trim(),
         campaignName: String(obj.campaignName || "").trim(),
         adgroupName: String(obj.adgroupName || "Conjunto Padrão").trim(),

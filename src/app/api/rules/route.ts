@@ -9,7 +9,7 @@ import {
 } from "@/lib/db";
 
 const createRuleSchema = z.object({
-  dashboardId: z.enum(["tiktok", "omegapay"]).default("tiktok"),
+  dashboardId: z.string().min(1).max(60).default("tiktok"),
   name: z.string().min(2, "Informe um nome para a regra.").max(120),
   metric: z.enum(["ROAS", "CPA", "CPC", "SPEND"]),
   operator: z.enum(["LT", "GT"]),
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
         : Number(String(raw.threshold ?? "0").replace(",", "."));
 
     const parsed = createRuleSchema.safeParse({
-      dashboardId: raw.dashboardId === "omegapay" ? "omegapay" : "tiktok",
+      dashboardId: typeof raw.dashboardId === "string" && raw.dashboardId.trim() ? raw.dashboardId.trim() : "tiktok",
       name: String(raw.name ?? "").trim(),
       metric: raw.metric,
       operator: raw.operator,

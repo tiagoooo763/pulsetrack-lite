@@ -23,7 +23,14 @@ export type {
 };
 
 export type GatewayId = "OMEGAPAY" | "NEXUS";
-export type DashboardOperationId = "tiktok" | "omegapay";
+export type DashboardOperationMode = "tiktok" | "omegapay";
+export type DashboardOperationId = string;
+
+export interface DashboardConfigRecord {
+  id: string;
+  name: string;
+  mode: DashboardOperationMode;
+}
 
 export type ExpenseCategory =
   | "META_ADS"
@@ -37,6 +44,7 @@ export type FeeType = "FIXED" | "PERCENTAGE";
 
 export interface TikTokCampaignRecord {
   id: string;
+  dashboardId: string;
   adAccount: string;
   campaignName: string;
   adgroupName: string;
@@ -295,6 +303,7 @@ export async function getDb(): Promise<DbExecutor> {
       await db.execute(`
         CREATE TABLE IF NOT EXISTS tiktok_campaigns (
           id TEXT PRIMARY KEY,
+          dashboard_id TEXT NOT NULL DEFAULT 'tiktok',
           ad_account TEXT NOT NULL DEFAULT 'Conta Principal TikTok',
           campaign_name TEXT NOT NULL,
           adgroup_name TEXT NOT NULL,
@@ -385,6 +394,9 @@ export async function getDb(): Promise<DbExecutor> {
       } catch {}
       try {
         await db.execute(`ALTER TABLE manual_expenses ADD COLUMN campaign_name TEXT`);
+      } catch {}
+      try {
+        await db.execute(`ALTER TABLE tiktok_campaigns ADD COLUMN dashboard_id TEXT NOT NULL DEFAULT 'tiktok'`);
       } catch {}
 
       return db;
@@ -1056,9 +1068,8 @@ function mapExpenseRow(row: Record<string, unknown>): ManualExpenseRecord {
   const gateway: "ALL" | GatewayId =
     rawGw === "NEXUS" ? "NEXUS" : rawGw === "OMEGAPAY" ? "OMEGAPAY" : "ALL";
 
-  const rawDash = String(row.dashboard_id || "").toLowerCase();
-  const dashboardId: DashboardOperationId =
-    rawDash === "tiktok" ? "tiktok" : "omegapay";
+  const rawDash = String(row.dashboard_id || "").trim();
+  const dashboardId: DashboardOperationId = rawDash || "omegapay";
 
   return {
     id: String(row.id),
@@ -1075,7 +1086,7 @@ function mapExpenseRow(row: Record<string, unknown>): ManualExpenseRecord {
 }
 
 // ============================================================
-// TIKTOK CAMPAIGNS (Operação TikTok — 100% isolada da OmegaPay)
+// TIKTOK CAMPAIGNS (Isoladas por dashboardId)
 // ============================================================
 
 export async function listTikTokCampaigns(): Promise<TikTokCampaignRecord[]> {
@@ -1087,6 +1098,7 @@ export async function listTikTokCampaigns(): Promise<TikTokCampaignRecord[]> {
 }
 
 export async function createTikTokCampaign(input: {
+  dashboardId?: string;
   adAccount?: string;
   campaignName: string;
   adgroupName: string;
@@ -1107,16 +1119,18 @@ export async function createTikTokCampaign(input: {
   const db = await getDb();
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
+  const dashboardId = input.dashboardId?.trim() || "tiktok";
 
   await db.execute(
     `INSERT INTO tiktok_campaigns (
-      id, ad_account, campaign_name, adgroup_name, ad_name, product_name,
+      id, dashboard_id, ad_account, campaign_name, adgroup_name, ad_name, product_name,
       utm_source, utm_medium, utm_campaign, utm_content, stat_date,
       spend, impressions, clicks, conversions, attributed_revenue, status,
       created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
+      dashboardId,
       input.adAccount?.trim() || "Conta Principal TikTok",
       input.campaignName.trim(),
       input.adgroupName.trim() || "Conjunto Padrão",
@@ -1164,6 +1178,7 @@ export async function deleteTikTokCampaign(id: string): Promise<void> {
 function mapTikTokRow(row: Record<string, unknown>): TikTokCampaignRecord {
   return {
     id: String(row.id),
+    dashboardId: String(row.dashboard_id || "tiktok").trim() || "tiktok",
     adAccount: String(row.ad_account || "Conta Principal TikTok"),
     campaignName: String(row.campaign_name || ""),
     adgroupName: String(row.adgroup_name || ""),
@@ -1241,10 +1256,10 @@ export async function deleteCustomFee(id: string): Promise<void> {
 }
 
 function mapFeeRow(row: Record<string, unknown>): CustomFeeRecord {
-  const rawDash = String(row.dashboard_id || "omegapay").toLowerCase();
+  const rawDash = String(row.dashboard_id || "omegapay").trim();
   return {
     id: String(row.id),
-    dashboardId: rawDash === "tiktok" ? "tiktok" : "omegapay",
+    dashboardId: rawDash || "omegapay",
     name: String(row.name || ""),
     category: String(row.category || "OTHER") as FeeCategory,
     feeType: String(row.fee_type || "FIXED").toUpperCase() === "PERCENTAGE" ? "PERCENTAGE" : "FIXED",
@@ -1320,10 +1335,10 @@ export async function deleteAutomationRule(id: string): Promise<void> {
 }
 
 function mapRuleRow(row: Record<string, unknown>): AutomationRuleRecord {
-  const rawDash = String(row.dashboard_id || "tiktok").toLowerCase();
+  const rawDash = String(row.dashboard_id || "tiktok").trim();
   return {
     id: String(row.id),
-    dashboardId: rawDash === "omegapay" ? "omegapay" : "tiktok",
+    dashboardId: rawDash || "tiktok",
     name: String(row.name || ""),
     metric: String(row.metric || "ROAS") as AutomationRuleRecord["metric"],
     operator: String(row.operator || "LT") as AutomationRuleRecord["operator"],

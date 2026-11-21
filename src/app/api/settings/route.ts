@@ -244,6 +244,35 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Salvar nomes e modos das abas de Dashboards (ex: renomear ou trocar TikTok/OmegaPay)
+    if (action === "save_dashboards_config") {
+      const rawList = body.dashboards;
+      if (Array.isArray(rawList) && rawList.length > 0 && rawList.length <= 10) {
+        const sanitized = rawList
+          .map((item) => {
+            const o = (item || {}) as Record<string, unknown>;
+            const id = String(o.id || "").trim().slice(0, 60);
+            const name = String(o.name || "").trim().slice(0, 60);
+            const mode = o.mode === "omegapay" ? "omegapay" : "tiktok";
+            return id && name ? { id, name, mode } : null;
+          })
+          .filter(Boolean);
+
+        if (sanitized.length > 0) {
+          await setServerSetting("DASHFY_DASHBOARDS_CONFIG", JSON.stringify(sanitized));
+          return NextResponse.json({
+            ok: true,
+            dashboards: sanitized,
+            message: "Abas atualizadas com sucesso.",
+          });
+        }
+      }
+      return NextResponse.json(
+        { error: "Configuração de abas inválida." },
+        { status: 400 }
+      );
+    }
+
     // Habilitar/Desabilitar sincronização OmegaPay
     if (action === "toggle_omegapay_sync") {
       const enabled = Boolean(body.enabled);

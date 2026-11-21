@@ -6,6 +6,7 @@ import type { AutomationRuleRecord, TikTokCampaignRecord } from "@/lib/db";
 import { SpotlightCard } from "@/components/SpotlightCard";
 
 interface RulesViewProps {
+  dashboardId: string;
   rules: AutomationRuleRecord[];
   campaigns: TikTokCampaignRecord[];
   onRefresh: () => Promise<void>;
@@ -18,7 +19,7 @@ const METRIC_LABELS: Record<AutomationRuleRecord["metric"], string> = {
   SPEND: "Investimento (R$)",
 };
 
-export function RulesView({ rules, campaigns, onRefresh }: RulesViewProps) {
+export function RulesView({ dashboardId, rules, campaigns, onRefresh }: RulesViewProps) {
   const [name, setName] = useState("");
   const [metric, setMetric] = useState<AutomationRuleRecord["metric"]>("ROAS");
   const [operator, setOperator] = useState<AutomationRuleRecord["operator"]>("LT");
@@ -89,7 +90,7 @@ export function RulesView({ rules, campaigns, onRefresh }: RulesViewProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          dashboardId: "tiktok",
+          dashboardId,
           name,
           metric,
           operator,

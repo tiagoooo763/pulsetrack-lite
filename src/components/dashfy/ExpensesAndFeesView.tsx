@@ -4,7 +4,9 @@ import React, { useState } from "react";
 import { CheckCircle2, Percent, Plus, Receipt, Trash2 } from "lucide-react";
 import type {
   CustomFeeRecord,
+  DashboardConfigRecord,
   DashboardOperationId,
+  DashboardOperationMode,
   ExpenseCategory,
   FeeCategory,
   FeeType,
@@ -16,21 +18,27 @@ import { EXPENSE_CATEGORIES, formatBRL, formatDateBR } from "@/lib/format";
 import { SpotlightCard } from "@/components/SpotlightCard";
 
 interface ExpensesViewProps {
+  dashboards: DashboardConfigRecord[];
   dashboardId: DashboardOperationId;
+  dashboardMode: DashboardOperationMode;
+  dashboardName: string;
   expenses: ManualExpenseRecord[];
   campaignSuggestions: string[];
   onRefresh: () => Promise<void>;
 }
 
 export function ExpensesView({
+  dashboards,
   dashboardId,
+  dashboardMode,
+  dashboardName,
   expenses,
   campaignSuggestions,
   onRefresh,
 }: ExpensesViewProps) {
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState<ExpenseCategory>(
-    dashboardId === "tiktok" ? "TIKTOK_ADS" : "META_ADS"
+    dashboardMode === "tiktok" ? "TIKTOK_ADS" : "META_ADS"
   );
   const [amount, setAmount] = useState("");
   const [expenseDate, setExpenseDate] = useState(() => getTodayLocalDate());
@@ -151,13 +159,14 @@ export function ExpensesView({
               <label className="block text-xs text-zinc-300 mb-1">Dashboard Relacionado</label>
               <select
                 value={targetDashboard}
-                onChange={(e) =>
-                  setTargetDashboard(e.target.value as DashboardOperationId)
-                }
+                onChange={(e) => setTargetDashboard(e.target.value)}
                 className="w-full rounded-xl border border-white/10 bg-[#08080a] px-2.5 py-2 text-xs text-white focus:border-white focus:outline-none"
               >
-                <option value="tiktok">Operação TikTok</option>
-                <option value="omegapay">Operação OmegaPay</option>
+                {dashboards.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -232,7 +241,7 @@ export function ExpensesView({
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-sm font-semibold text-white">
-              Despesas — {dashboardId === "tiktok" ? "Operação TikTok" : "Operação OmegaPay"}
+              Despesas — {dashboardName}
             </h3>
             <p className="text-xs text-zinc-400 font-mono">
               Total no período: <strong className="text-white">{formatBRL(totalAmount)}</strong>
@@ -307,7 +316,10 @@ export function ExpensesView({
 }
 
 interface FeesViewProps {
+  dashboards: DashboardConfigRecord[];
   dashboardId: DashboardOperationId;
+  dashboardMode: DashboardOperationMode;
+  dashboardName: string;
   fees: CustomFeeRecord[];
   checkoutFeesTotal?: number;
   revenueBase: number;
@@ -316,7 +328,10 @@ interface FeesViewProps {
 }
 
 export function FeesView({
+  dashboards,
   dashboardId,
+  dashboardMode,
+  dashboardName,
   fees,
   checkoutFeesTotal = 0,
   revenueBase,
@@ -448,13 +463,14 @@ export function FeesView({
               <label className="block text-xs text-zinc-300 mb-1">Dashboard</label>
               <select
                 value={targetDashboard}
-                onChange={(e) =>
-                  setTargetDashboard(e.target.value as DashboardOperationId)
-                }
+                onChange={(e) => setTargetDashboard(e.target.value)}
                 className="w-full rounded-xl border border-white/10 bg-[#08080a] px-2.5 py-2 text-xs text-white focus:border-white focus:outline-none"
               >
-                <option value="tiktok">Operação TikTok</option>
-                <option value="omegapay">Operação OmegaPay</option>
+                {dashboards.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -542,14 +558,14 @@ export function FeesView({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h3 className="text-sm font-semibold text-white">
-              Taxas — {dashboardId === "tiktok" ? "Operação TikTok" : "Operação OmegaPay"}
+              Taxas — {dashboardName}
             </h3>
             <p className="text-xs text-zinc-400">
               Impacto calculado no período sobre base de {formatBRL(revenueBase)}
             </p>
           </div>
           <div className="flex items-center gap-3 text-xs font-mono">
-            {dashboardId === "omegapay" && (
+            {dashboardMode === "omegapay" && (
               <span className="px-2.5 py-1 rounded-lg border border-white/10 bg-[#08080a] text-zinc-300">
                 Checkout OmegaPay: <strong className="text-white">{formatBRL(checkoutFeesTotal)}</strong>
               </span>

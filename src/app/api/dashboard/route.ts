@@ -15,6 +15,7 @@ import {
   listTransfers,
 } from "@/lib/db";
 import { getOmegaPayServerCredentials } from "@/lib/omegapay-client";
+import { DEFAULT_DASHBOARDS, type DashboardConfigRecord } from "@/lib/dashfy-types";
 
 export async function GET() {
   if (!(await isAuthenticated())) {
@@ -40,6 +41,7 @@ export async function GET() {
     profileName,
     profileCompany,
     notifPrefsRaw,
+    dashboardsConfigRaw,
   ] = await Promise.all([
     listTransactions(),
     listTransfers(),
@@ -59,7 +61,29 @@ export async function GET() {
     getServerSetting("USER_PROFILE_NAME"),
     getServerSetting("USER_PROFILE_COMPANY"),
     getServerSetting("NOTIFICATION_PREFS"),
+    getServerSetting("DASHFY_DASHBOARDS_CONFIG"),
   ]);
+
+  let dashboards: DashboardConfigRecord[] = DEFAULT_DASHBOARDS;
+  if (dashboardsConfigRaw) {
+    try {
+      const parsed = JSON.parse(dashboardsConfigRaw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        dashboards = parsed
+          .filter(
+            (d: unknown): d is DashboardConfigRecord =>
+              Boolean(d) &&
+              typeof (d as DashboardConfigRecord).id === "string" &&
+              typeof (d as DashboardConfigRecord).name === "string"
+          )
+          .map((d) => ({
+            id: d.id.trim(),
+            name: d.name.trim() || "Operação",
+            mode: d.mode === "omegapay" ? "omegapay" : "tiktok",
+          }));
+      }
+    } catch {}
+  }
 
   let quickExpensePreset = {
     category: "META_ADS",
@@ -95,6 +119,7 @@ export async function GET() {
   const syncEnabled = omegaSyncEnabledRaw !== "false";
 
   return NextResponse.json({
+    dashboards,
     transactions,
     transfers,
     expenses,

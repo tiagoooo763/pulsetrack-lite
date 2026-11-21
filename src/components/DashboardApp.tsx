@@ -2,16 +2,14 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { gsap } from "gsap";
+import { CheckCircle2, Menu, RefreshCw, Zap } from "lucide-react";
 import {
-  CheckCircle2,
-  Menu,
-  RefreshCw,
-  Zap,
-} from "lucide-react";
-import {
-  DASHBOARD_DEFINITIONS,
+  DEFAULT_DASHBOARDS,
+  getTabsForMode,
   type DashfyDashboardPayload,
+  type DashboardConfigRecord,
   type DashboardOperationId,
+  type DashboardOperationMode,
   type GlobalPageId,
   type NavigationLocation,
   type OperationTabId,
@@ -101,7 +99,6 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Persistência do dashboard e aba ativa no localStorage
   const [location, setLocation] = useState<NavigationLocation>(() => {
     if (typeof window !== "undefined") {
       try {
@@ -180,7 +177,6 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
     fetchDashboard();
   }, [fetchDashboard]);
 
-  // Animação suave com GSAP ao navegar (respeita reduced motion)
   useEffect(() => {
     if (typeof window === "undefined" || !contentRef.current) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -201,15 +197,35 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
     }
   }, [location, filters.period]);
 
+  // Lista dinâmica de abas/dashboards configuráveis (3 por padrão, renomeáveis e livres)
+  const dashboards: DashboardConfigRecord[] = useMemo(() => {
+    if (data?.dashboards && data.dashboards.length > 0) {
+      return data.dashboards;
+    }
+    return DEFAULT_DASHBOARDS;
+  }, [data?.dashboards]);
+
   const activeDashboardId: DashboardOperationId =
-    location.kind === "dashboard" ? location.dashboardId : "omegapay";
+    location.kind === "dashboard"
+      ? location.dashboardId
+      : dashboards[0]?.id || "tiktok";
+
+  const activeDashboard: DashboardConfigRecord = useMemo(() => {
+    return (
+      dashboards.find((d) => d.id === activeDashboardId) ||
+      dashboards[0] ||
+      DEFAULT_DASHBOARDS[0]
+    );
+  }, [dashboards, activeDashboardId]);
+
+  const activeMode: DashboardOperationMode = activeDashboard.mode;
 
   const { startDate, endDate } = useMemo(
     () => getDateRange(filters.period, filters.customFrom, filters.customTo),
     [filters.period, filters.customFrom, filters.customTo]
   );
 
-  // ==================== DADOS ISOLADOS: OPERAÇÃO OMEGAPAY ====================
+  // ==================== DADOS ISOLADOS DA ABA ATIVA ====================
   const omegaTransactions = useMemo(() => {
     if (!data) return [];
     return data.transactions.filter((tx) => {
@@ -232,37 +248,34 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
     });
   }, [data, startDate, endDate]);
 
-  const omegaExpenses = useMemo(() => {
+  const activeExpenses = useMemo(() => {
     if (!data) return [];
     return data.expenses.filter((e) => {
-      if (e.dashboardId !== "omegapay") return false;
+      if (e.dashboardId !== activeDashboard.id) return false;
+      if (
+        activeMode === "tiktok" &&
+        filters.campaign !== "ALL" &&
+        e.campaignName &&
+        e.campaignName !== filters.campaign
+      ) {
+        return false;
+      }
       return isDateInRange(e.expenseDate, startDate, endDate);
     });
-  }, [data, startDate, endDate]);
+  }, [data, activeDashboard.id, activeMode, filters.campaign, startDate, endDate]);
 
-  const omegaFees = useMemo(() => {
+  const activeFees = useMemo(() => {
     if (!data) return [];
     return (data.customFees || []).filter((f) => {
-      if (f.dashboardId !== "omegapay") return false;
+      if (f.dashboardId !== activeDashboard.id) return false;
       return isDateInRange(f.feeDate, startDate, endDate);
     });
-  }, [data, startDate, endDate]);
+  }, [data, activeDashboard.id, startDate, endDate]);
 
-  const omegaMetrics = useMemo(
-    () =>
-      computeOmegaPaySummary(
-        omegaTransactions,
-        omegaTransfers,
-        omegaExpenses,
-        omegaFees
-      ),
-    [omegaTransactions, omegaTransfers, omegaExpenses, omegaFees]
-  );
-
-  // ==================== DADOS ISOLADOS: OPERAÇÃO TIKTOK ====================
-  const tiktokCampaignsFiltered = useMemo(() => {
+  const activeTikTokCampaigns = useMemo(() => {
     if (!data) return [];
     return (data.tiktokCampaigns || []).filter((c) => {
+      if ((c.dashboardId || "tiktok") !== activeDashboard.id) return false;
       if (!isDateInRange(c.statDate, startDate, endDate)) return false;
       if (filters.adAccount !== "ALL" && c.adAccount !== filters.adAccount) return false;
       if (filters.campaign !== "ALL" && c.campaignName !== filters.campaign) return false;
@@ -275,6 +288,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
     });
   }, [
     data,
+    activeDashboard.id,
     startDate,
     endDate,
     filters.adAccount,
@@ -284,31 +298,32 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
     filters.status,
   ]);
 
-  const tiktokExpenses = useMemo(() => {
+  const activeRules = useMemo(() => {
     if (!data) return [];
-    return data.expenses.filter((e) => {
-      if (e.dashboardId !== "tiktok") return false;
-      if (filters.campaign !== "ALL" && e.campaignName && e.campaignName !== filters.campaign) {
-        return false;
-      }
-      return isDateInRange(e.expenseDate, startDate, endDate);
-    });
-  }, [data, startDate, endDate, filters.campaign]);
+    return (data.automationRules || []).filter(
+      (r) => r.dashboardId === activeDashboard.id
+    );
+  }, [data, activeDashboard.id]);
 
-  const tiktokFees = useMemo(() => {
-    if (!data) return [];
-    return (data.customFees || []).filter((f) => {
-      if (f.dashboardId !== "tiktok") return false;
-      return isDateInRange(f.feeDate, startDate, endDate);
-    });
-  }, [data, startDate, endDate]);
+  const activeMetrics = useMemo(() => {
+    if (activeMode === "tiktok") {
+      return computeTikTokSummary(activeTikTokCampaigns, activeExpenses, activeFees);
+    }
+    return computeOmegaPaySummary(
+      omegaTransactions,
+      omegaTransfers,
+      activeExpenses,
+      activeFees
+    );
+  }, [
+    activeMode,
+    activeTikTokCampaigns,
+    omegaTransactions,
+    omegaTransfers,
+    activeExpenses,
+    activeFees,
+  ]);
 
-  const tiktokMetrics = useMemo(
-    () => computeTikTokSummary(tiktokCampaignsFiltered, tiktokExpenses, tiktokFees),
-    [tiktokCampaignsFiltered, tiktokExpenses, tiktokFees]
-  );
-
-  // Opções dinâmicas para os selects do filtro horizontal
   const filterOptions = useMemo(() => {
     if (!data) {
       return {
@@ -319,8 +334,10 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
         platforms: [],
       };
     }
-    if (activeDashboardId === "tiktok") {
-      const all = data.tiktokCampaigns || [];
+    if (activeMode === "tiktok") {
+      const all = (data.tiktokCampaigns || []).filter(
+        (c) => (c.dashboardId || "tiktok") === activeDashboard.id
+      );
       return {
         adAccounts: Array.from(new Set(all.map((c) => c.adAccount).filter(Boolean))),
         campaigns: Array.from(new Set(all.map((c) => c.campaignName).filter(Boolean))),
@@ -337,7 +354,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
       campaigns: Array.from(
         new Set(
           data.expenses
-            .filter((e) => e.dashboardId === "omegapay" && e.campaignName)
+            .filter((e) => e.dashboardId === activeDashboard.id && e.campaignName)
             .map((e) => e.campaignName as string)
         )
       ),
@@ -345,7 +362,39 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
       products: Array.from(new Set(omegaTx.map((t) => t.productName).filter(Boolean))),
       platforms: ["OmegaPay v1"],
     };
-  }, [data, activeDashboardId]);
+  }, [data, activeMode, activeDashboard.id]);
+
+  async function handleUpdateDashboardConfig(
+    dashboardId: string,
+    updates: { name: string; mode: DashboardOperationMode }
+  ) {
+    const nextDashboards = dashboards.map((d) =>
+      d.id === dashboardId ? { ...d, name: updates.name, mode: updates.mode } : d
+    );
+
+    const res = await fetch("/api/settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "save_dashboards_config",
+        dashboards: nextDashboards,
+      }),
+    });
+
+    if (res.ok) {
+      // Se mudou o modo da aba ativa e o submenu atual não existe no novo modo, volta para Resumo
+      if (location.kind === "dashboard" && location.dashboardId === dashboardId) {
+        const validTabs = getTabsForMode(updates.mode);
+        if (!validTabs.some((t) => t.id === location.tabId)) {
+          setLocation({ kind: "dashboard", dashboardId, tabId: "resumo" });
+        }
+      }
+      showToast("success", `Aba "${updates.name}" atualizada com sucesso.`);
+      await fetchDashboard(false);
+    } else {
+      showToast("error", "Não foi possível salvar a alteração da aba.");
+    }
+  }
 
   async function handleSyncOmegaBalance() {
     setSyncingBalance(true);
@@ -380,17 +429,15 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
           title: data.quickExpensePreset.title,
           amount: data.quickExpensePreset.amount,
           expenseDate: getTodayLocalDate(),
-          dashboardId: activeDashboardId,
-          gateway: activeDashboardId === "omegapay" ? "OMEGAPAY" : "ALL",
+          dashboardId: activeDashboard.id,
+          gateway: activeMode === "omegapay" ? "OMEGAPAY" : "ALL",
         }),
       });
       const json = await res.json();
       if (res.ok && json.ok) {
         showToast(
           "success",
-          `+ ${formatBRL(data.quickExpensePreset.amount)} (${data.quickExpensePreset.title}) lançado na ${
-            activeDashboardId === "tiktok" ? "Operação TikTok" : "Operação OmegaPay"
-          }.`
+          `+ ${formatBRL(data.quickExpensePreset.amount)} (${data.quickExpensePreset.title}) lançado em ${activeDashboard.name}.`
         );
         await fetchDashboard();
       } else {
@@ -410,11 +457,10 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
     return <DashboardSkeleton />;
   }
 
-  // Título e subtítulo do cabeçalho superior
-  const activeDashDef = DASHBOARD_DEFINITIONS.find((d) => d.id === activeDashboardId)!;
+  const activeTabs = getTabsForMode(activeMode);
   const activeTabDef =
     location.kind === "dashboard"
-      ? activeDashDef.tabs.find((t) => t.id === location.tabId)
+      ? activeTabs.find((t) => t.id === location.tabId)
       : null;
 
   const pageTitle =
@@ -436,6 +482,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
     <div className="min-h-screen bg-[#050507] text-zinc-100 flex">
       {/* SIDEBAR ESQUERDA FIXA E RECOLHÍVEL */}
       <Sidebar
+        dashboards={dashboards}
         location={location}
         collapsed={sidebarCollapsed}
         mobileOpen={mobileMenuOpen}
@@ -452,6 +499,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
             }));
           }
         }}
+        onUpdateDashboardConfig={handleUpdateDashboardConfig}
         onSelectGlobalPage={(pageId: GlobalPageId) =>
           setLocation({ kind: "global", pageId })
         }
@@ -484,7 +532,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                 {location.kind === "dashboard" ? (
                   <>
                     <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium border border-white/10 bg-[#0c0c0e] text-zinc-300">
-                      {activeDashDef.name}
+                      {activeDashboard.name}
                     </span>
                     <span className="text-zinc-600">/</span>
                   </>
@@ -507,7 +555,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                 type="button"
                 onClick={handleQuickAddExpense}
                 disabled={quickAdding}
-                title={`Lançar + ${formatBRL(quickPreset.amount)} (${quickPreset.title}) em ${activeDashDef.name}`}
+                title={`Lançar + ${formatBRL(quickPreset.amount)} (${quickPreset.title}) em ${activeDashboard.name}`}
                 className="btn-pressable hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/15 text-xs font-semibold text-amber-300 disabled:opacity-50"
               >
                 <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
@@ -574,8 +622,9 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
 
           {location.kind === "dashboard" && location.tabId === "resumo" && (
             <SummaryView
-              dashboardId={location.dashboardId}
-              metrics={location.dashboardId === "tiktok" ? tiktokMetrics : omegaMetrics}
+              dashboardMode={activeMode}
+              dashboardName={activeDashboard.name}
+              metrics={activeMetrics}
               filters={filters}
               filterOptions={filterOptions}
               onFiltersChange={setFilters}
@@ -583,57 +632,58 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
               onNavigateTab={(tabId: OperationTabId) =>
                 setLocation({
                   kind: "dashboard",
-                  dashboardId: location.dashboardId,
+                  dashboardId: activeDashboard.id,
                   tabId,
                 })
               }
               recentTransactions={omegaTransactions}
-              tiktokCampaigns={tiktokCampaignsFiltered}
+              tiktokCampaigns={activeTikTokCampaigns}
               omegaBalance={data.balances?.OMEGAPAY ?? data.balance}
             />
           )}
 
           {location.kind === "dashboard" &&
-            location.dashboardId === "tiktok" &&
+            activeMode === "tiktok" &&
             location.tabId === "tiktok_ads" && (
               <TikTokAdsView
-                campaigns={tiktokCampaignsFiltered}
+                dashboardId={activeDashboard.id}
+                dashboardName={activeDashboard.name}
+                campaigns={activeTikTokCampaigns}
                 onRefresh={() => fetchDashboard(false)}
               />
             )}
 
           {location.kind === "dashboard" &&
-            location.dashboardId === "tiktok" &&
+            activeMode === "tiktok" &&
             location.tabId === "utms" && (
-              <UtmsView campaigns={tiktokCampaignsFiltered} />
+              <UtmsView campaigns={activeTikTokCampaigns} />
             )}
 
           {location.kind === "dashboard" &&
-            location.dashboardId === "tiktok" &&
+            activeMode === "tiktok" &&
             location.tabId === "regras" && (
               <RulesView
-                rules={(data.automationRules || []).filter(
-                  (r) => r.dashboardId === "tiktok"
-                )}
-                campaigns={tiktokCampaignsFiltered}
+                dashboardId={activeDashboard.id}
+                rules={activeRules}
+                campaigns={activeTikTokCampaigns}
                 onRefresh={() => fetchDashboard(false)}
               />
             )}
 
           {location.kind === "dashboard" &&
-            location.dashboardId === "omegapay" &&
+            activeMode === "omegapay" &&
             location.tabId === "vendas" && (
               <OmegaPaySalesView transactions={omegaTransactions} />
             )}
 
           {location.kind === "dashboard" &&
-            location.dashboardId === "omegapay" &&
+            activeMode === "omegapay" &&
             location.tabId === "recebimentos" && (
               <OmegaPayReceivablesView transfers={omegaTransfers} />
             )}
 
           {location.kind === "dashboard" &&
-            location.dashboardId === "omegapay" &&
+            activeMode === "omegapay" &&
             location.tabId === "saldo" && (
               <OmegaPayBalanceView
                 balance={data.balances?.OMEGAPAY ?? data.balance}
@@ -645,8 +695,11 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
 
           {location.kind === "dashboard" && location.tabId === "despesas" && (
             <ExpensesView
-              dashboardId={location.dashboardId}
-              expenses={location.dashboardId === "tiktok" ? tiktokExpenses : omegaExpenses}
+              dashboards={dashboards}
+              dashboardId={activeDashboard.id}
+              dashboardMode={activeMode}
+              dashboardName={activeDashboard.name}
+              expenses={activeExpenses}
               campaignSuggestions={filterOptions.campaigns}
               onRefresh={() => fetchDashboard(false)}
             />
@@ -654,18 +707,17 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
 
           {location.kind === "dashboard" && location.tabId === "taxas" && (
             <FeesView
-              dashboardId={location.dashboardId}
-              fees={location.dashboardId === "tiktok" ? tiktokFees : omegaFees}
+              dashboards={dashboards}
+              dashboardId={activeDashboard.id}
+              dashboardMode={activeMode}
+              dashboardName={activeDashboard.name}
+              fees={activeFees}
               checkoutFeesTotal={
-                location.dashboardId === "omegapay"
-                  ? omegaMetrics.checkoutOrPlatformFees
+                activeMode === "omegapay"
+                  ? activeMetrics.checkoutOrPlatformFees
                   : 0
               }
-              revenueBase={
-                location.dashboardId === "tiktok"
-                  ? tiktokMetrics.grossRevenue
-                  : omegaMetrics.grossRevenue
-              }
+              revenueBase={activeMetrics.grossRevenue}
               campaignSuggestions={filterOptions.campaigns}
               onRefresh={() => fetchDashboard(false)}
             />
@@ -673,13 +725,13 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
 
           {location.kind === "dashboard" && location.tabId === "integracoes" && (
             <IntegrationsView
-              dashboardId={location.dashboardId}
+              dashboardMode={activeMode}
               integrationStatus={data.integrationStatus}
               onRefresh={() => fetchDashboard(false)}
               onNavigateTab={(tabId) =>
                 setLocation({
                   kind: "dashboard",
-                  dashboardId: location.dashboardId,
+                  dashboardId: activeDashboard.id,
                   tabId,
                 })
               }
@@ -690,35 +742,38 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
 
           {location.kind === "dashboard" && location.tabId === "relatorios" && (
             <ReportsView
-              dashboardId={location.dashboardId}
-              metrics={location.dashboardId === "tiktok" ? tiktokMetrics : omegaMetrics}
+              dashboardMode={activeMode}
+              dashboardName={activeDashboard.name}
+              metrics={activeMetrics}
               transactions={omegaTransactions}
-              tiktokCampaigns={tiktokCampaignsFiltered}
+              tiktokCampaigns={activeTikTokCampaigns}
             />
           )}
 
           {location.kind === "dashboard" && location.tabId === "pedidos" && (
             <OrdersView
-              dashboardId={location.dashboardId}
+              dashboardMode={activeMode}
+              dashboardName={activeDashboard.name}
               transactions={omegaTransactions}
-              tiktokCampaigns={tiktokCampaignsFiltered}
+              tiktokCampaigns={activeTikTokCampaigns}
             />
           )}
 
           {location.kind === "dashboard" && location.tabId === "eventos" && (
             <EventsView
-              dashboardId={location.dashboardId}
+              dashboardMode={activeMode}
+              dashboardName={activeDashboard.name}
               webhooks={data.recentWebhooks}
-              tiktokCampaigns={tiktokCampaignsFiltered}
+              tiktokCampaigns={activeTikTokCampaigns}
             />
           )}
 
           {location.kind === "dashboard" && location.tabId === "notificacoes" && (
             <NotificationsView
-              dashboardId={location.dashboardId}
+              dashboardMode={activeMode}
               integrationStatus={data.integrationStatus}
               transactions={omegaTransactions}
-              rules={data.automationRules || []}
+              rules={activeRules}
               prefs={data.profile.notificationPrefs}
               onRefresh={() => fetchDashboard(false)}
             />

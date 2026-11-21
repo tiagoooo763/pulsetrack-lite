@@ -2,7 +2,9 @@ import type {
   AutomationRuleRecord,
   BalanceSnapshotRecord,
   CustomFeeRecord,
+  DashboardConfigRecord,
   DashboardOperationId,
+  DashboardOperationMode,
   ExpenseCategory,
   ManualExpenseRecord,
   TikTokCampaignRecord,
@@ -11,7 +13,11 @@ import type {
   WebhookEventRecord,
 } from "./db";
 
-export type { DashboardOperationId };
+export type {
+  DashboardConfigRecord,
+  DashboardOperationId,
+  DashboardOperationMode,
+};
 
 export type PeriodPreset = "today" | "7d" | "30d" | "month" | "all" | "custom";
 
@@ -89,6 +95,7 @@ export interface IntegrationStatusPayload {
 }
 
 export interface DashfyDashboardPayload {
+  dashboards: DashboardConfigRecord[];
   transactions: TransactionRecord[];
   transfers: TransferRecord[];
   expenses: ManualExpenseRecord[];
@@ -131,59 +138,45 @@ export interface TabMenuItem {
     | "wallet";
 }
 
-export interface DashboardDefinition {
-  id: DashboardOperationId;
-  name: string;
-  shortName: string;
-  description: string;
-  accentColor: string;
-  tabs: TabMenuItem[];
+export const TIKTOK_MODE_TABS: TabMenuItem[] = [
+  { id: "resumo", label: "Resumo", iconName: "layout" },
+  { id: "tiktok_ads", label: "TikTok Ads", iconName: "megaphone" },
+  { id: "utms", label: "UTMs", iconName: "link" },
+  { id: "integracoes", label: "Integrações", iconName: "plug" },
+  { id: "regras", label: "Regras", iconName: "sliders" },
+  { id: "taxas", label: "Taxas", iconName: "percent" },
+  { id: "despesas", label: "Despesas", iconName: "receipt" },
+  { id: "relatorios", label: "Relatórios", iconName: "file" },
+  { id: "pedidos", label: "Pedidos", iconName: "shopping" },
+  { id: "eventos", label: "Eventos", iconName: "activity" },
+  { id: "notificacoes", label: "Notificações", iconName: "bell" },
+];
+
+export const OMEGAPAY_MODE_TABS: TabMenuItem[] = [
+  { id: "resumo", label: "Resumo", iconName: "layout" },
+  { id: "vendas", label: "Vendas", iconName: "dollar" },
+  { id: "recebimentos", label: "Recebimentos", iconName: "landmark" },
+  { id: "saldo", label: "Saldo", iconName: "wallet" },
+  { id: "taxas", label: "Taxas", iconName: "percent" },
+  { id: "despesas", label: "Despesas", iconName: "receipt" },
+  { id: "integracoes", label: "Integrações", iconName: "plug" },
+  { id: "relatorios", label: "Relatórios", iconName: "file" },
+  { id: "pedidos", label: "Pedidos", iconName: "shopping" },
+  { id: "eventos", label: "Eventos", iconName: "activity" },
+  { id: "notificacoes", label: "Notificações", iconName: "bell" },
+];
+
+export function getTabsForMode(mode: DashboardOperationMode): TabMenuItem[] {
+  return mode === "tiktok" ? TIKTOK_MODE_TABS : OMEGAPAY_MODE_TABS;
 }
 
 /**
- * Estrutura extensível de dashboards e submenus laterais no estilo UTMify.
- * Para adicionar novas operações no futuro (ex: Meta Ads, Google Ads), basta incluir uma entrada aqui.
+ * 3 abas padrão totalmente renomeáveis e configuráveis entre TikTok ou OmegaPay.
  */
-export const DASHBOARD_DEFINITIONS: DashboardDefinition[] = [
-  {
-    id: "tiktok",
-    name: "Operação TikTok",
-    shortName: "TikTok",
-    description: "Performance de campanhas, conjuntos, anúncios e UTMs",
-    accentColor: "#38bdf8",
-    tabs: [
-      { id: "resumo", label: "Resumo", iconName: "layout" },
-      { id: "tiktok_ads", label: "TikTok Ads", iconName: "megaphone" },
-      { id: "utms", label: "UTMs", iconName: "link" },
-      { id: "integracoes", label: "Integrações", iconName: "plug" },
-      { id: "regras", label: "Regras", iconName: "sliders" },
-      { id: "taxas", label: "Taxas", iconName: "percent" },
-      { id: "despesas", label: "Despesas", iconName: "receipt" },
-      { id: "relatorios", label: "Relatórios", iconName: "file" },
-      { id: "pedidos", label: "Pedidos", iconName: "shopping" },
-      { id: "eventos", label: "Eventos", iconName: "activity" },
-      { id: "notificacoes", label: "Notificações", iconName: "bell" },
-    ],
-  },
-  {
-    id: "omegapay",
-    name: "Operação OmegaPay",
-    shortName: "OmegaPay",
-    description: "Gateway de pagamentos, vendas, taxas, recebimentos e saldo",
-    accentColor: "#1a86ff",
-    tabs: [
-      { id: "resumo", label: "Resumo", iconName: "layout" },
-      { id: "vendas", label: "Vendas", iconName: "dollar" },
-      { id: "recebimentos", label: "Recebimentos", iconName: "landmark" },
-      { id: "saldo", label: "Saldo", iconName: "wallet" },
-      { id: "taxas", label: "Taxas", iconName: "percent" },
-      { id: "integracoes", label: "Integrações", iconName: "plug" },
-      { id: "relatorios", label: "Relatórios", iconName: "file" },
-      { id: "pedidos", label: "Pedidos", iconName: "shopping" },
-      { id: "eventos", label: "Eventos", iconName: "activity" },
-      { id: "notificacoes", label: "Notificações", iconName: "bell" },
-    ],
-  },
+export const DEFAULT_DASHBOARDS: DashboardConfigRecord[] = [
+  { id: "tiktok", name: "Operação TikTok", mode: "tiktok" },
+  { id: "omegapay", name: "Operação OmegaPay", mode: "omegapay" },
+  { id: "operacao_3", name: "Operação 3", mode: "tiktok" },
 ];
 
 export const FEE_CATEGORIES: Record<

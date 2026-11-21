@@ -14,7 +14,7 @@ import {
   Upload,
 } from "lucide-react";
 import type {
-  DashboardOperationId,
+  DashboardOperationMode,
   IntegrationStatusPayload,
   OperationTabId,
 } from "@/lib/dashfy-types";
@@ -23,7 +23,7 @@ import { formatDateTimeBR } from "@/lib/format";
 import { SpotlightCard } from "@/components/SpotlightCard";
 
 interface IntegrationsViewProps {
-  dashboardId: DashboardOperationId;
+  dashboardMode: DashboardOperationMode;
   integrationStatus: IntegrationStatusPayload;
   onRefresh: () => Promise<void>;
   onNavigateTab: (tabId: OperationTabId) => void;
@@ -32,7 +32,7 @@ interface IntegrationsViewProps {
 }
 
 export function IntegrationsView({
-  dashboardId,
+  dashboardMode,
   integrationStatus,
   onRefresh,
   onNavigateTab,
@@ -191,7 +191,7 @@ export function IntegrationsView({
   }
 
   // ==================== INTEGRAÇÕES DA OPERAÇÃO TIKTOK ====================
-  if (dashboardId === "tiktok") {
+  if (dashboardMode === "tiktok") {
     return (
       <div className="space-y-5">
         <SpotlightCard className="p-5 sm:p-6 bento-card space-y-4">

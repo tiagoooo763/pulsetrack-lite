@@ -3,13 +3,13 @@
 import React, { useState } from "react";
 import { Calendar, Filter, RotateCcw, SlidersHorizontal } from "lucide-react";
 import type {
-  DashboardOperationId,
+  DashboardOperationMode,
   PeriodPreset,
   SummaryFilterState,
 } from "@/lib/dashfy-types";
 
 interface SummaryFiltersBarProps {
-  dashboardId: DashboardOperationId;
+  dashboardMode: DashboardOperationMode;
   filters: SummaryFilterState;
   onChange: (next: SummaryFilterState) => void;
   onReset: () => void;
@@ -32,7 +32,7 @@ const PERIOD_PRESETS: Array<{ id: PeriodPreset; label: string }> = [
 ];
 
 export function SummaryFiltersBar({
-  dashboardId,
+  dashboardMode,
   filters,
   onChange,
   onReset,
@@ -212,7 +212,7 @@ export function SummaryFiltersBar({
             className="w-full rounded-xl border border-white/10 bg-[#050507] px-2.5 py-1.5 text-xs text-white focus:border-white focus:outline-none"
           >
             <option value="ALL">
-              {dashboardId === "tiktok" ? "TikTok Ads" : "OmegaPay"}
+              {dashboardMode === "tiktok" ? "TikTok Ads" : "OmegaPay"}
             </option>
             {options.platforms.map((pl) => (
               <option key={pl} value={pl}>
@@ -239,7 +239,7 @@ export function SummaryFiltersBar({
               className="w-full rounded-xl border border-white/10 bg-[#050507] px-2.5 py-1.5 text-xs text-white focus:border-white focus:outline-none"
             >
               <option value="ALL">Todos os status</option>
-              {dashboardId === "tiktok" ? (
+              {dashboardMode === "tiktok" ? (
                 <>
                   <option value="ACTIVE">Ativas</option>
                   <option value="PAUSED">Pausadas</option>
@@ -256,7 +256,7 @@ export function SummaryFiltersBar({
             </select>
           </div>
 
-          {dashboardId === "omegapay" && (
+          {dashboardMode === "omegapay" && (
             <div>
               <label className="block text-[10px] font-medium uppercase tracking-wider text-zinc-500 mb-1">
                 Método de Pagamento

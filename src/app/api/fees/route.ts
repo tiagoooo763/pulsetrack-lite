@@ -11,7 +11,7 @@ import {
 } from "@/lib/db";
 
 const createFeeSchema = z.object({
-  dashboardId: z.enum(["tiktok", "omegapay"]).default("omegapay"),
+  dashboardId: z.string().min(1).max(60).default("omegapay"),
   name: z.string().min(1, "Informe o nome da taxa.").max(120),
   category: z.enum(["GATEWAY", "TAX", "PLATFORM", "OTHER"]).default("GATEWAY"),
   feeType: z.enum(["FIXED", "PERCENTAGE"]).default("FIXED"),
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     }
 
     const parsed = createFeeSchema.safeParse({
-      dashboardId: raw.dashboardId === "tiktok" ? "tiktok" : "omegapay",
+      dashboardId: typeof raw.dashboardId === "string" && raw.dashboardId.trim() ? raw.dashboardId.trim() : "omegapay",
       name: String(raw.name ?? "").trim(),
       category: raw.category || "GATEWAY",
       feeType: raw.feeType === "PERCENTAGE" ? "PERCENTAGE" : "FIXED",

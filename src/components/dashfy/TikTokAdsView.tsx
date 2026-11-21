@@ -24,6 +24,8 @@ import { formatBRL, formatDateBR } from "@/lib/format";
 import { SpotlightCard } from "@/components/SpotlightCard";
 
 interface TikTokAdsViewProps {
+  dashboardId: string;
+  dashboardName: string;
   campaigns: TikTokCampaignRecord[];
   onRefresh: () => Promise<void>;
 }
@@ -45,7 +47,12 @@ interface AggregatedRow {
   statDate?: string;
 }
 
-export function TikTokAdsView({ campaigns, onRefresh }: TikTokAdsViewProps) {
+export function TikTokAdsView({
+  dashboardId,
+  dashboardName,
+  campaigns,
+  onRefresh,
+}: TikTokAdsViewProps) {
   const [level, setLevel] = useState<HierarchyLevel>("campaigns");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "ACTIVE" | "PAUSED">("ALL");
@@ -231,13 +238,13 @@ export function TikTokAdsView({ campaigns, onRefresh }: TikTokAdsViewProps) {
       const res = await fetch("/api/tiktok/campaigns", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rows: csvPreview }),
+        body: JSON.stringify({ dashboardId, rows: csvPreview }),
       });
       const json = await res.json();
       if (!res.ok || !json.ok) {
         setNotice(json.error || "Falha ao importar CSV.");
       } else {
-        setNotice(`${json.importedCount} registros importados para a Operação TikTok.`);
+        setNotice(`${json.importedCount} registros importados para ${dashboardName}.`);
         setCsvPreview(null);
         await onRefresh();
       }
@@ -261,6 +268,7 @@ export function TikTokAdsView({ campaigns, onRefresh }: TikTokAdsViewProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          dashboardId,
           adAccount: formAdAccount,
           campaignName: formCampaign,
           adgroupName: formAdgroup || "Conjunto Principal",

@@ -18,7 +18,7 @@ import type {
   WebhookEventRecord,
 } from "@/lib/db";
 import type {
-  DashboardOperationId,
+  DashboardOperationMode,
   IntegrationStatusPayload,
   NotificationPrefs,
 } from "@/lib/dashfy-types";
@@ -34,19 +34,21 @@ import { SpotlightCard } from "@/components/SpotlightCard";
 
 /* ==================== 1. RELATÓRIOS ==================== */
 interface ReportsViewProps {
-  dashboardId: DashboardOperationId;
+  dashboardMode: DashboardOperationMode;
+  dashboardName: string;
   metrics: OperationSummaryMetrics;
   transactions: TransactionRecord[];
   tiktokCampaigns: TikTokCampaignRecord[];
 }
 
 export function ReportsView({
-  dashboardId,
+  dashboardMode,
+  dashboardName,
   metrics,
   transactions,
   tiktokCampaigns,
 }: ReportsViewProps) {
-  const isTikTok = dashboardId === "tiktok";
+  const isTikTok = dashboardMode === "tiktok";
 
   function handleExportCsv() {
     if (isTikTok) {
@@ -119,7 +121,7 @@ export function ReportsView({
           </div>
           <div>
             <h3 className="text-sm font-semibold text-white">
-              Relatório Executivo — {isTikTok ? "Operação TikTok" : "Operação OmegaPay"}
+              Relatório Executivo — {dashboardName}
             </h3>
             <p className="text-xs text-zinc-400 mt-0.5">
               Exporte os dados filtrados da operação atual em CSV pronto para Excel ou Google Sheets.
@@ -235,17 +237,19 @@ export function ReportsView({
 
 /* ==================== 2. PEDIDOS ==================== */
 interface OrdersViewProps {
-  dashboardId: DashboardOperationId;
+  dashboardMode: DashboardOperationMode;
+  dashboardName: string;
   transactions: TransactionRecord[];
   tiktokCampaigns: TikTokCampaignRecord[];
 }
 
 export function OrdersView({
-  dashboardId,
+  dashboardMode,
+  dashboardName,
   transactions,
   tiktokCampaigns,
 }: OrdersViewProps) {
-  const isTikTok = dashboardId === "tiktok";
+  const isTikTok = dashboardMode === "tiktok";
   const tiktokWithOrders = tiktokCampaigns.filter((c) => c.conversions > 0);
 
   return (
@@ -256,7 +260,7 @@ export function OrdersView({
         </div>
         <div>
           <h3 className="text-sm font-semibold text-white">
-            Pedidos — {isTikTok ? "Conversões Atribuídas TikTok" : "Pedidos OmegaPay"}
+            Pedidos — {dashboardName}
           </h3>
           <p className="text-xs text-zinc-400">
             {isTikTok
@@ -365,17 +369,19 @@ export function OrdersView({
 
 /* ==================== 3. EVENTOS ==================== */
 interface EventsViewProps {
-  dashboardId: DashboardOperationId;
+  dashboardMode: DashboardOperationMode;
+  dashboardName: string;
   webhooks: WebhookEventRecord[];
   tiktokCampaigns: TikTokCampaignRecord[];
 }
 
 export function EventsView({
-  dashboardId,
+  dashboardMode,
+  dashboardName,
   webhooks,
   tiktokCampaigns,
 }: EventsViewProps) {
-  const isTikTok = dashboardId === "tiktok";
+  const isTikTok = dashboardMode === "tiktok";
   const omegaWebhooks = webhooks.filter((w) => (w.gateway || "OMEGAPAY") === "OMEGAPAY");
 
   return (
@@ -386,7 +392,7 @@ export function EventsView({
         </div>
         <div>
           <h3 className="text-sm font-semibold text-white">
-            Log de Eventos — {isTikTok ? "Operação TikTok" : "Webhooks OmegaPay"}
+            Log de Eventos — {dashboardName}
           </h3>
           <p className="text-xs text-zinc-400">
             {isTikTok
@@ -462,7 +468,7 @@ export function EventsView({
 
 /* ==================== 4. NOTIFICAÇÕES ==================== */
 interface NotificationsViewProps {
-  dashboardId: DashboardOperationId;
+  dashboardMode: DashboardOperationMode;
   integrationStatus: IntegrationStatusPayload;
   transactions: TransactionRecord[];
   rules: AutomationRuleRecord[];
@@ -471,7 +477,7 @@ interface NotificationsViewProps {
 }
 
 export function NotificationsView({
-  dashboardId,
+  dashboardMode,
   integrationStatus,
   transactions,
   rules,
@@ -482,7 +488,7 @@ export function NotificationsView({
   const [saving, setSaving] = useState(false);
   const [savedNotice, setSavedNotice] = useState(false);
 
-  const isTikTok = dashboardId === "tiktok";
+  const isTikTok = dashboardMode === "tiktok";
   const refunds = transactions.filter(
     (t) => t.status === "REFUNDED" || t.status === "CHARGED_BACK"
   );

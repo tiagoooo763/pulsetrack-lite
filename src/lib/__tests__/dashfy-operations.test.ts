@@ -33,6 +33,7 @@ describe("Dashfy — Separação de Operações (TikTok vs OmegaPay) & CSV Parse
     const campaigns: TikTokCampaignRecord[] = [
       {
         id: "c1",
+        dashboardId: "tiktok",
         adAccount: "Conta 01",
         campaignName: "Campanha Escala",
         adgroupName: "Conjunto 1",

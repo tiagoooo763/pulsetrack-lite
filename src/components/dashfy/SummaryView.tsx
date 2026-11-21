@@ -21,7 +21,7 @@ import type {
   TransactionRecord,
 } from "@/lib/db";
 import type {
-  DashboardOperationId,
+  DashboardOperationMode,
   OperationTabId,
   SummaryFilterState,
 } from "@/lib/dashfy-types";
@@ -35,7 +35,8 @@ import { SpotlightCard } from "@/components/SpotlightCard";
 import { SummaryFiltersBar } from "./SummaryFiltersBar";
 
 interface SummaryViewProps {
-  dashboardId: DashboardOperationId;
+  dashboardMode: DashboardOperationMode;
+  dashboardName: string;
   metrics: OperationSummaryMetrics;
   filters: SummaryFilterState;
   filterOptions: {
@@ -54,7 +55,8 @@ interface SummaryViewProps {
 }
 
 export function SummaryView({
-  dashboardId,
+  dashboardMode,
+  dashboardName,
   metrics,
   filters,
   filterOptions,
@@ -66,7 +68,7 @@ export function SummaryView({
   omegaBalance,
 }: SummaryViewProps) {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
-  const isTikTok = dashboardId === "tiktok";
+  const isTikTok = dashboardMode === "tiktok";
 
   const maxChartVal = Math.max(
     1,
@@ -103,7 +105,7 @@ export function SummaryView({
   return (
     <div className="space-y-4">
       <SummaryFiltersBar
-        dashboardId={dashboardId}
+        dashboardMode={dashboardMode}
         filters={filters}
         onChange={onFiltersChange}
         onReset={onFiltersReset}
@@ -114,7 +116,7 @@ export function SummaryView({
         <div className="rounded-xl border border-white/10 bg-[#0c0c0e] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h3 className="text-sm font-semibold text-white">
-              Operação TikTok pronta para receber dados
+              {dashboardName} pronta para receber dados
             </h3>
             <p className="text-xs text-zinc-400 mt-0.5">
               Importe seu relatório CSV do TikTok Ads Manager ou cadastre campanhas manualmente. Estes dados ficam 100% separados da OmegaPay.
@@ -384,7 +386,7 @@ export function SummaryView({
             <div>
               <h3 className="text-sm font-semibold text-white tracking-tight flex items-center gap-2">
                 <BarChart3 className="w-4 h-4 text-zinc-300" />
-                <span>Desempenho Diário — {isTikTok ? "Operação TikTok" : "Operação OmegaPay"}</span>
+                <span>Desempenho Diário — {dashboardName}</span>
               </h3>
               <p className="text-xs text-zinc-400 mt-0.5">
                 Evolução de {isTikTok ? "receita atribuída" : "faturamento"}, despesas e lucro
@@ -558,8 +560,8 @@ export function SummaryView({
           <div>
             <h3 className="text-sm font-semibold text-white tracking-tight">
               {isTikTok
-                ? "Resumo de Campanhas — Operação TikTok"
-                : "Últimas Transações — Operação OmegaPay"}
+                ? `Resumo de Campanhas — ${dashboardName}`
+                : `Últimas Transações — ${dashboardName}`}
             </h3>
             <p className="text-xs text-zinc-400">
               {isTikTok
