@@ -244,6 +244,50 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Habilitar/Desabilitar sincronização OmegaPay
+    if (action === "toggle_omegapay_sync") {
+      const enabled = Boolean(body.enabled);
+      await setServerSetting("OMEGAPAY_SYNC_ENABLED", enabled ? "true" : "false");
+      return NextResponse.json({
+        ok: true,
+        syncEnabled: enabled,
+        message: enabled
+          ? "Sincronização com a OmegaPay habilitada."
+          : "Sincronização com a OmegaPay pausada.",
+      });
+    }
+
+    // Atualizar perfil do usuário (Minha Conta)
+    if (action === "update_profile") {
+      const displayName =
+        typeof body.displayName === "string" ? body.displayName.trim().slice(0, 80) : "";
+      const companyName =
+        typeof body.companyName === "string" ? body.companyName.trim().slice(0, 80) : "";
+      if (displayName) {
+        await setServerSetting("USER_PROFILE_NAME", displayName);
+      }
+      if (companyName) {
+        await setServerSetting("USER_PROFILE_COMPANY", companyName);
+      }
+      return NextResponse.json({
+        ok: true,
+        message: "Perfil atualizado com sucesso.",
+      });
+    }
+
+    // Atualizar preferências de notificações
+    if (action === "update_notifications") {
+      const prefs = body.prefs;
+      if (prefs && typeof prefs === "object") {
+        await setServerSetting("NOTIFICATION_PREFS", JSON.stringify(prefs));
+        return NextResponse.json({
+          ok: true,
+          message: "Preferências de notificação salvas.",
+        });
+      }
+      return NextResponse.json({ error: "Preferências inválidas." }, { status: 400 });
+    }
+
     // Preset rápido de despesa
     if (action === "save_quick_expense_preset") {
       const preset = body.preset as Record<string, unknown>;

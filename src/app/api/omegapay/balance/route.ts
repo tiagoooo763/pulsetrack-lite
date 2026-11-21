@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAuthenticated } from "@/lib/auth";
-import { saveBalanceSnapshot } from "@/lib/db";
+import { getServerSetting, saveBalanceSnapshot, setServerSetting } from "@/lib/db";
 import {
   fetchOmegaPayBalance,
   OmegaPayApiError,
@@ -16,9 +16,22 @@ export async function POST() {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   }
 
+  const syncEnabledRaw = await getServerSetting("OMEGAPAY_SYNC_ENABLED");
+  if (syncEnabledRaw === "false") {
+    return NextResponse.json(
+      {
+        ok: false,
+        error:
+          "A sincronização da OmegaPay está desabilitada em Integrações. Habilite-a para consultar o saldo.",
+      },
+      { status: 400 }
+    );
+  }
+
   try {
     const balance = await fetchOmegaPayBalance();
-    const snapshot = await saveBalanceSnapshot(balance);
+    const snapshot = await saveBalanceSnapshot(balance, "OMEGAPAY");
+    await setServerSetting("OMEGAPAY_LAST_SYNC_AT", snapshot.fetchedAt || new Date().toISOString());
     return NextResponse.json({
       ok: true,
       balance: snapshot,

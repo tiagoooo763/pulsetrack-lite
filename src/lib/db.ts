@@ -23,6 +23,7 @@ export type {
 };
 
 export type GatewayId = "OMEGAPAY" | "NEXUS";
+export type DashboardOperationId = "tiktok" | "omegapay";
 
 export type ExpenseCategory =
   | "META_ADS"
@@ -30,6 +31,56 @@ export type ExpenseCategory =
   | "OTHER_ADS"
   | "TOOLS"
   | "OTHER";
+
+export type FeeCategory = "GATEWAY" | "TAX" | "PLATFORM" | "OTHER";
+export type FeeType = "FIXED" | "PERCENTAGE";
+
+export interface TikTokCampaignRecord {
+  id: string;
+  adAccount: string;
+  campaignName: string;
+  adgroupName: string;
+  adName: string;
+  productName: string;
+  utmSource: string;
+  utmMedium: string;
+  utmCampaign: string;
+  utmContent: string;
+  statDate: string; // YYYY-MM-DD
+  spend: number;
+  impressions: number;
+  clicks: number;
+  conversions: number;
+  attributedRevenue: number;
+  status: "ACTIVE" | "PAUSED";
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CustomFeeRecord {
+  id: string;
+  dashboardId: DashboardOperationId;
+  name: string;
+  category: FeeCategory;
+  feeType: FeeType;
+  value: number;
+  feeDate: string; // YYYY-MM-DD
+  campaignName: string | null;
+  notes: string | null;
+  createdAt: string;
+}
+
+export interface AutomationRuleRecord {
+  id: string;
+  dashboardId: DashboardOperationId;
+  name: string;
+  metric: "ROAS" | "CPA" | "CPC" | "SPEND";
+  operator: "LT" | "GT";
+  threshold: number;
+  actionLabel: string;
+  enabled: boolean;
+  createdAt: string;
+}
 
 export interface TransactionRecord {
   id: string;
@@ -70,6 +121,8 @@ export interface TransferRecord {
 export interface ManualExpenseRecord {
   id: string;
   gateway: "ALL" | GatewayId;
+  dashboardId: DashboardOperationId;
+  campaignName: string | null;
   category: ExpenseCategory;
   title: string;
   amount: number;
@@ -228,11 +281,66 @@ export async function getDb(): Promise<DbExecutor> {
         CREATE TABLE IF NOT EXISTS manual_expenses (
           id TEXT PRIMARY KEY,
           gateway TEXT NOT NULL DEFAULT 'ALL',
+          dashboard_id TEXT NOT NULL DEFAULT 'omegapay',
+          campaign_name TEXT,
           category TEXT NOT NULL,
           title TEXT NOT NULL,
           amount REAL NOT NULL,
           expense_date TEXT NOT NULL,
           notes TEXT,
+          created_at TEXT NOT NULL
+        )
+      `);
+
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS tiktok_campaigns (
+          id TEXT PRIMARY KEY,
+          ad_account TEXT NOT NULL DEFAULT 'Conta Principal TikTok',
+          campaign_name TEXT NOT NULL,
+          adgroup_name TEXT NOT NULL,
+          ad_name TEXT NOT NULL,
+          product_name TEXT NOT NULL DEFAULT 'Produto Principal',
+          utm_source TEXT NOT NULL DEFAULT 'tiktok',
+          utm_medium TEXT NOT NULL DEFAULT 'cpc',
+          utm_campaign TEXT NOT NULL DEFAULT '',
+          utm_content TEXT NOT NULL DEFAULT '',
+          stat_date TEXT NOT NULL,
+          spend REAL NOT NULL DEFAULT 0,
+          impressions INTEGER NOT NULL DEFAULT 0,
+          clicks INTEGER NOT NULL DEFAULT 0,
+          conversions INTEGER NOT NULL DEFAULT 0,
+          attributed_revenue REAL NOT NULL DEFAULT 0,
+          status TEXT NOT NULL DEFAULT 'ACTIVE',
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        )
+      `);
+
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS custom_fees (
+          id TEXT PRIMARY KEY,
+          dashboard_id TEXT NOT NULL DEFAULT 'omegapay',
+          name TEXT NOT NULL,
+          category TEXT NOT NULL DEFAULT 'GATEWAY',
+          fee_type TEXT NOT NULL DEFAULT 'FIXED',
+          value REAL NOT NULL DEFAULT 0,
+          fee_date TEXT NOT NULL,
+          campaign_name TEXT,
+          notes TEXT,
+          created_at TEXT NOT NULL
+        )
+      `);
+
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS automation_rules (
+          id TEXT PRIMARY KEY,
+          dashboard_id TEXT NOT NULL DEFAULT 'tiktok',
+          name TEXT NOT NULL,
+          metric TEXT NOT NULL,
+          operator TEXT NOT NULL,
+          threshold REAL NOT NULL,
+          action_label TEXT NOT NULL,
+          enabled INTEGER NOT NULL DEFAULT 1,
           created_at TEXT NOT NULL
         )
       `);
@@ -271,6 +379,12 @@ export async function getDb(): Promise<DbExecutor> {
       } catch {}
       try {
         await db.execute(`ALTER TABLE webhook_events ADD COLUMN gateway TEXT NOT NULL DEFAULT 'OMEGAPAY'`);
+      } catch {}
+      try {
+        await db.execute(`ALTER TABLE manual_expenses ADD COLUMN dashboard_id TEXT NOT NULL DEFAULT 'omegapay'`);
+      } catch {}
+      try {
+        await db.execute(`ALTER TABLE manual_expenses ADD COLUMN campaign_name TEXT`);
       } catch {}
 
       return db;
@@ -688,6 +802,8 @@ export async function listManualExpenses(): Promise<ManualExpenseRecord[]> {
 export async function createManualExpense(input: {
   category: ExpenseCategory;
   gateway?: "ALL" | GatewayId;
+  dashboardId?: DashboardOperationId;
+  campaignName?: string | null;
   title: string;
   amount: number;
   expenseDate: string;
@@ -697,13 +813,17 @@ export async function createManualExpense(input: {
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
   const gateway = input.gateway || "ALL";
+  const dashboardId: DashboardOperationId =
+    input.dashboardId || (input.category === "TIKTOK_ADS" ? "tiktok" : "omegapay");
 
   await db.execute(
-    `INSERT INTO manual_expenses (id, gateway, category, title, amount, expense_date, notes, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO manual_expenses (id, gateway, dashboard_id, campaign_name, category, title, amount, expense_date, notes, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
       gateway,
+      dashboardId,
+      input.campaignName?.trim() || null,
       input.category,
       input.title.trim(),
       Number(input.amount),
@@ -936,14 +1056,280 @@ function mapExpenseRow(row: Record<string, unknown>): ManualExpenseRecord {
   const gateway: "ALL" | GatewayId =
     rawGw === "NEXUS" ? "NEXUS" : rawGw === "OMEGAPAY" ? "OMEGAPAY" : "ALL";
 
+  const rawDash = String(row.dashboard_id || "").toLowerCase();
+  const dashboardId: DashboardOperationId =
+    rawDash === "tiktok" ? "tiktok" : "omegapay";
+
   return {
     id: String(row.id),
     gateway,
+    dashboardId,
+    campaignName: row.campaign_name ? String(row.campaign_name) : null,
     category: String(row.category || "OTHER") as ExpenseCategory,
     title: String(row.title),
     amount: Number(row.amount || 0),
     expenseDate: expenseDateStr,
     notes: row.notes ? String(row.notes) : null,
     createdAt: createdAtStr,
+  };
+}
+
+// ============================================================
+// TIKTOK CAMPAIGNS (Operação TikTok — 100% isolada da OmegaPay)
+// ============================================================
+
+export async function listTikTokCampaigns(): Promise<TikTokCampaignRecord[]> {
+  const db = await getDb();
+  const rows = await db.query(
+    `SELECT * FROM tiktok_campaigns ORDER BY stat_date DESC, created_at DESC`
+  );
+  return rows.map(mapTikTokRow);
+}
+
+export async function createTikTokCampaign(input: {
+  adAccount?: string;
+  campaignName: string;
+  adgroupName: string;
+  adName: string;
+  productName?: string;
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+  utmContent?: string;
+  statDate: string;
+  spend: number;
+  impressions: number;
+  clicks: number;
+  conversions: number;
+  attributedRevenue: number;
+  status?: "ACTIVE" | "PAUSED";
+}): Promise<TikTokCampaignRecord> {
+  const db = await getDb();
+  const id = crypto.randomUUID();
+  const now = new Date().toISOString();
+
+  await db.execute(
+    `INSERT INTO tiktok_campaigns (
+      id, ad_account, campaign_name, adgroup_name, ad_name, product_name,
+      utm_source, utm_medium, utm_campaign, utm_content, stat_date,
+      spend, impressions, clicks, conversions, attributed_revenue, status,
+      created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      id,
+      input.adAccount?.trim() || "Conta Principal TikTok",
+      input.campaignName.trim(),
+      input.adgroupName.trim() || "Conjunto Padrão",
+      input.adName.trim() || "Anúncio 01",
+      input.productName?.trim() || "Produto Principal",
+      input.utmSource?.trim() || "tiktok",
+      input.utmMedium?.trim() || "cpc",
+      input.utmCampaign?.trim() || input.campaignName.trim(),
+      input.utmContent?.trim() || input.adName.trim(),
+      input.statDate.slice(0, 10),
+      Number(input.spend || 0),
+      Math.max(0, Math.round(Number(input.impressions || 0))),
+      Math.max(0, Math.round(Number(input.clicks || 0))),
+      Math.max(0, Math.round(Number(input.conversions || 0))),
+      Number(input.attributedRevenue || 0),
+      input.status === "PAUSED" ? "PAUSED" : "ACTIVE",
+      now,
+      now,
+    ]
+  );
+
+  const rows = await db.query(
+    `SELECT * FROM tiktok_campaigns WHERE id = ? LIMIT 1`,
+    [id]
+  );
+  return mapTikTokRow(rows[0]);
+}
+
+export async function updateTikTokCampaignStatus(
+  id: string,
+  status: "ACTIVE" | "PAUSED"
+): Promise<void> {
+  const db = await getDb();
+  await db.execute(
+    `UPDATE tiktok_campaigns SET status = ?, updated_at = ? WHERE id = ?`,
+    [status, new Date().toISOString(), id]
+  );
+}
+
+export async function deleteTikTokCampaign(id: string): Promise<void> {
+  const db = await getDb();
+  await db.execute(`DELETE FROM tiktok_campaigns WHERE id = ?`, [id]);
+}
+
+function mapTikTokRow(row: Record<string, unknown>): TikTokCampaignRecord {
+  return {
+    id: String(row.id),
+    adAccount: String(row.ad_account || "Conta Principal TikTok"),
+    campaignName: String(row.campaign_name || ""),
+    adgroupName: String(row.adgroup_name || ""),
+    adName: String(row.ad_name || ""),
+    productName: String(row.product_name || "Produto Principal"),
+    utmSource: String(row.utm_source || "tiktok"),
+    utmMedium: String(row.utm_medium || "cpc"),
+    utmCampaign: String(row.utm_campaign || ""),
+    utmContent: String(row.utm_content || ""),
+    statDate: String(row.stat_date || "").slice(0, 10),
+    spend: Number(row.spend || 0),
+    impressions: Number(row.impressions || 0),
+    clicks: Number(row.clicks || 0),
+    conversions: Number(row.conversions || 0),
+    attributedRevenue: Number(row.attributed_revenue || 0),
+    status: String(row.status || "ACTIVE").toUpperCase() === "PAUSED" ? "PAUSED" : "ACTIVE",
+    createdAt: String(row.created_at || ""),
+    updatedAt: String(row.updated_at || ""),
+  };
+}
+
+// ============================================================
+// CUSTOM FEES (Taxas por operação — impactam o Resumo)
+// ============================================================
+
+export async function listCustomFees(): Promise<CustomFeeRecord[]> {
+  const db = await getDb();
+  const rows = await db.query(
+    `SELECT * FROM custom_fees ORDER BY fee_date DESC, created_at DESC`
+  );
+  return rows.map(mapFeeRow);
+}
+
+export async function createCustomFee(input: {
+  dashboardId: DashboardOperationId;
+  name: string;
+  category: FeeCategory;
+  feeType: FeeType;
+  value: number;
+  feeDate: string;
+  campaignName?: string | null;
+  notes?: string | null;
+}): Promise<CustomFeeRecord> {
+  const db = await getDb();
+  const id = crypto.randomUUID();
+  const now = new Date().toISOString();
+
+  await db.execute(
+    `INSERT INTO custom_fees (id, dashboard_id, name, category, fee_type, value, fee_date, campaign_name, notes, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      id,
+      input.dashboardId,
+      input.name.trim(),
+      input.category,
+      input.feeType,
+      Number(input.value || 0),
+      input.feeDate.slice(0, 10),
+      input.campaignName?.trim() || null,
+      input.notes?.trim() || null,
+      now,
+    ]
+  );
+
+  const rows = await db.query(
+    `SELECT * FROM custom_fees WHERE id = ? LIMIT 1`,
+    [id]
+  );
+  return mapFeeRow(rows[0]);
+}
+
+export async function deleteCustomFee(id: string): Promise<void> {
+  const db = await getDb();
+  await db.execute(`DELETE FROM custom_fees WHERE id = ?`, [id]);
+}
+
+function mapFeeRow(row: Record<string, unknown>): CustomFeeRecord {
+  const rawDash = String(row.dashboard_id || "omegapay").toLowerCase();
+  return {
+    id: String(row.id),
+    dashboardId: rawDash === "tiktok" ? "tiktok" : "omegapay",
+    name: String(row.name || ""),
+    category: String(row.category || "OTHER") as FeeCategory,
+    feeType: String(row.fee_type || "FIXED").toUpperCase() === "PERCENTAGE" ? "PERCENTAGE" : "FIXED",
+    value: Number(row.value || 0),
+    feeDate: String(row.fee_date || "").slice(0, 10),
+    campaignName: row.campaign_name ? String(row.campaign_name) : null,
+    notes: row.notes ? String(row.notes) : null,
+    createdAt: String(row.created_at || ""),
+  };
+}
+
+// ============================================================
+// AUTOMATION RULES (Regras de monitoramento TikTok)
+// ============================================================
+
+export async function listAutomationRules(): Promise<AutomationRuleRecord[]> {
+  const db = await getDb();
+  const rows = await db.query(
+    `SELECT * FROM automation_rules ORDER BY created_at DESC`
+  );
+  return rows.map(mapRuleRow);
+}
+
+export async function createAutomationRule(input: {
+  dashboardId?: DashboardOperationId;
+  name: string;
+  metric: "ROAS" | "CPA" | "CPC" | "SPEND";
+  operator: "LT" | "GT";
+  threshold: number;
+  actionLabel: string;
+}): Promise<AutomationRuleRecord> {
+  const db = await getDb();
+  const id = crypto.randomUUID();
+  const now = new Date().toISOString();
+
+  await db.execute(
+    `INSERT INTO automation_rules (id, dashboard_id, name, metric, operator, threshold, action_label, enabled, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      id,
+      input.dashboardId || "tiktok",
+      input.name.trim(),
+      input.metric,
+      input.operator,
+      Number(input.threshold),
+      input.actionLabel.trim() || "Sinalizar alerta",
+      1,
+      now,
+    ]
+  );
+
+  const rows = await db.query(
+    `SELECT * FROM automation_rules WHERE id = ? LIMIT 1`,
+    [id]
+  );
+  return mapRuleRow(rows[0]);
+}
+
+export async function toggleAutomationRule(
+  id: string,
+  enabled: boolean
+): Promise<void> {
+  const db = await getDb();
+  await db.execute(
+    `UPDATE automation_rules SET enabled = ? WHERE id = ?`,
+    [enabled ? 1 : 0, id]
+  );
+}
+
+export async function deleteAutomationRule(id: string): Promise<void> {
+  const db = await getDb();
+  await db.execute(`DELETE FROM automation_rules WHERE id = ?`, [id]);
+}
+
+function mapRuleRow(row: Record<string, unknown>): AutomationRuleRecord {
+  const rawDash = String(row.dashboard_id || "tiktok").toLowerCase();
+  return {
+    id: String(row.id),
+    dashboardId: rawDash === "omegapay" ? "omegapay" : "tiktok",
+    name: String(row.name || ""),
+    metric: String(row.metric || "ROAS") as AutomationRuleRecord["metric"],
+    operator: String(row.operator || "LT") as AutomationRuleRecord["operator"],
+    threshold: Number(row.threshold || 0),
+    actionLabel: String(row.action_label || "Sinalizar alerta"),
+    enabled: Number(row.enabled ?? 1) === 1,
+    createdAt: String(row.created_at || ""),
   };
 }

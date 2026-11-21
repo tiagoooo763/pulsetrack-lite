@@ -6,8 +6,11 @@ import {
 import {
   getAllBalanceSnapshots,
   getServerSetting,
+  listAutomationRules,
+  listCustomFees,
   listManualExpenses,
   listRecentWebhookEvents,
+  listTikTokCampaigns,
   listTransactions,
   listTransfers,
 } from "@/lib/db";
@@ -29,17 +32,33 @@ export async function GET() {
     presetSetting,
     nexusApiKey,
     nexusWebhookToken,
+    tiktokCampaigns,
+    customFees,
+    automationRules,
+    omegaSyncEnabledRaw,
+    omegaLastSyncAt,
+    profileName,
+    profileCompany,
+    notifPrefsRaw,
   ] = await Promise.all([
     listTransactions(),
     listTransfers(),
     listManualExpenses(),
     getAllBalanceSnapshots(),
-    listRecentWebhookEvents(30),
+    listRecentWebhookEvents(40),
     getOmegaPayServerCredentials(),
     getExpectedDashboardCredentials(),
     getServerSetting("QUICK_EXPENSE_PRESET"),
     getServerSetting("NEXUS_API_KEY"),
     getServerSetting("NEXUS_WEBHOOK_TOKEN"),
+    listTikTokCampaigns(),
+    listCustomFees(),
+    listAutomationRules(),
+    getServerSetting("OMEGAPAY_SYNC_ENABLED"),
+    getServerSetting("OMEGAPAY_LAST_SYNC_AT"),
+    getServerSetting("USER_PROFILE_NAME"),
+    getServerSetting("USER_PROFILE_COMPANY"),
+    getServerSetting("NOTIFICATION_PREFS"),
   ]);
 
   let quickExpensePreset = {
@@ -57,20 +76,49 @@ export async function GET() {
     } catch {}
   }
 
+  let notificationPrefs = {
+    alertOnRefund: true,
+    alertOnChargeback: true,
+    alertOnLowRoas: true,
+    alertOnSyncError: true,
+  };
+
+  if (notifPrefsRaw) {
+    try {
+      const parsed = JSON.parse(notifPrefsRaw);
+      if (parsed && typeof parsed === "object") {
+        notificationPrefs = { ...notificationPrefs, ...parsed };
+      }
+    } catch {}
+  }
+
+  const syncEnabled = omegaSyncEnabledRaw !== "false";
+
   return NextResponse.json({
     transactions,
     transfers,
     expenses,
-    balance: balances.OMEGAPAY, // retrocompatibilidade
+    balance: balances.OMEGAPAY,
     balances,
     recentWebhooks,
     quickExpensePreset,
+    tiktokCampaigns,
+    customFees,
+    automationRules,
+    profile: {
+      username: dashCreds.username,
+      displayName: profileName || "Tiago Mendonça",
+      companyName: profileCompany || "Dashfy Workspace",
+      notificationPrefs,
+    },
     integrationStatus: {
       hasApiCredentials: creds.hasApiCredentials,
       hasWebhookToken: creds.hasWebhookToken,
       source: creds.source,
       apiBaseUrl: creds.baseUrl,
       isDefaultPassword: dashCreds.isDefaultPassword,
+      syncEnabled,
+      lastSyncAt: omegaLastSyncAt || balances.OMEGAPAY?.fetchedAt || null,
       nexus: {
         hasApiCredentials: Boolean(nexusApiKey),
         hasWebhookToken: Boolean(nexusWebhookToken || process.env.NEXUS_WEBHOOK_TOKEN),
