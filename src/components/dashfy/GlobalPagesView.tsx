@@ -38,7 +38,10 @@ export function GlobalPagesView({
   const [displayName, setDisplayName] = useState(data.profile.displayName);
   const [companyName, setCompanyName] = useState(data.profile.companyName);
   const [newPassword, setNewPassword] = useState("");
-  const [accountMsg, setAccountMsg] = useState<string | null>(null);
+  const [accountMsg, setAccountMsg] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
   const [savingAccount, setSavingAccount] = useState(false);
 
   // Configurações (Gasto rápido)
@@ -59,6 +62,15 @@ export function GlobalPagesView({
     setSavingAccount(true);
     setAccountMsg(null);
     try {
+      if (newPassword.trim().length > 0 && newPassword.trim().length < 8) {
+        setAccountMsg({
+          type: "error",
+          text: "A nova senha deve ter no mínimo 8 caracteres.",
+        });
+        setSavingAccount(false);
+        return;
+      }
+
       await fetch("/api/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -68,8 +80,9 @@ export function GlobalPagesView({
           companyName,
         }),
       });
-      if (newPassword.trim().length >= 6) {
-        await fetch("/api/settings", {
+
+      if (newPassword.trim().length >= 8) {
+        const pwdRes = await fetch("/api/settings", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -77,9 +90,22 @@ export function GlobalPagesView({
             dashboardPassword: newPassword.trim(),
           }),
         });
+        const pwdJson = await pwdRes.json();
+        if (!pwdRes.ok) {
+          setAccountMsg({
+            type: "error",
+            text: pwdJson.error || "Não foi possível atualizar a senha.",
+          });
+          setSavingAccount(false);
+          return;
+        }
         setNewPassword("");
       }
-      setAccountMsg("Dados da conta atualizados com sucesso.");
+
+      setAccountMsg({
+        type: "success",
+        text: "Dados da conta atualizados com sucesso.",
+      });
       await onRefresh();
     } finally {
       setSavingAccount(false);
@@ -126,9 +152,15 @@ export function GlobalPagesView({
           </div>
 
           {accountMsg && (
-            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-300 flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4" />
-              {accountMsg}
+            <div
+              className={`rounded-xl border p-3 text-xs flex items-center gap-2 ${
+                accountMsg.type === "success"
+                  ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+                  : "border-rose-500/30 bg-rose-500/10 text-rose-300"
+              }`}
+            >
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              {accountMsg.text}
             </div>
           )}
 
@@ -165,7 +197,7 @@ export function GlobalPagesView({
 
             <div>
               <label className="block text-xs text-zinc-300 mb-1">
-                Nova Senha de Acesso (opcional, mín. 6 caracteres)
+                Nova Senha de Acesso (opcional, mín. 8 caracteres)
               </label>
               <input
                 type="password"
@@ -201,7 +233,9 @@ export function GlobalPagesView({
             <div className="p-3 rounded-xl border border-white/10 bg-[#08080a] flex items-center justify-between">
               <span className="flex items-center gap-2">
                 <KeyRound className="w-4 h-4 text-white" />
-                Autenticação HTTP-Only HMAC-SHA256
+                {data.profile.authProvider === "supabase"
+                  ? "Supabase Auth (JWT + RLS Multi-Usuário)"
+                  : "Sessão Segura HTTP-Only (Conta Legada)"}
               </span>
               <span className="text-emerald-400 font-semibold">Ativa</span>
             </div>

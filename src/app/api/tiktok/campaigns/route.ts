@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { isAuthenticated } from "@/lib/auth";
+import { getAuthenticatedUser } from "@/lib/auth";
 import {
   createTikTokCampaign,
   deleteTikTokCampaign,
@@ -34,7 +34,6 @@ function parseNum(v: unknown): number {
     .trim()
     .replace(/R\$/gi, "")
     .replace(/\s/g, "");
-  // Handle Brazilian number format like 1.250,50 vs 1250.50
   const normalized =
     s.includes(",") && s.includes(".")
       ? s.replace(/\./g, "").replace(",", ".")
@@ -49,15 +48,17 @@ function getTodayDate(): string {
 }
 
 export async function GET() {
-  if (!(await isAuthenticated())) {
+  const user = await getAuthenticatedUser();
+  if (!user) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   }
-  const campaigns = await listTikTokCampaigns();
+  const campaigns = await listTikTokCampaigns(user.id);
   return NextResponse.json({ ok: true, campaigns });
 }
 
 export async function POST(request: NextRequest) {
-  if (!(await isAuthenticated())) {
+  const user = await getAuthenticatedUser();
+  if (!user) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   }
 
@@ -104,20 +105,29 @@ export async function POST(request: NextRequest) {
         clicks: Math.max(0, Math.round(parseNum(obj.clicks))),
         conversions: Math.max(0, Math.round(parseNum(obj.conversions))),
         attributedRevenue: parseNum(obj.attributedRevenue),
-        status: String(obj.status || "ACTIVE").toUpperCase() === "PAUSED" ? "PAUSED" : "ACTIVE",
+        status:
+          String(obj.status || "ACTIVE").toUpperCase() === "PAUSED"
+            ? "PAUSED"
+            : "ACTIVE",
       });
 
       if (!parsed.success) {
         if (rawRows.length === 1) {
           return NextResponse.json(
-            { error: parsed.error.issues[0]?.message || "Dados de campanha inválidos." },
+            {
+              error:
+                parsed.error.issues[0]?.message || "Dados de campanha inválidos.",
+            },
             { status: 400 }
           );
         }
         continue;
       }
 
-      const record = await createTikTokCampaign(parsed.data);
+      const record = await createTikTokCampaign({
+        ...parsed.data,
+        userId: user.id,
+      });
       created.push(record);
     }
 
@@ -139,7 +149,8 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  if (!(await isAuthenticated())) {
+  const user = await getAuthenticatedUser();
+  if (!user) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   }
   try {
@@ -148,7 +159,13 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "ID obrigatório." }, { status: 400 });
     }
     const status = body.status === "PAUSED" ? "PAUSED" : "ACTIVE";
-    await updateTikTokCampaignStatus(body.id, status);
+    const updated = await updateTikTokCampaignStatus(body.id, status, user.id);
+    if (!updated) {
+      return NextResponse.json(
+        { error: "Campanha não encontrada ou sem permissão." },
+        { status: 404 }
+      );
+    }
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json(
@@ -159,7 +176,8 @@ export async function PATCH(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  if (!(await isAuthenticated())) {
+  const user = await getAuthenticatedUser();
+  if (!user) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   }
   const { searchParams } = new URL(request.url);
@@ -167,6 +185,12 @@ export async function DELETE(request: NextRequest) {
   if (!id) {
     return NextResponse.json({ error: "ID obrigatório." }, { status: 400 });
   }
-  await deleteTikTokCampaign(id);
+  const deleted = await deleteTikTokCampaign(id, user.id);
+  if (!deleted) {
+    return NextResponse.json(
+      { error: "Campanha não encontrada ou sem permissão." },
+      { status: 404 }
+    );
+  }
   return NextResponse.json({ ok: true });
 }

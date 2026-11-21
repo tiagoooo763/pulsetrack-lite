@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+import { findUserIdByWebhookToken, LEGACY_ADMIN_USER_ID } from "@/lib/db";
 import { getOmegaPayServerCredentials } from "@/lib/omegapay-client";
 import { processOmegaPayWebhook } from "@/lib/webhook-processor";
 import { safeLog } from "@/lib/sanitize";
 
 /**
- * Endpoint oficial de recebimento de Webhooks da OmegaPay
- * Método esperado pela OmegaPay: HTTP POST (application/json)
- * Deve retornar status HTTP 2XX após o processamento bem-sucedido.
+ * Endpoint oficial de recebimento de Webhooks da OmegaPay (multi-usuário)
+ * - Novos usuários utilizam: POST /api/webhooks/omegapay?u=<user_id>
+ * - Também resolve automaticamente o usuário dono do token configurado.
+ * - Mantém compatibilidade total com o endpoint legado sem query string.
  */
 export async function POST(request: NextRequest) {
   let rawBody: unknown;
@@ -21,8 +23,34 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const creds = await getOmegaPayServerCredentials();
-    const result = await processOmegaPayWebhook(rawBody, creds.webhookToken);
+    const queryUserId = request.nextUrl.searchParams.get("u")?.trim() || "";
+    const payloadToken =
+      typeof rawBody === "object" &&
+      rawBody !== null &&
+      typeof (rawBody as Record<string, unknown>).token === "string"
+        ? ((rawBody as Record<string, unknown>).token as string).trim()
+        : "";
+
+    let targetUserId = queryUserId;
+    if (!targetUserId && payloadToken) {
+      const matchedUser = await findUserIdByWebhookToken(
+        "OMEGAPAY_WEBHOOK_TOKEN",
+        payloadToken
+      );
+      if (matchedUser) {
+        targetUserId = matchedUser;
+      }
+    }
+    if (!targetUserId) {
+      targetUserId = LEGACY_ADMIN_USER_ID;
+    }
+
+    const creds = await getOmegaPayServerCredentials(targetUserId);
+    const result = await processOmegaPayWebhook(
+      rawBody,
+      creds.webhookToken,
+      targetUserId
+    );
 
     if (!result.ok) {
       return NextResponse.json(
@@ -66,7 +94,7 @@ export async function GET() {
   return NextResponse.json(
     {
       status: "online",
-      service: "PulseTrack Lite — Receptor de Webhooks OmegaPay",
+      service: "Dashfy — Receptor de Webhooks OmegaPay",
       methodRequired: "POST",
       contentType: "application/json",
     },

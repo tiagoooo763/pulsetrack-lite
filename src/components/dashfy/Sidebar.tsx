@@ -49,6 +49,7 @@ interface SidebarProps {
   mobileOpen: boolean;
   userEmail: string;
   userName: string;
+  companyName?: string;
   onSelectGeneral: () => void;
   onSelectDashboardTab: (dashboardId: DashboardOperationId, tabId: OperationTabId) => void;
   onUpdateDashboardConfig: (
@@ -103,6 +104,7 @@ export function Sidebar({
   mobileOpen,
   userEmail,
   userName,
+  companyName,
   onSelectGeneral,
   onSelectDashboardTab,
   onUpdateDashboardConfig,
@@ -516,8 +518,8 @@ export function Sidebar({
                   <span className="text-xs font-medium text-white block truncate">
                     {userEmail}
                   </span>
-                  <span className="text-[10px] text-zinc-400 block">
-                    Administrador &bull; Supabase Live
+                  <span className="text-[10px] text-zinc-400 block truncate">
+                    {companyName || "Dashfy Workspace"}
                   </span>
                 </div>
               )}

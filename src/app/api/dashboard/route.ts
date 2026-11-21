@@ -1,11 +1,8 @@
 import { NextResponse } from "next/server";
-import {
-  getExpectedDashboardCredentials,
-  isAuthenticated,
-} from "@/lib/auth";
+import { getAuthenticatedUser } from "@/lib/auth";
 import {
   getAllBalanceSnapshots,
-  getServerSetting,
+  getUserSetting,
   listAutomationRules,
   listCustomFees,
   listManualExpenses,
@@ -15,12 +12,18 @@ import {
   listTransfers,
 } from "@/lib/db";
 import { getOmegaPayServerCredentials } from "@/lib/omegapay-client";
-import { DEFAULT_DASHBOARDS, type DashboardConfigRecord } from "@/lib/dashfy-types";
+import {
+  DEFAULT_DASHBOARDS,
+  type DashboardConfigRecord,
+} from "@/lib/dashfy-types";
 
 export async function GET() {
-  if (!(await isAuthenticated())) {
+  const user = await getAuthenticatedUser();
+  if (!user) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   }
+
+  const userId = user.id;
 
   const [
     transactions,
@@ -29,7 +32,6 @@ export async function GET() {
     balances,
     recentWebhooks,
     creds,
-    dashCreds,
     presetSetting,
     nexusApiKey,
     nexusWebhookToken,
@@ -38,30 +40,25 @@ export async function GET() {
     automationRules,
     omegaSyncEnabledRaw,
     omegaLastSyncAt,
-    profileName,
-    profileCompany,
     notifPrefsRaw,
     dashboardsConfigRaw,
   ] = await Promise.all([
-    listTransactions(),
-    listTransfers(),
-    listManualExpenses(),
-    getAllBalanceSnapshots(),
-    listRecentWebhookEvents(40),
-    getOmegaPayServerCredentials(),
-    getExpectedDashboardCredentials(),
-    getServerSetting("QUICK_EXPENSE_PRESET"),
-    getServerSetting("NEXUS_API_KEY"),
-    getServerSetting("NEXUS_WEBHOOK_TOKEN"),
-    listTikTokCampaigns(),
-    listCustomFees(),
-    listAutomationRules(),
-    getServerSetting("OMEGAPAY_SYNC_ENABLED"),
-    getServerSetting("OMEGAPAY_LAST_SYNC_AT"),
-    getServerSetting("USER_PROFILE_NAME"),
-    getServerSetting("USER_PROFILE_COMPANY"),
-    getServerSetting("NOTIFICATION_PREFS"),
-    getServerSetting("DASHFY_DASHBOARDS_CONFIG"),
+    listTransactions(userId),
+    listTransfers(userId),
+    listManualExpenses(userId),
+    getAllBalanceSnapshots(userId),
+    listRecentWebhookEvents(40, userId),
+    getOmegaPayServerCredentials(userId),
+    getUserSetting(userId, "QUICK_EXPENSE_PRESET"),
+    getUserSetting(userId, "NEXUS_API_KEY"),
+    getUserSetting(userId, "NEXUS_WEBHOOK_TOKEN"),
+    listTikTokCampaigns(userId),
+    listCustomFees(userId),
+    listAutomationRules(userId),
+    getUserSetting(userId, "OMEGAPAY_SYNC_ENABLED"),
+    getUserSetting(userId, "OMEGAPAY_LAST_SYNC_AT"),
+    getUserSetting(userId, "NOTIFICATION_PREFS"),
+    getUserSetting(userId, "DASHFY_DASHBOARDS_CONFIG"),
   ]);
 
   let dashboards: DashboardConfigRecord[] = DEFAULT_DASHBOARDS;
@@ -131,9 +128,11 @@ export async function GET() {
     customFees,
     automationRules,
     profile: {
-      username: dashCreds.username,
-      displayName: profileName || "Tiago Mendonça",
-      companyName: profileCompany || "Dashfy Workspace",
+      id: user.id,
+      username: user.email,
+      displayName: user.displayName,
+      companyName: user.companyName,
+      authProvider: user.authProvider,
       notificationPrefs,
     },
     integrationStatus: {
@@ -141,12 +140,13 @@ export async function GET() {
       hasWebhookToken: creds.hasWebhookToken,
       source: creds.source,
       apiBaseUrl: creds.baseUrl,
-      isDefaultPassword: dashCreds.isDefaultPassword,
+      isDefaultPassword: false,
       syncEnabled,
       lastSyncAt: omegaLastSyncAt || balances.OMEGAPAY?.fetchedAt || null,
+      webhookUserParam: user.id,
       nexus: {
         hasApiCredentials: Boolean(nexusApiKey),
-        hasWebhookToken: Boolean(nexusWebhookToken || process.env.NEXUS_WEBHOOK_TOKEN),
+        hasWebhookToken: Boolean(nexusWebhookToken),
         apiBaseUrl: "https://api.nexuspay.com.br",
       },
     },

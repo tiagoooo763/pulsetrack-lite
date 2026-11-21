@@ -1,22 +1,19 @@
 import { NextResponse } from "next/server";
-import { isAuthenticated } from "@/lib/auth";
+import { getAuthenticatedUser } from "@/lib/auth";
 import {
   OmegaPayApiError,
   testOmegaPayCredentials,
 } from "@/lib/omegapay-client";
 import { safeLog } from "@/lib/sanitize";
 
-/**
- * Consulta pontual ao endpoint oficial:
- * GET https://app.omegapayments.com.br/api/v1/gateway/producer/credentials
- */
-export async function POST() {
-  if (!(await isAuthenticated())) {
+async function handleCredentialsTest() {
+  const user = await getAuthenticatedUser();
+  if (!user) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   }
 
   try {
-    const credentials = await testOmegaPayCredentials();
+    const credentials = await testOmegaPayCredentials(user.id);
     return NextResponse.json({
       ok: true,
       credentials,
@@ -45,4 +42,16 @@ export async function POST() {
       { status: 500 }
     );
   }
+}
+
+/**
+ * Consulta pontual ao endpoint oficial:
+ * GET https://app.omegapayments.com.br/api/v1/gateway/producer/credentials
+ */
+export async function POST() {
+  return handleCredentialsTest();
+}
+
+export async function GET() {
+  return handleCredentialsTest();
 }

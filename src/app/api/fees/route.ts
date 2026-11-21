@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { isAuthenticated } from "@/lib/auth";
+import { getAuthenticatedUser } from "@/lib/auth";
 import {
   createCustomFee,
   deleteCustomFee,
@@ -22,15 +22,17 @@ const createFeeSchema = z.object({
 });
 
 export async function GET() {
-  if (!(await isAuthenticated())) {
+  const user = await getAuthenticatedUser();
+  if (!user) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   }
-  const fees = await listCustomFees();
+  const fees = await listCustomFees(user.id);
   return NextResponse.json({ ok: true, fees });
 }
 
 export async function POST(request: NextRequest) {
-  if (!(await isAuthenticated())) {
+  const user = await getAuthenticatedUser();
+  if (!user) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   }
 
@@ -40,24 +42,39 @@ export async function POST(request: NextRequest) {
     if (typeof raw.value === "number") {
       numericVal = raw.value;
     } else {
-      numericVal = Number(String(raw.value ?? "").trim().replace(/\s/g, "").replace(",", "."));
+      numericVal = Number(
+        String(raw.value ?? "")
+          .trim()
+          .replace(/\s/g, "")
+          .replace(",", ".")
+      );
     }
 
-    let dateStr = typeof raw.feeDate === "string" ? raw.feeDate.trim().slice(0, 10) : "";
+    let dateStr =
+      typeof raw.feeDate === "string" ? raw.feeDate.trim().slice(0, 10) : "";
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
       const d = new Date();
       dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
     }
 
     const parsed = createFeeSchema.safeParse({
-      dashboardId: typeof raw.dashboardId === "string" && raw.dashboardId.trim() ? raw.dashboardId.trim() : "omegapay",
+      dashboardId:
+        typeof raw.dashboardId === "string" && raw.dashboardId.trim()
+          ? raw.dashboardId.trim()
+          : "omegapay",
       name: String(raw.name ?? "").trim(),
       category: raw.category || "GATEWAY",
       feeType: raw.feeType === "PERCENTAGE" ? "PERCENTAGE" : "FIXED",
       value: numericVal,
       feeDate: dateStr,
-      campaignName: typeof raw.campaignName === "string" && raw.campaignName.trim() ? raw.campaignName.trim() : null,
-      notes: typeof raw.notes === "string" && raw.notes.trim() ? raw.notes.trim() : null,
+      campaignName:
+        typeof raw.campaignName === "string" && raw.campaignName.trim()
+          ? raw.campaignName.trim()
+          : null,
+      notes:
+        typeof raw.notes === "string" && raw.notes.trim()
+          ? raw.notes.trim()
+          : null,
     });
 
     if (!parsed.success) {
@@ -68,6 +85,7 @@ export async function POST(request: NextRequest) {
     }
 
     const fee = await createCustomFee({
+      userId: user.id,
       dashboardId: parsed.data.dashboardId as DashboardOperationId,
       name: parsed.data.name,
       category: parsed.data.category as FeeCategory,
@@ -88,7 +106,8 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  if (!(await isAuthenticated())) {
+  const user = await getAuthenticatedUser();
+  if (!user) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   }
   const { searchParams } = new URL(request.url);
@@ -96,6 +115,12 @@ export async function DELETE(request: NextRequest) {
   if (!id) {
     return NextResponse.json({ error: "ID obrigatório." }, { status: 400 });
   }
-  await deleteCustomFee(id);
+  const deleted = await deleteCustomFee(id, user.id);
+  if (!deleted) {
+    return NextResponse.json(
+      { error: "Taxa não encontrada ou sem permissão." },
+      { status: 404 }
+    );
+  }
   return NextResponse.json({ ok: true });
 }

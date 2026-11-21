@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import {
   insertWebhookEvent,
+  LEGACY_ADMIN_USER_ID,
   resolveTransactionStatus,
   upsertTransaction,
   upsertTransfer,
@@ -78,7 +79,8 @@ function extractProductInfo(payload: Record<string, unknown>): {
 
 export async function processOmegaPayWebhook(
   rawBody: unknown,
-  configuredWebhookTokens: string
+  configuredWebhookTokens: string,
+  userId: string = LEGACY_ADMIN_USER_ID
 ): Promise<WebhookProcessResult> {
   if (!rawBody || typeof rawBody !== "object" || Array.isArray(rawBody)) {
     return {
@@ -215,6 +217,7 @@ export async function processOmegaPayWebhook(
 
   // 5. Registro idempotente do evento no banco de dados
   const inserted = await insertWebhookEvent({
+    userId,
     dedupeKey,
     eventType: event,
     entityId,
@@ -281,6 +284,7 @@ export async function processOmegaPayWebhook(
 
       await upsertTransaction({
         id: tx.id.trim(),
+        userId,
         clientIdentifier:
           typeof tx.identifier === "string" ? tx.identifier : null,
         orderId: typeof payload.orderId === "string" ? payload.orderId : null,
@@ -319,6 +323,7 @@ export async function processOmegaPayWebhook(
 
       await upsertTransfer({
         id: withdraw.id.trim(),
+        userId,
         clientIdentifier:
           typeof withdraw.clientIdentifier === "string"
             ? withdraw.clientIdentifier

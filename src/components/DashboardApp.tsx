@@ -499,6 +499,11 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
 
   async function handleLogoutClick() {
     await fetch("/api/auth/logout", { method: "POST" });
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.removeItem("dashfy_nav_location");
+      } catch {}
+    }
     onLogout();
   }
 
@@ -539,6 +544,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
         mobileOpen={mobileMenuOpen}
         userEmail={data.profile.username}
         userName={data.profile.displayName}
+        companyName={data.profile.companyName}
         onSelectGeneral={() => setLocation({ kind: "general" })}
         onSelectDashboardTab={(dashboardId, tabId) => {
           setLocation({ kind: "dashboard", dashboardId, tabId });

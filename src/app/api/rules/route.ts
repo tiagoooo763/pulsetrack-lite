@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { isAuthenticated } from "@/lib/auth";
+import { getAuthenticatedUser } from "@/lib/auth";
 import {
   createAutomationRule,
   deleteAutomationRule,
@@ -14,19 +14,25 @@ const createRuleSchema = z.object({
   metric: z.enum(["ROAS", "CPA", "CPC", "SPEND"]),
   operator: z.enum(["LT", "GT"]),
   threshold: z.number().min(0),
-  actionLabel: z.string().min(2).max(120).default("Sinalizar alerta na campanha"),
+  actionLabel: z
+    .string()
+    .min(2)
+    .max(120)
+    .default("Sinalizar alerta na campanha"),
 });
 
 export async function GET() {
-  if (!(await isAuthenticated())) {
+  const user = await getAuthenticatedUser();
+  if (!user) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   }
-  const rules = await listAutomationRules();
+  const rules = await listAutomationRules(user.id);
   return NextResponse.json({ ok: true, rules });
 }
 
 export async function POST(request: NextRequest) {
-  if (!(await isAuthenticated())) {
+  const user = await getAuthenticatedUser();
+  if (!user) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   }
 
@@ -38,12 +44,17 @@ export async function POST(request: NextRequest) {
         : Number(String(raw.threshold ?? "0").replace(",", "."));
 
     const parsed = createRuleSchema.safeParse({
-      dashboardId: typeof raw.dashboardId === "string" && raw.dashboardId.trim() ? raw.dashboardId.trim() : "tiktok",
+      dashboardId:
+        typeof raw.dashboardId === "string" && raw.dashboardId.trim()
+          ? raw.dashboardId.trim()
+          : "tiktok",
       name: String(raw.name ?? "").trim(),
       metric: raw.metric,
       operator: raw.operator,
       threshold,
-      actionLabel: String(raw.actionLabel || "Sinalizar alerta na campanha").trim(),
+      actionLabel: String(
+        raw.actionLabel || "Sinalizar alerta na campanha"
+      ).trim(),
     });
 
     if (!parsed.success) {
@@ -53,7 +64,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const rule = await createAutomationRule(parsed.data);
+    const rule = await createAutomationRule({
+      ...parsed.data,
+      userId: user.id,
+    });
     return NextResponse.json({ ok: true, rule }, { status: 201 });
   } catch {
     return NextResponse.json(
@@ -64,7 +78,8 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  if (!(await isAuthenticated())) {
+  const user = await getAuthenticatedUser();
+  if (!user) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   }
   try {
@@ -72,7 +87,17 @@ export async function PATCH(request: NextRequest) {
     if (!body.id) {
       return NextResponse.json({ error: "ID obrigatório." }, { status: 400 });
     }
-    await toggleAutomationRule(body.id, Boolean(body.enabled));
+    const updated = await toggleAutomationRule(
+      body.id,
+      Boolean(body.enabled),
+      user.id
+    );
+    if (!updated) {
+      return NextResponse.json(
+        { error: "Regra não encontrada ou sem permissão." },
+        { status: 404 }
+      );
+    }
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json(
@@ -83,7 +108,8 @@ export async function PATCH(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  if (!(await isAuthenticated())) {
+  const user = await getAuthenticatedUser();
+  if (!user) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   }
   const { searchParams } = new URL(request.url);
@@ -91,6 +117,12 @@ export async function DELETE(request: NextRequest) {
   if (!id) {
     return NextResponse.json({ error: "ID obrigatório." }, { status: 400 });
   }
-  await deleteAutomationRule(id);
+  const deleted = await deleteAutomationRule(id, user.id);
+  if (!deleted) {
+    return NextResponse.json(
+      { error: "Regra não encontrada ou sem permissão." },
+      { status: 404 }
+    );
+  }
   return NextResponse.json({ ok: true });
 }

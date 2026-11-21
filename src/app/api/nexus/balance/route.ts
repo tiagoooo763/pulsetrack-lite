@@ -1,25 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isAuthenticated } from "@/lib/auth";
+import { getAuthenticatedUser } from "@/lib/auth";
 import {
   getLatestBalanceSnapshot,
+  getUserSetting,
   saveBalanceSnapshot,
-  getServerSetting,
 } from "@/lib/db";
 import { safeLog } from "@/lib/sanitize";
 
 export async function GET() {
-  if (!(await isAuthenticated())) {
+  const user = await getAuthenticatedUser();
+  if (!user) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   }
 
-  const balance = await getLatestBalanceSnapshot("NEXUS");
+  const balance = await getLatestBalanceSnapshot("NEXUS", user.id);
   return NextResponse.json({ ok: true, balance });
 }
 
 export async function POST(request: NextRequest) {
-  if (!(await isAuthenticated())) {
+  const user = await getAuthenticatedUser();
+  if (!user) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   }
+
+  const userId = user.id;
 
   try {
     const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
@@ -36,7 +40,8 @@ export async function POST(request: NextRequest) {
           pending,
           fundLock,
         },
-        "NEXUS"
+        "NEXUS",
+        userId
       );
 
       safeLog("info", "Saldo da Nexus atualizado com sucesso.", {
@@ -51,13 +56,12 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 2. Se for tentativa de sincronização automática com a API da Nexus
-    const nexusApiKey = await getServerSetting("NEXUS_API_KEY");
-    const nexusSecretKey = await getServerSetting("NEXUS_SECRET_KEY");
+    // 2. Sincronização automática com a API da Nexus (credenciais exclusivas do usuário)
+    const nexusApiKey = await getUserSetting(userId, "NEXUS_API_KEY");
+    const nexusSecretKey = await getUserSetting(userId, "NEXUS_SECRET_KEY");
 
     if (!nexusApiKey) {
-      // Se não houver chave de API configurada, retorna aviso amigável
-      const current = await getLatestBalanceSnapshot("NEXUS");
+      const current = await getLatestBalanceSnapshot("NEXUS", userId);
       return NextResponse.json({
         ok: false,
         error:
@@ -66,10 +70,10 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Se houver chave, tentar sincronizar via API da Nexus
-    // Em caso de falha de conexão com a API da Nexus, reporta com clareza
     try {
-      const apiUrl = (await getServerSetting("NEXUS_API_URL")) || "https://api.nexuspay.com.br/v1/balance";
+      const apiUrl =
+        (await getUserSetting(userId, "NEXUS_API_URL")) ||
+        "https://api.nexuspay.com.br/v1/balance";
       const apiRes = await fetch(apiUrl, {
         headers: {
           Authorization: `Bearer ${nexusApiKey}`,
@@ -85,7 +89,8 @@ export async function POST(request: NextRequest) {
 
         const saved = await saveBalanceSnapshot(
           { available, pending, fundLock },
-          "NEXUS"
+          "NEXUS",
+          userId
         );
 
         return NextResponse.json({
@@ -98,7 +103,7 @@ export async function POST(request: NextRequest) {
       // Falha de rede na API da Nexus
     }
 
-    const current = await getLatestBalanceSnapshot("NEXUS");
+    const current = await getLatestBalanceSnapshot("NEXUS", userId);
     return NextResponse.json({
       ok: false,
       error:

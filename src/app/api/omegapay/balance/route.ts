@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
-import { isAuthenticated } from "@/lib/auth";
-import { getServerSetting, saveBalanceSnapshot, setServerSetting } from "@/lib/db";
+import { getAuthenticatedUser } from "@/lib/auth";
+import {
+  getUserSetting,
+  saveBalanceSnapshot,
+  setUserSetting,
+} from "@/lib/db";
 import {
   fetchOmegaPayBalance,
   OmegaPayApiError,
@@ -8,15 +12,16 @@ import {
 import { safeLog } from "@/lib/sanitize";
 
 /**
- * Consulta pontual (sob demanda do usuário) ao endpoint oficial:
+ * Consulta pontual (sob demanda do usuário autenticado) ao endpoint oficial:
  * GET https://app.omegapayments.com.br/api/v1/gateway/producer/balance
  */
 export async function POST() {
-  if (!(await isAuthenticated())) {
+  const user = await getAuthenticatedUser();
+  if (!user) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   }
 
-  const syncEnabledRaw = await getServerSetting("OMEGAPAY_SYNC_ENABLED");
+  const syncEnabledRaw = await getUserSetting(user.id, "OMEGAPAY_SYNC_ENABLED");
   if (syncEnabledRaw === "false") {
     return NextResponse.json(
       {
@@ -29,9 +34,13 @@ export async function POST() {
   }
 
   try {
-    const balance = await fetchOmegaPayBalance();
-    const snapshot = await saveBalanceSnapshot(balance, "OMEGAPAY");
-    await setServerSetting("OMEGAPAY_LAST_SYNC_AT", snapshot.fetchedAt || new Date().toISOString());
+    const balance = await fetchOmegaPayBalance(user.id);
+    const snapshot = await saveBalanceSnapshot(balance, "OMEGAPAY", user.id);
+    await setUserSetting(
+      user.id,
+      "OMEGAPAY_LAST_SYNC_AT",
+      snapshot.fetchedAt || new Date().toISOString()
+    );
     return NextResponse.json({
       ok: true,
       balance: snapshot,

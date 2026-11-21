@@ -1,9 +1,23 @@
 import crypto from "crypto";
 import { cookies } from "next/headers";
-import { getServerSetting } from "./db";
+import {
+  claimLegacyDataForOwner,
+  ensureUserProfile,
+  getServerSetting,
+  LEGACY_ADMIN_USER_ID,
+} from "./db";
+import { createSupabaseServerClient } from "./supabase/server";
 
 export const SESSION_COOKIE_NAME = "pulsetrack_session";
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 dias
+
+export interface AuthenticatedUser {
+  id: string;
+  email: string;
+  displayName: string;
+  companyName: string;
+  authProvider: "supabase" | "legacy";
+}
 
 function getSigningSecret(): string {
   return (
@@ -83,8 +97,77 @@ export function timingSafeStringCompare(a: string, b: string): boolean {
   return crypto.timingSafeEqual(hashA, hashB);
 }
 
+/**
+ * Valida a sessão no servidor (Supabase Auth prioritário + fallback seguro da conta legada).
+ * Garante criação automática de perfil sem duplicatas e preserva dados existentes da conta proprietária.
+ */
+export async function getAuthenticatedUser(): Promise<AuthenticatedUser | null> {
+  // 1. Tenta autenticar via Supabase Auth (JWT verificado no servidor com getUser())
+  try {
+    const supabase = await createSupabaseServerClient();
+    if (supabase) {
+      const { data, error } = await supabase.auth.getUser();
+      if (!error && data?.user) {
+        const email = (data.user.email || "").trim().toLowerCase();
+        const meta = (data.user.user_metadata || {}) as Record<string, unknown>;
+        const metaName =
+          (typeof meta.display_name === "string" && meta.display_name) ||
+          (typeof meta.full_name === "string" && meta.full_name) ||
+          (typeof meta.name === "string" && meta.name) ||
+          undefined;
+        const metaCompany =
+          typeof meta.company_name === "string" ? meta.company_name : undefined;
+
+        const profile = await ensureUserProfile({
+          id: data.user.id,
+          email,
+          displayName: metaName,
+          companyName: metaCompany,
+        });
+
+        await claimLegacyDataForOwner(data.user.id, email);
+
+        return {
+          id: data.user.id,
+          email: profile.email || email,
+          displayName: profile.displayName || email.split("@")[0] || "Usuário",
+          companyName: profile.companyName || "Dashfy Workspace",
+          authProvider: "supabase",
+        };
+      }
+    }
+  } catch {
+    // Fallback para sessão legada abaixo
+  }
+
+  // 2. Fallback compatível para a sessão legada HMAC da conta proprietária
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+    const verified = verifySessionToken(token);
+    if (verified.valid && verified.username) {
+      const profile = await ensureUserProfile({
+        id: LEGACY_ADMIN_USER_ID,
+        email: verified.username,
+        displayName: "Tiago Mendonça",
+        companyName: "Dashfy Workspace",
+        role: "owner",
+      });
+      return {
+        id: LEGACY_ADMIN_USER_ID,
+        email: verified.username,
+        displayName: profile.displayName || "Tiago Mendonça",
+        companyName: profile.companyName || "Dashfy Workspace",
+        authProvider: "legacy",
+      };
+    }
+  } catch {
+    // Sem cookies válidos
+  }
+
+  return null;
+}
+
 export async function isAuthenticated(): Promise<boolean> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
-  return verifySessionToken(token).valid;
+  return Boolean(await getAuthenticatedUser());
 }

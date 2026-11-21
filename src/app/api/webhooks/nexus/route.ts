@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSetting } from "@/lib/db";
+import {
+  findUserIdByWebhookToken,
+  getUserSetting,
+  LEGACY_ADMIN_USER_ID,
+} from "@/lib/db";
 import { processNexusWebhook } from "@/lib/nexus-processor";
 import { safeLog } from "@/lib/sanitize";
 
 /**
- * Endpoint oficial de recebimento de Webhooks do Gateway Nexus
+ * Endpoint oficial de recebimento de Webhooks do Gateway Nexus (multi-usuário)
  * Método: HTTP POST (application/json)
  */
 export async function POST(request: NextRequest) {
@@ -20,12 +24,6 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const configuredToken =
-      (await getServerSetting("NEXUS_WEBHOOK_TOKEN")) ||
-      process.env.NEXUS_WEBHOOK_TOKEN ||
-      "";
-
-    // Suporte para token passado via query string ou header x-nexus-token
     const headerToken =
       request.headers.get("x-nexus-token") ||
       request.headers.get("x-webhook-token") ||
@@ -34,14 +32,41 @@ export async function POST(request: NextRequest) {
 
     const payload =
       typeof rawBody === "object" && rawBody !== null
-        ? (rawBody as Record<string, unknown>)
+        ? ({ ...(rawBody as Record<string, unknown>) } as Record<string, unknown>)
         : {};
 
     if (headerToken && !payload.token) {
       payload.token = headerToken;
     }
 
-    const result = await processNexusWebhook(payload, configuredToken);
+    const tokenCandidate =
+      typeof payload.token === "string" ? payload.token.trim() : "";
+
+    let targetUserId = request.nextUrl.searchParams.get("u")?.trim() || "";
+    if (!targetUserId && tokenCandidate) {
+      const matchedUser = await findUserIdByWebhookToken(
+        "NEXUS_WEBHOOK_TOKEN",
+        tokenCandidate
+      );
+      if (matchedUser) {
+        targetUserId = matchedUser;
+      }
+    }
+    if (!targetUserId) {
+      targetUserId = LEGACY_ADMIN_USER_ID;
+    }
+
+    const configuredToken =
+      (await getUserSetting(targetUserId, "NEXUS_WEBHOOK_TOKEN")) ||
+      (targetUserId === LEGACY_ADMIN_USER_ID
+        ? process.env.NEXUS_WEBHOOK_TOKEN || ""
+        : "");
+
+    const result = await processNexusWebhook(
+      payload,
+      configuredToken,
+      targetUserId
+    );
 
     if (!result.ok) {
       return NextResponse.json(

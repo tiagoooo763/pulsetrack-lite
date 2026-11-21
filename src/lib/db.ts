@@ -26,6 +26,18 @@ export type GatewayId = "OMEGAPAY" | "NEXUS";
 export type DashboardOperationMode = "tiktok" | "omegapay";
 export type DashboardOperationId = string;
 
+export const LEGACY_ADMIN_USER_ID = "legacy:mendoncat831@gmail.com";
+
+export interface UserProfileRecord {
+  id: string;
+  email: string;
+  displayName: string;
+  companyName: string;
+  role: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface DashboardConfigRecord {
   id: string;
   name: string;
@@ -373,7 +385,41 @@ export async function getDb(): Promise<DbExecutor> {
         )
       `);
 
-      // Migração segura para bancos existentes (SQLite e PostgreSQL)
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS profiles (
+          id TEXT PRIMARY KEY,
+          email TEXT NOT NULL,
+          display_name TEXT NOT NULL DEFAULT '',
+          company_name TEXT NOT NULL DEFAULT 'Dashfy Workspace',
+          role TEXT NOT NULL DEFAULT 'user',
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        )
+      `);
+
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS user_settings (
+          user_id TEXT NOT NULL,
+          key TEXT NOT NULL,
+          value TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          PRIMARY KEY (user_id, key)
+        )
+      `);
+
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS user_balance_snapshots (
+          user_id TEXT NOT NULL,
+          gateway TEXT NOT NULL DEFAULT 'OMEGAPAY',
+          available REAL NOT NULL DEFAULT 0,
+          pending REAL NOT NULL DEFAULT 0,
+          fund_lock REAL NOT NULL DEFAULT 0,
+          fetched_at TEXT NOT NULL,
+          PRIMARY KEY (user_id, gateway)
+        )
+      `);
+
+      // Migração segura não-destrutiva para bancos existentes (SQLite e PostgreSQL)
       try {
         await db.execute(`ALTER TABLE transactions ADD COLUMN gateway TEXT NOT NULL DEFAULT 'OMEGAPAY'`);
       } catch {}
@@ -398,6 +444,24 @@ export async function getDb(): Promise<DbExecutor> {
       try {
         await db.execute(`ALTER TABLE tiktok_campaigns ADD COLUMN dashboard_id TEXT NOT NULL DEFAULT 'tiktok'`);
       } catch {}
+
+      // Multi-tenant: adiciona user_id preservando todos os dados legados existentes
+      for (const tbl of [
+        "transactions",
+        "transfers",
+        "manual_expenses",
+        "tiktok_campaigns",
+        "custom_fees",
+        "automation_rules",
+        "webhook_events",
+        "balance_snapshots",
+      ]) {
+        try {
+          await db.execute(
+            `ALTER TABLE ${tbl} ADD COLUMN user_id TEXT NOT NULL DEFAULT '${LEGACY_ADMIN_USER_ID}'`
+          );
+        } catch {}
+      }
 
       return db;
     })();
@@ -489,6 +553,7 @@ export async function checkWebhookEventExists(dedupeKey: string): Promise<boolea
 }
 
 export async function insertWebhookEvent(params: {
+  userId?: string;
   dedupeKey: string;
   gateway?: GatewayId;
   eventType: string;
@@ -497,7 +562,13 @@ export async function insertWebhookEvent(params: {
   sanitizedPayload: Record<string, unknown>;
 }): Promise<{ duplicate: boolean; id: string }> {
   const db = await getDb();
-  const existing = await checkWebhookEventExists(params.dedupeKey);
+  const userId = params.userId?.trim() || LEGACY_ADMIN_USER_ID;
+  const scopedDedupeKey =
+    userId === LEGACY_ADMIN_USER_ID
+      ? params.dedupeKey
+      : `${userId}:${params.dedupeKey}`;
+
+  const existing = await checkWebhookEventExists(scopedDedupeKey);
   if (existing) {
     return { duplicate: true, id: "" };
   }
@@ -507,12 +578,13 @@ export async function insertWebhookEvent(params: {
   const gateway = params.gateway || "OMEGAPAY";
   try {
     await db.execute(
-      `INSERT INTO webhook_events (id, gateway, dedupe_key, event_type, entity_id, status_after, sanitized_payload, received_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO webhook_events (id, user_id, gateway, dedupe_key, event_type, entity_id, status_after, sanitized_payload, received_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
+        userId,
         gateway,
-        params.dedupeKey,
+        scopedDedupeKey,
         params.eventType,
         params.entityId,
         params.statusAfter,
@@ -532,6 +604,7 @@ export async function insertWebhookEvent(params: {
 
 export async function upsertTransaction(input: {
   id: string;
+  userId?: string;
   gateway?: GatewayId;
   clientIdentifier?: string | null;
   orderId?: string | null;
@@ -550,9 +623,10 @@ export async function upsertTransaction(input: {
   paidAt?: string | null;
 }): Promise<TransactionRecord> {
   const db = await getDb();
+  const userId = input.userId?.trim() || LEGACY_ADMIN_USER_ID;
   const existingRows = await db.query(
-    `SELECT * FROM transactions WHERE id = ? LIMIT 1`,
-    [input.id]
+    `SELECT * FROM transactions WHERE id = ? AND user_id = ? LIMIT 1`,
+    [input.id, userId]
   );
 
   const now = new Date().toISOString();
@@ -613,7 +687,7 @@ export async function upsertTransaction(input: {
            installments = ?,
            paid_at = ?,
            updated_at = ?
-       WHERE id = ?`,
+       WHERE id = ? AND user_id = ?`,
       [
         gateway,
         input.clientIdentifier ?? existing.clientIdentifier,
@@ -632,12 +706,13 @@ export async function upsertTransaction(input: {
         paidAt,
         now,
         input.id,
+        userId,
       ]
     );
 
     const updated = await db.query(
-      `SELECT * FROM transactions WHERE id = ? LIMIT 1`,
-      [input.id]
+      `SELECT * FROM transactions WHERE id = ? AND user_id = ? LIMIT 1`,
+      [input.id, userId]
     );
     return mapTransactionRow(updated[0]);
   }
@@ -657,12 +732,13 @@ export async function upsertTransaction(input: {
 
   await db.execute(
     `INSERT INTO transactions (
-      id, gateway, client_identifier, order_id, product_id, product_name,
+      id, user_id, gateway, client_identifier, order_id, product_id, product_name,
       offer_code, payment_method, currency, gross_amount, fee_amount,
       net_amount, status, last_event, installments, created_at, paid_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       input.id,
+      userId,
       gateway,
       input.clientIdentifier ?? null,
       input.orderId ?? null,
@@ -684,14 +760,15 @@ export async function upsertTransaction(input: {
   );
 
   const inserted = await db.query(
-    `SELECT * FROM transactions WHERE id = ? LIMIT 1`,
-    [input.id]
+    `SELECT * FROM transactions WHERE id = ? AND user_id = ? LIMIT 1`,
+    [input.id, userId]
   );
   return mapTransactionRow(inserted[0]);
 }
 
 export async function upsertTransfer(input: {
   id: string;
+  userId?: string;
   gateway?: GatewayId;
   clientIdentifier?: string | null;
   amount: number;
@@ -705,9 +782,10 @@ export async function upsertTransfer(input: {
   updatedAt?: string | null;
 }): Promise<TransferRecord> {
   const db = await getDb();
+  const userId = input.userId?.trim() || LEGACY_ADMIN_USER_ID;
   const existingRows = await db.query(
-    `SELECT * FROM transfers WHERE id = ? LIMIT 1`,
-    [input.id]
+    `SELECT * FROM transfers WHERE id = ? AND user_id = ? LIMIT 1`,
+    [input.id, userId]
   );
 
   const now = new Date().toISOString();
@@ -735,7 +813,7 @@ export async function upsertTransfer(input: {
            last_event = ?,
            message = ?,
            updated_at = ?
-       WHERE id = ?`,
+       WHERE id = ? AND user_id = ?`,
       [
         gateway,
         input.clientIdentifier ?? existing.clientIdentifier,
@@ -748,11 +826,12 @@ export async function upsertTransfer(input: {
         input.message ?? existing.message,
         input.updatedAt || now,
         input.id,
+        userId,
       ]
     );
     const updated = await db.query(
-      `SELECT * FROM transfers WHERE id = ? LIMIT 1`,
-      [input.id]
+      `SELECT * FROM transfers WHERE id = ? AND user_id = ? LIMIT 1`,
+      [input.id, userId]
     );
     return mapTransferRow(updated[0]);
   }
@@ -761,11 +840,12 @@ export async function upsertTransfer(input: {
 
   await db.execute(
     `INSERT INTO transfers (
-      id, gateway, client_identifier, amount, received_amount, fee_amount,
+      id, user_id, gateway, client_identifier, amount, received_amount, fee_amount,
       currency, status, last_event, message, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       input.id,
+      userId,
       gateway,
       input.clientIdentifier ?? null,
       amount,
@@ -781,37 +861,47 @@ export async function upsertTransfer(input: {
   );
 
   const inserted = await db.query(
-    `SELECT * FROM transfers WHERE id = ? LIMIT 1`,
-    [input.id]
+    `SELECT * FROM transfers WHERE id = ? AND user_id = ? LIMIT 1`,
+    [input.id, userId]
   );
   return mapTransferRow(inserted[0]);
 }
 
-export async function listTransactions(): Promise<TransactionRecord[]> {
+export async function listTransactions(
+  userId: string = LEGACY_ADMIN_USER_ID
+): Promise<TransactionRecord[]> {
   const db = await getDb();
   const rows = await db.query(
-    `SELECT * FROM transactions ORDER BY created_at DESC`
+    `SELECT * FROM transactions WHERE user_id = ? ORDER BY created_at DESC`,
+    [userId]
   );
   return rows.map(mapTransactionRow);
 }
 
-export async function listTransfers(): Promise<TransferRecord[]> {
+export async function listTransfers(
+  userId: string = LEGACY_ADMIN_USER_ID
+): Promise<TransferRecord[]> {
   const db = await getDb();
   const rows = await db.query(
-    `SELECT * FROM transfers ORDER BY created_at DESC`
+    `SELECT * FROM transfers WHERE user_id = ? ORDER BY created_at DESC`,
+    [userId]
   );
   return rows.map(mapTransferRow);
 }
 
-export async function listManualExpenses(): Promise<ManualExpenseRecord[]> {
+export async function listManualExpenses(
+  userId: string = LEGACY_ADMIN_USER_ID
+): Promise<ManualExpenseRecord[]> {
   const db = await getDb();
   const rows = await db.query(
-    `SELECT * FROM manual_expenses ORDER BY expense_date DESC, created_at DESC`
+    `SELECT * FROM manual_expenses WHERE user_id = ? ORDER BY expense_date DESC, created_at DESC`,
+    [userId]
   );
   return rows.map(mapExpenseRow);
 }
 
 export async function createManualExpense(input: {
+  userId?: string;
   category: ExpenseCategory;
   gateway?: "ALL" | GatewayId;
   dashboardId?: DashboardOperationId;
@@ -824,15 +914,17 @@ export async function createManualExpense(input: {
   const db = await getDb();
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
+  const userId = input.userId?.trim() || LEGACY_ADMIN_USER_ID;
   const gateway = input.gateway || "ALL";
   const dashboardId: DashboardOperationId =
     input.dashboardId || (input.category === "TIKTOK_ADS" ? "tiktok" : "omegapay");
 
   await db.execute(
-    `INSERT INTO manual_expenses (id, gateway, dashboard_id, campaign_name, category, title, amount, expense_date, notes, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO manual_expenses (id, user_id, gateway, dashboard_id, campaign_name, category, title, amount, expense_date, notes, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
+      userId,
       gateway,
       dashboardId,
       input.campaignName?.trim() || null,
@@ -846,24 +938,37 @@ export async function createManualExpense(input: {
   );
 
   const rows = await db.query(
-    `SELECT * FROM manual_expenses WHERE id = ? LIMIT 1`,
-    [id]
+    `SELECT * FROM manual_expenses WHERE id = ? AND user_id = ? LIMIT 1`,
+    [id, userId]
   );
   return mapExpenseRow(rows[0]);
 }
 
-export async function deleteManualExpense(id: string): Promise<void> {
+export async function deleteManualExpense(
+  id: string,
+  userId: string = LEGACY_ADMIN_USER_ID
+): Promise<boolean> {
   const db = await getDb();
-  await db.execute(`DELETE FROM manual_expenses WHERE id = ?`, [id]);
+  const existing = await db.query(
+    `SELECT id FROM manual_expenses WHERE id = ? AND user_id = ? LIMIT 1`,
+    [id, userId]
+  );
+  if (existing.length === 0) return false;
+  await db.execute(
+    `DELETE FROM manual_expenses WHERE id = ? AND user_id = ?`,
+    [id, userId]
+  );
+  return true;
 }
 
 export async function listRecentWebhookEvents(
-  limit = 30
+  limit = 30,
+  userId: string = LEGACY_ADMIN_USER_ID
 ): Promise<WebhookEventRecord[]> {
   const db = await getDb();
   const rows = await db.query(
-    `SELECT * FROM webhook_events ORDER BY received_at DESC LIMIT ?`,
-    [limit]
+    `SELECT * FROM webhook_events WHERE user_id = ? ORDER BY received_at DESC LIMIT ?`,
+    [userId, limit]
   );
   return rows.map((row) => ({
     id: String(row.id),
@@ -879,41 +984,40 @@ export async function listRecentWebhookEvents(
 
 export async function saveBalanceSnapshot(
   balance: OmegaPayBalanceResponse & { gateway?: GatewayId },
-  explicitGateway?: GatewayId
+  explicitGateway?: GatewayId,
+  userId: string = LEGACY_ADMIN_USER_ID
 ): Promise<BalanceSnapshotRecord> {
   const db = await getDb();
   const now = new Date().toISOString();
   const gateway: GatewayId =
     explicitGateway ||
     (balance.gateway && String(balance.gateway).toUpperCase() === "NEXUS" ? "NEXUS" : "OMEGAPAY");
-  const id = gateway === "OMEGAPAY" ? 1 : 2;
 
   const existing = await db.query(
-    `SELECT id FROM balance_snapshots WHERE gateway = ? OR (gateway IS NULL AND id = ?) LIMIT 1`,
-    [gateway, id]
+    `SELECT user_id FROM user_balance_snapshots WHERE user_id = ? AND gateway = ? LIMIT 1`,
+    [userId, gateway]
   );
 
   if (existing.length > 0) {
-    const existingId = Number(existing[0].id);
     await db.execute(
-      `UPDATE balance_snapshots
-       SET gateway = ?, available = ?, pending = ?, fund_lock = ?, fetched_at = ?
-       WHERE id = ?`,
+      `UPDATE user_balance_snapshots
+       SET available = ?, pending = ?, fund_lock = ?, fetched_at = ?
+       WHERE user_id = ? AND gateway = ?`,
       [
-        gateway,
         Number(balance.available || 0),
         Number(balance.pending || 0),
         Number(balance.fundLock || 0),
         now,
-        existingId,
+        userId,
+        gateway,
       ]
     );
   } else {
     await db.execute(
-      `INSERT INTO balance_snapshots (id, gateway, available, pending, fund_lock, fetched_at)
+      `INSERT INTO user_balance_snapshots (user_id, gateway, available, pending, fund_lock, fetched_at)
        VALUES (?, ?, ?, ?, ?, ?)`,
       [
-        id,
+        userId,
         gateway,
         Number(balance.available || 0),
         Number(balance.pending || 0),
@@ -933,37 +1037,60 @@ export async function saveBalanceSnapshot(
 }
 
 export async function getLatestBalanceSnapshot(
-  gateway: GatewayId = "OMEGAPAY"
+  gateway: GatewayId = "OMEGAPAY",
+  userId: string = LEGACY_ADMIN_USER_ID
 ): Promise<BalanceSnapshotRecord> {
   const db = await getDb();
-  const id = gateway === "OMEGAPAY" ? 1 : 2;
   const rows = await db.query(
-    `SELECT * FROM balance_snapshots WHERE gateway = ? OR (gateway IS NULL AND id = ?) ORDER BY id ASC LIMIT 1`,
-    [gateway, id]
+    `SELECT * FROM user_balance_snapshots WHERE user_id = ? AND gateway = ? LIMIT 1`,
+    [userId, gateway]
   );
-  if (rows.length === 0) {
+
+  if (rows.length > 0) {
+    const r = rows[0];
     return {
-      gateway,
-      available: 0,
-      pending: 0,
-      fundLock: 0,
-      fetchedAt: null,
+      gateway: (String(r.gateway || gateway).toUpperCase() === "NEXUS" ? "NEXUS" : "OMEGAPAY") as GatewayId,
+      available: Number(r.available || 0),
+      pending: Number(r.pending || 0),
+      fundLock: Number(r.fund_lock || 0),
+      fetchedAt: r.fetched_at ? String(r.fetched_at) : null,
     };
   }
-  const r = rows[0];
+
+  // Fallback não-destrutivo somente para a conta legada ler snapshots antigos de balance_snapshots
+  if (userId === LEGACY_ADMIN_USER_ID) {
+    const id = gateway === "OMEGAPAY" ? 1 : 2;
+    const legacyRows = await db.query(
+      `SELECT * FROM balance_snapshots WHERE (gateway = ? OR (gateway IS NULL AND id = ?)) AND user_id = ? ORDER BY id ASC LIMIT 1`,
+      [gateway, id, LEGACY_ADMIN_USER_ID]
+    );
+    if (legacyRows.length > 0) {
+      const r = legacyRows[0];
+      return {
+        gateway: (String(r.gateway || gateway).toUpperCase() === "NEXUS" ? "NEXUS" : "OMEGAPAY") as GatewayId,
+        available: Number(r.available || 0),
+        pending: Number(r.pending || 0),
+        fundLock: Number(r.fund_lock || 0),
+        fetchedAt: r.fetched_at ? String(r.fetched_at) : null,
+      };
+    }
+  }
+
   return {
-    gateway: (String(r.gateway || gateway).toUpperCase() === "NEXUS" ? "NEXUS" : "OMEGAPAY") as GatewayId,
-    available: Number(r.available || 0),
-    pending: Number(r.pending || 0),
-    fundLock: Number(r.fund_lock || 0),
-    fetchedAt: r.fetched_at ? String(r.fetched_at) : null,
+    gateway,
+    available: 0,
+    pending: 0,
+    fundLock: 0,
+    fetchedAt: null,
   };
 }
 
-export async function getAllBalanceSnapshots(): Promise<Record<GatewayId, BalanceSnapshotRecord>> {
+export async function getAllBalanceSnapshots(
+  userId: string = LEGACY_ADMIN_USER_ID
+): Promise<Record<GatewayId, BalanceSnapshotRecord>> {
   const [omega, nexus] = await Promise.all([
-    getLatestBalanceSnapshot("OMEGAPAY"),
-    getLatestBalanceSnapshot("NEXUS"),
+    getLatestBalanceSnapshot("OMEGAPAY", userId),
+    getLatestBalanceSnapshot("NEXUS", userId),
   ]);
   return {
     OMEGAPAY: omega,
@@ -1086,18 +1213,258 @@ function mapExpenseRow(row: Record<string, unknown>): ManualExpenseRecord {
 }
 
 // ============================================================
-// TIKTOK CAMPAIGNS (Isoladas por dashboardId)
+// PROFILES & USER SETTINGS (Multi-Tenant + Auto-Criação Idempotente)
 // ============================================================
 
-export async function listTikTokCampaigns(): Promise<TikTokCampaignRecord[]> {
+export async function getUserProfile(
+  userId: string
+): Promise<UserProfileRecord | null> {
   const db = await getDb();
   const rows = await db.query(
-    `SELECT * FROM tiktok_campaigns ORDER BY stat_date DESC, created_at DESC`
+    `SELECT * FROM profiles WHERE id = ? LIMIT 1`,
+    [userId]
+  );
+  if (rows.length === 0) return null;
+  const r = rows[0];
+  return {
+    id: String(r.id),
+    email: String(r.email || ""),
+    displayName: String(r.display_name || ""),
+    companyName: String(r.company_name || "Dashfy Workspace"),
+    role: String(r.role || "user"),
+    createdAt: String(r.created_at || ""),
+    updatedAt: String(r.updated_at || ""),
+  };
+}
+
+/**
+ * Cria automaticamente o perfil de um usuário se ainda não existir (100% idempotente, nunca duplica).
+ */
+export async function ensureUserProfile(input: {
+  id: string;
+  email: string;
+  displayName?: string | null;
+  companyName?: string | null;
+  role?: string;
+}): Promise<UserProfileRecord> {
+  const existing = await getUserProfile(input.id);
+  if (existing) return existing;
+
+  const db = await getDb();
+  const now = new Date().toISOString();
+  const normalizedEmail = input.email.trim().toLowerCase();
+  const fallbackName = normalizedEmail.split("@")[0] || "Usuário";
+  const displayName = input.displayName?.trim() || fallbackName;
+  const companyName = input.companyName?.trim() || "Dashfy Workspace";
+  const role = input.role || "user";
+
+  try {
+    await db.execute(
+      `INSERT INTO profiles (id, email, display_name, company_name, role, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [input.id, normalizedEmail, displayName, companyName, role, now, now]
+    );
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (!msg.toLowerCase().includes("unique") && !msg.toLowerCase().includes("duplicate")) {
+      throw err;
+    }
+  }
+
+  return (
+    (await getUserProfile(input.id)) || {
+      id: input.id,
+      email: normalizedEmail,
+      displayName,
+      companyName,
+      role,
+      createdAt: now,
+      updatedAt: now,
+    }
+  );
+}
+
+export async function updateUserProfile(
+  userId: string,
+  updates: { displayName?: string; companyName?: string }
+): Promise<UserProfileRecord | null> {
+  const existing = await getUserProfile(userId);
+  if (!existing) return null;
+
+  const db = await getDb();
+  const now = new Date().toISOString();
+  const displayName = updates.displayName?.trim() || existing.displayName;
+  const companyName = updates.companyName?.trim() || existing.companyName;
+
+  await db.execute(
+    `UPDATE profiles SET display_name = ?, company_name = ?, updated_at = ? WHERE id = ?`,
+    [displayName, companyName, now, userId]
+  );
+
+  return getUserProfile(userId);
+}
+
+export async function getUserSetting(
+  userId: string,
+  key: string
+): Promise<string | null> {
+  const db = await getDb();
+  const rows = await db.query(
+    `SELECT value FROM user_settings WHERE user_id = ? AND key = ? LIMIT 1`,
+    [userId, key]
+  );
+  if (rows.length > 0) {
+    return String(rows[0].value);
+  }
+  // Fallback não-destrutivo somente para a conta proprietária legada
+  if (userId === LEGACY_ADMIN_USER_ID) {
+    return getServerSetting(key);
+  }
+  return null;
+}
+
+export async function setUserSetting(
+  userId: string,
+  key: string,
+  value: string
+): Promise<void> {
+  const db = await getDb();
+  const now = new Date().toISOString();
+  const existing = await db.query(
+    `SELECT user_id FROM user_settings WHERE user_id = ? AND key = ? LIMIT 1`,
+    [userId, key]
+  );
+  if (existing.length > 0) {
+    await db.execute(
+      `UPDATE user_settings SET value = ?, updated_at = ? WHERE user_id = ? AND key = ?`,
+      [value, now, userId, key]
+    );
+  } else {
+    await db.execute(
+      `INSERT INTO user_settings (user_id, key, value, updated_at) VALUES (?, ?, ?, ?)`,
+      [userId, key, value, now]
+    );
+  }
+}
+
+/**
+ * Localiza qual usuário é dono de um token de webhook (para roteamento seguro multi-tenant).
+ */
+export async function findUserIdByWebhookToken(
+  settingKey: string,
+  incomingToken: string
+): Promise<string | null> {
+  const cleanIncoming = incomingToken.trim();
+  if (!cleanIncoming) return null;
+
+  const db = await getDb();
+  const rows = await db.query(
+    `SELECT user_id, value FROM user_settings WHERE key = ?`,
+    [settingKey]
+  );
+
+  const incomingHash = crypto.createHash("sha256").update(cleanIncoming, "utf8").digest();
+
+  for (const row of rows) {
+    const tokens = String(row.value || "")
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
+    for (const candidate of tokens) {
+      const candidateHash = crypto.createHash("sha256").update(candidate, "utf8").digest();
+      if (crypto.timingSafeEqual(incomingHash, candidateHash)) {
+        return String(row.user_id);
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * Vincula de forma segura e não-destrutiva todos os dados legados da conta proprietária
+ * ('mendoncat831@gmail.com') ao seu novo UUID do Supabase Auth no primeiro login.
+ */
+export async function claimLegacyDataForOwner(
+  newUserId: string,
+  email: string
+): Promise<void> {
+  const ownerEmail = (process.env.DASHBOARD_USER?.trim() || "mendoncat831@gmail.com").toLowerCase();
+  if (!newUserId || newUserId === LEGACY_ADMIN_USER_ID) return;
+  if (email.trim().toLowerCase() !== ownerEmail) return;
+
+  const alreadyClaimed = await getUserSetting(newUserId, "LEGACY_DATA_CLAIMED");
+  if (alreadyClaimed === "true") return;
+
+  const db = await getDb();
+  for (const tbl of [
+    "transactions",
+    "transfers",
+    "manual_expenses",
+    "tiktok_campaigns",
+    "custom_fees",
+    "automation_rules",
+    "webhook_events",
+  ]) {
+    try {
+      await db.execute(
+        `UPDATE ${tbl} SET user_id = ? WHERE user_id = ?`,
+        [newUserId, LEGACY_ADMIN_USER_ID]
+      );
+    } catch {}
+  }
+
+  // Copia snapshots de saldo legados
+  const legacyBalances = await getAllBalanceSnapshots(LEGACY_ADMIN_USER_ID);
+  if (legacyBalances.OMEGAPAY.fetchedAt) {
+    await saveBalanceSnapshot(legacyBalances.OMEGAPAY, "OMEGAPAY", newUserId);
+  }
+  if (legacyBalances.NEXUS.fetchedAt) {
+    await saveBalanceSnapshot(legacyBalances.NEXUS, "NEXUS", newUserId);
+  }
+
+  // Copia configurações legadas para user_settings do proprietário
+  for (const key of [
+    "OMEGAPAY_PUBLIC_KEY",
+    "OMEGAPAY_SECRET_KEY",
+    "OMEGAPAY_WEBHOOK_TOKEN",
+    "OMEGAPAY_SYNC_ENABLED",
+    "OMEGAPAY_LAST_SYNC_AT",
+    "NEXUS_API_KEY",
+    "NEXUS_SECRET_KEY",
+    "NEXUS_WEBHOOK_TOKEN",
+    "DASHFY_DASHBOARDS_CONFIG",
+    "QUICK_EXPENSE_PRESET",
+    "NOTIFICATION_PREFS",
+  ]) {
+    const existingForUser = await getUserSetting(newUserId, key);
+    if (!existingForUser) {
+      const legacyVal = await getServerSetting(key);
+      if (legacyVal) {
+        await setUserSetting(newUserId, key, legacyVal);
+      }
+    }
+  }
+
+  await setUserSetting(newUserId, "LEGACY_DATA_CLAIMED", "true");
+}
+
+// ============================================================
+// TIKTOK CAMPAIGNS (Isoladas por userId + dashboardId)
+// ============================================================
+
+export async function listTikTokCampaigns(
+  userId: string = LEGACY_ADMIN_USER_ID
+): Promise<TikTokCampaignRecord[]> {
+  const db = await getDb();
+  const rows = await db.query(
+    `SELECT * FROM tiktok_campaigns WHERE user_id = ? ORDER BY stat_date DESC, created_at DESC`,
+    [userId]
   );
   return rows.map(mapTikTokRow);
 }
 
 export async function createTikTokCampaign(input: {
+  userId?: string;
   dashboardId?: string;
   adAccount?: string;
   campaignName: string;
@@ -1119,17 +1486,19 @@ export async function createTikTokCampaign(input: {
   const db = await getDb();
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
+  const userId = input.userId?.trim() || LEGACY_ADMIN_USER_ID;
   const dashboardId = input.dashboardId?.trim() || "tiktok";
 
   await db.execute(
     `INSERT INTO tiktok_campaigns (
-      id, dashboard_id, ad_account, campaign_name, adgroup_name, ad_name, product_name,
+      id, user_id, dashboard_id, ad_account, campaign_name, adgroup_name, ad_name, product_name,
       utm_source, utm_medium, utm_campaign, utm_content, stat_date,
       spend, impressions, clicks, conversions, attributed_revenue, status,
       created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
+      userId,
       dashboardId,
       input.adAccount?.trim() || "Conta Principal TikTok",
       input.campaignName.trim(),
@@ -1153,26 +1522,45 @@ export async function createTikTokCampaign(input: {
   );
 
   const rows = await db.query(
-    `SELECT * FROM tiktok_campaigns WHERE id = ? LIMIT 1`,
-    [id]
+    `SELECT * FROM tiktok_campaigns WHERE id = ? AND user_id = ? LIMIT 1`,
+    [id, userId]
   );
   return mapTikTokRow(rows[0]);
 }
 
 export async function updateTikTokCampaignStatus(
   id: string,
-  status: "ACTIVE" | "PAUSED"
-): Promise<void> {
+  status: "ACTIVE" | "PAUSED",
+  userId: string = LEGACY_ADMIN_USER_ID
+): Promise<boolean> {
   const db = await getDb();
-  await db.execute(
-    `UPDATE tiktok_campaigns SET status = ?, updated_at = ? WHERE id = ?`,
-    [status, new Date().toISOString(), id]
+  const existing = await db.query(
+    `SELECT id FROM tiktok_campaigns WHERE id = ? AND user_id = ? LIMIT 1`,
+    [id, userId]
   );
+  if (existing.length === 0) return false;
+  await db.execute(
+    `UPDATE tiktok_campaigns SET status = ?, updated_at = ? WHERE id = ? AND user_id = ?`,
+    [status, new Date().toISOString(), id, userId]
+  );
+  return true;
 }
 
-export async function deleteTikTokCampaign(id: string): Promise<void> {
+export async function deleteTikTokCampaign(
+  id: string,
+  userId: string = LEGACY_ADMIN_USER_ID
+): Promise<boolean> {
   const db = await getDb();
-  await db.execute(`DELETE FROM tiktok_campaigns WHERE id = ?`, [id]);
+  const existing = await db.query(
+    `SELECT id FROM tiktok_campaigns WHERE id = ? AND user_id = ? LIMIT 1`,
+    [id, userId]
+  );
+  if (existing.length === 0) return false;
+  await db.execute(
+    `DELETE FROM tiktok_campaigns WHERE id = ? AND user_id = ?`,
+    [id, userId]
+  );
+  return true;
 }
 
 function mapTikTokRow(row: Record<string, unknown>): TikTokCampaignRecord {
@@ -1201,18 +1589,22 @@ function mapTikTokRow(row: Record<string, unknown>): TikTokCampaignRecord {
 }
 
 // ============================================================
-// CUSTOM FEES (Taxas por operação — impactam o Resumo)
+// CUSTOM FEES (Taxas isoladas por userId + dashboardId)
 // ============================================================
 
-export async function listCustomFees(): Promise<CustomFeeRecord[]> {
+export async function listCustomFees(
+  userId: string = LEGACY_ADMIN_USER_ID
+): Promise<CustomFeeRecord[]> {
   const db = await getDb();
   const rows = await db.query(
-    `SELECT * FROM custom_fees ORDER BY fee_date DESC, created_at DESC`
+    `SELECT * FROM custom_fees WHERE user_id = ? ORDER BY fee_date DESC, created_at DESC`,
+    [userId]
   );
   return rows.map(mapFeeRow);
 }
 
 export async function createCustomFee(input: {
+  userId?: string;
   dashboardId: DashboardOperationId;
   name: string;
   category: FeeCategory;
@@ -1225,12 +1617,14 @@ export async function createCustomFee(input: {
   const db = await getDb();
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
+  const userId = input.userId?.trim() || LEGACY_ADMIN_USER_ID;
 
   await db.execute(
-    `INSERT INTO custom_fees (id, dashboard_id, name, category, fee_type, value, fee_date, campaign_name, notes, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO custom_fees (id, user_id, dashboard_id, name, category, fee_type, value, fee_date, campaign_name, notes, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
+      userId,
       input.dashboardId,
       input.name.trim(),
       input.category,
@@ -1244,15 +1638,27 @@ export async function createCustomFee(input: {
   );
 
   const rows = await db.query(
-    `SELECT * FROM custom_fees WHERE id = ? LIMIT 1`,
-    [id]
+    `SELECT * FROM custom_fees WHERE id = ? AND user_id = ? LIMIT 1`,
+    [id, userId]
   );
   return mapFeeRow(rows[0]);
 }
 
-export async function deleteCustomFee(id: string): Promise<void> {
+export async function deleteCustomFee(
+  id: string,
+  userId: string = LEGACY_ADMIN_USER_ID
+): Promise<boolean> {
   const db = await getDb();
-  await db.execute(`DELETE FROM custom_fees WHERE id = ?`, [id]);
+  const existing = await db.query(
+    `SELECT id FROM custom_fees WHERE id = ? AND user_id = ? LIMIT 1`,
+    [id, userId]
+  );
+  if (existing.length === 0) return false;
+  await db.execute(
+    `DELETE FROM custom_fees WHERE id = ? AND user_id = ?`,
+    [id, userId]
+  );
+  return true;
 }
 
 function mapFeeRow(row: Record<string, unknown>): CustomFeeRecord {
@@ -1272,18 +1678,22 @@ function mapFeeRow(row: Record<string, unknown>): CustomFeeRecord {
 }
 
 // ============================================================
-// AUTOMATION RULES (Regras de monitoramento TikTok)
+// AUTOMATION RULES (Isoladas por userId + dashboardId)
 // ============================================================
 
-export async function listAutomationRules(): Promise<AutomationRuleRecord[]> {
+export async function listAutomationRules(
+  userId: string = LEGACY_ADMIN_USER_ID
+): Promise<AutomationRuleRecord[]> {
   const db = await getDb();
   const rows = await db.query(
-    `SELECT * FROM automation_rules ORDER BY created_at DESC`
+    `SELECT * FROM automation_rules WHERE user_id = ? ORDER BY created_at DESC`,
+    [userId]
   );
   return rows.map(mapRuleRow);
 }
 
 export async function createAutomationRule(input: {
+  userId?: string;
   dashboardId?: DashboardOperationId;
   name: string;
   metric: "ROAS" | "CPA" | "CPC" | "SPEND";
@@ -1294,12 +1704,14 @@ export async function createAutomationRule(input: {
   const db = await getDb();
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
+  const userId = input.userId?.trim() || LEGACY_ADMIN_USER_ID;
 
   await db.execute(
-    `INSERT INTO automation_rules (id, dashboard_id, name, metric, operator, threshold, action_label, enabled, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO automation_rules (id, user_id, dashboard_id, name, metric, operator, threshold, action_label, enabled, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
+      userId,
       input.dashboardId || "tiktok",
       input.name.trim(),
       input.metric,
@@ -1312,26 +1724,45 @@ export async function createAutomationRule(input: {
   );
 
   const rows = await db.query(
-    `SELECT * FROM automation_rules WHERE id = ? LIMIT 1`,
-    [id]
+    `SELECT * FROM automation_rules WHERE id = ? AND user_id = ? LIMIT 1`,
+    [id, userId]
   );
   return mapRuleRow(rows[0]);
 }
 
 export async function toggleAutomationRule(
   id: string,
-  enabled: boolean
-): Promise<void> {
+  enabled: boolean,
+  userId: string = LEGACY_ADMIN_USER_ID
+): Promise<boolean> {
   const db = await getDb();
-  await db.execute(
-    `UPDATE automation_rules SET enabled = ? WHERE id = ?`,
-    [enabled ? 1 : 0, id]
+  const existing = await db.query(
+    `SELECT id FROM automation_rules WHERE id = ? AND user_id = ? LIMIT 1`,
+    [id, userId]
   );
+  if (existing.length === 0) return false;
+  await db.execute(
+    `UPDATE automation_rules SET enabled = ? WHERE id = ? AND user_id = ?`,
+    [enabled ? 1 : 0, id, userId]
+  );
+  return true;
 }
 
-export async function deleteAutomationRule(id: string): Promise<void> {
+export async function deleteAutomationRule(
+  id: string,
+  userId: string = LEGACY_ADMIN_USER_ID
+): Promise<boolean> {
   const db = await getDb();
-  await db.execute(`DELETE FROM automation_rules WHERE id = ?`, [id]);
+  const existing = await db.query(
+    `SELECT id FROM automation_rules WHERE id = ? AND user_id = ? LIMIT 1`,
+    [id, userId]
+  );
+  if (existing.length === 0) return false;
+  await db.execute(
+    `DELETE FROM automation_rules WHERE id = ? AND user_id = ?`,
+    [id, userId]
+  );
+  return true;
 }
 
 function mapRuleRow(row: Record<string, unknown>): AutomationRuleRecord {

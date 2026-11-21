@@ -88,6 +88,7 @@ export interface IntegrationStatusPayload {
   isDefaultPassword: boolean;
   syncEnabled: boolean;
   lastSyncAt: string | null;
+  webhookUserParam?: string;
   nexus?: {
     hasApiCredentials: boolean;
     hasWebhookToken: boolean;
@@ -111,9 +112,11 @@ export interface DashfyDashboardPayload {
   customFees: CustomFeeRecord[];
   automationRules: AutomationRuleRecord[];
   profile: {
+    id?: string;
     username: string;
     displayName: string;
     companyName: string;
+    authProvider?: "supabase" | "legacy";
     notificationPrefs: NotificationPrefs;
   };
   integrationStatus: IntegrationStatusPayload;

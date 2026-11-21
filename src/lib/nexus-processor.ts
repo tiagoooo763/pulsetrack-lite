@@ -1,5 +1,6 @@
 import {
   insertWebhookEvent,
+  LEGACY_ADMIN_USER_ID,
   resolveTransactionStatus,
   upsertTransaction,
   type OmegaPayTransactionStatus,
@@ -21,7 +22,8 @@ export interface ProcessNexusWebhookResult {
  */
 export async function processNexusWebhook(
   payload: Record<string, unknown>,
-  configuredToken?: string
+  configuredToken?: string,
+  userId: string = LEGACY_ADMIN_USER_ID
 ): Promise<ProcessNexusWebhookResult> {
   try {
     // 1. Validação de token se configurado
@@ -213,6 +215,8 @@ export async function processNexusWebhook(
     const sanitizedPayload = sanitizeData(payload);
 
     const webhookResult = await insertWebhookEvent({
+      userId,
+      gateway: "NEXUS",
       dedupeKey,
       eventType: rawEvent,
       entityId: transactionId,
@@ -237,6 +241,7 @@ export async function processNexusWebhook(
     const now = new Date().toISOString();
     await upsertTransaction({
       id: transactionId,
+      userId,
       gateway: "NEXUS",
       clientIdentifier,
       productName,

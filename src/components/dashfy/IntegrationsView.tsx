@@ -67,7 +67,11 @@ export function IntegrationsView({
     typeof window !== "undefined"
       ? window.location.origin
       : "https://pulsetrack-lite.vercel.app";
-  const omegaWebhookUrl = `${originUrl}/api/webhooks/omegapay`;
+  const webhookParam = integrationStatus.webhookUserParam;
+  const omegaWebhookUrl =
+    webhookParam && !webhookParam.startsWith("legacy:")
+      ? `${originUrl}/api/webhooks/omegapay?u=${encodeURIComponent(webhookParam)}`
+      : `${originUrl}/api/webhooks/omegapay`;
 
   const isOmegaConnected =
     integrationStatus.hasApiCredentials || integrationStatus.hasWebhookToken;

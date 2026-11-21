@@ -1,4 +1,8 @@
-import { getServerSetting } from "./db";
+import {
+  getUserProfile,
+  getUserSetting,
+  LEGACY_ADMIN_USER_ID,
+} from "./db";
 import {
   type OmegaPayBalanceResponse,
   type OmegaPayCredentialsResponse,
@@ -20,34 +24,60 @@ export interface OmegaPayServerCredentials {
   source: "env" | "db" | "mixed" | "none";
 }
 
+async function isLegacyOwnerAccount(userId: string): Promise<boolean> {
+  if (userId === LEGACY_ADMIN_USER_ID) return true;
+  const ownerEmail = (
+    process.env.DASHBOARD_USER?.trim() || "mendoncat831@gmail.com"
+  ).toLowerCase();
+  const profile = await getUserProfile(userId);
+  return Boolean(profile && profile.email.trim().toLowerCase() === ownerEmail);
+}
+
 /**
- * Obtém as credenciais exclusivamente no servidor (Variáveis de Ambiente + fallback seguro no banco).
- * Nunca retorna as chaves em texto aberto para o cliente.
+ * Obtém credenciais OmegaPay isoladas por usuário exclusivamente no servidor.
+ * Variáveis de ambiente globais aplicam-se APENAS à conta proprietária legada,
+ * garantindo que novos usuários nunca herdem chaves de terceiros.
  */
-export async function getOmegaPayServerCredentials(): Promise<OmegaPayServerCredentials> {
-  const envPublicKey = process.env.OMEGAPAY_PUBLIC_KEY?.trim() || "";
-  const envSecretKey = process.env.OMEGAPAY_SECRET_KEY?.trim() || "";
-  const envWebhookToken = process.env.OMEGAPAY_WEBHOOK_TOKEN?.trim() || "";
+export async function getOmegaPayServerCredentials(
+  userId: string = LEGACY_ADMIN_USER_ID
+): Promise<OmegaPayServerCredentials> {
+  const allowEnvFallback = await isLegacyOwnerAccount(userId);
+
+  const envPublicKey = allowEnvFallback
+    ? process.env.OMEGAPAY_PUBLIC_KEY?.trim() || ""
+    : "";
+  const envSecretKey = allowEnvFallback
+    ? process.env.OMEGAPAY_SECRET_KEY?.trim() || ""
+    : "";
+  const envWebhookToken = allowEnvFallback
+    ? process.env.OMEGAPAY_WEBHOOK_TOKEN?.trim() || ""
+    : "";
   const envBaseUrl = process.env.OMEGAPAY_API_BASE_URL?.trim() || "";
 
-  const dbPublicKey = (await getServerSetting("OMEGAPAY_PUBLIC_KEY"))?.trim() || "";
-  const dbSecretKey = (await getServerSetting("OMEGAPAY_SECRET_KEY"))?.trim() || "";
-  const dbWebhookToken = (await getServerSetting("OMEGAPAY_WEBHOOK_TOKEN"))?.trim() || "";
+  const dbPublicKey =
+    (await getUserSetting(userId, "OMEGAPAY_PUBLIC_KEY"))?.trim() || "";
+  const dbSecretKey =
+    (await getUserSetting(userId, "OMEGAPAY_SECRET_KEY"))?.trim() || "";
+  const dbWebhookToken =
+    (await getUserSetting(userId, "OMEGAPAY_WEBHOOK_TOKEN"))?.trim() || "";
 
-  const publicKey = envPublicKey || dbPublicKey;
-  const secretKey = envSecretKey || dbSecretKey;
-  const webhookToken = [envWebhookToken, dbWebhookToken]
+  const publicKey = dbPublicKey || envPublicKey;
+  const secretKey = dbSecretKey || envSecretKey;
+  const webhookToken = [dbWebhookToken, envWebhookToken]
     .filter(Boolean)
     .join(",");
   const baseUrl = (envBaseUrl || DEFAULT_BASE_URL).replace(/\/+$/, "");
 
   let source: "env" | "db" | "mixed" | "none" = "none";
-  if ((envPublicKey || envSecretKey || envWebhookToken) && (dbPublicKey || dbSecretKey || dbWebhookToken)) {
+  if (
+    (envPublicKey || envSecretKey || envWebhookToken) &&
+    (dbPublicKey || dbSecretKey || dbWebhookToken)
+  ) {
     source = "mixed";
-  } else if (envPublicKey || envSecretKey || envWebhookToken) {
-    source = "env";
   } else if (dbPublicKey || dbSecretKey || dbWebhookToken) {
     source = "db";
+  } else if (envPublicKey || envSecretKey || envWebhookToken) {
+    source = "env";
   }
 
   return {
@@ -73,18 +103,15 @@ export class OmegaPayApiError extends Error {
   }
 }
 
-/**
- * Executa apenas chamadas GET de leitura nos endpoints oficiais da OmegaPay.
- * Nenhuma operação financeira de escrita (saques, transferências, etc.) é implementada.
- */
 async function omegaPayGet<T>(
   apiPath: string,
+  userId: string = LEGACY_ADMIN_USER_ID,
   queryParams?: Record<string, string | undefined>
 ): Promise<T> {
-  const creds = await getOmegaPayServerCredentials();
+  const creds = await getOmegaPayServerCredentials(userId);
   if (!creds.hasApiCredentials) {
     throw new OmegaPayApiError(
-      "Credenciais da API OmegaPay (x-public-key e x-secret-key) não configuradas no servidor.",
+      "Credenciais da API OmegaPay (x-public-key e x-secret-key) não configuradas para esta conta.",
       401,
       "MISSING_CREDENTIALS"
     );
@@ -144,14 +171,12 @@ async function omegaPayGet<T>(
   return parsed as T;
 }
 
-/**
- * 1. Meu saldo — GET /gateway/producer/balance
- * Documentação: https://app.omegapayments.com.br/docs/v1/endpoint/producer/balance
- * Retorno oficial: { available: number, pending: number, fundLock: number }
- */
-export async function fetchOmegaPayBalance(): Promise<OmegaPayBalanceResponse> {
+export async function fetchOmegaPayBalance(
+  userId: string = LEGACY_ADMIN_USER_ID
+): Promise<OmegaPayBalanceResponse> {
   const data = await omegaPayGet<OmegaPayBalanceResponse>(
-    "/gateway/producer/balance"
+    "/gateway/producer/balance",
+    userId
   );
   return {
     available: Number(data.available ?? 0),
@@ -160,14 +185,12 @@ export async function fetchOmegaPayBalance(): Promise<OmegaPayBalanceResponse> {
   };
 }
 
-/**
- * 2. Testar credenciais — GET /gateway/producer/credentials
- * Documentação: https://app.omegapayments.com.br/docs/v1/endpoint/producer/credentials
- * Retorno oficial: { name: string, permissions: string[], grantAllPermissions: boolean, expiresAt: string | null }
- */
-export async function testOmegaPayCredentials(): Promise<OmegaPayCredentialsResponse> {
+export async function testOmegaPayCredentials(
+  userId: string = LEGACY_ADMIN_USER_ID
+): Promise<OmegaPayCredentialsResponse> {
   const data = await omegaPayGet<OmegaPayCredentialsResponse>(
-    "/gateway/producer/credentials"
+    "/gateway/producer/credentials",
+    userId
   );
   return {
     name: String(data.name ?? "Credencial OmegaPay"),
@@ -177,16 +200,10 @@ export async function testOmegaPayCredentials(): Promise<OmegaPayCredentialsResp
   };
 }
 
-/**
- * 3. Buscar transação — GET /gateway/transactions
- * Documentação: https://app.omegapayments.com.br/docs/v1/endpoint/transactions
- * Query params oficiais: id (opcional), clientIdentifier (opcional)
- * Aviso oficial: Não realizar polling frequente; usar apenas para consultas pontuais.
- */
-export async function fetchOmegaPayTransaction(params: {
-  id?: string;
-  clientIdentifier?: string;
-}): Promise<OmegaPayTransactionLookupResponse> {
+export async function fetchOmegaPayTransaction(
+  params: { id?: string; clientIdentifier?: string },
+  userId: string = LEGACY_ADMIN_USER_ID
+): Promise<OmegaPayTransactionLookupResponse> {
   if (!params.id?.trim() && !params.clientIdentifier?.trim()) {
     throw new OmegaPayApiError(
       "Informe o ID da transação (id) ou o identificador do cliente (clientIdentifier).",
@@ -197,6 +214,7 @@ export async function fetchOmegaPayTransaction(params: {
 
   return omegaPayGet<OmegaPayTransactionLookupResponse>(
     "/gateway/transactions",
+    userId,
     {
       id: params.id,
       clientIdentifier: params.clientIdentifier,
@@ -204,16 +222,10 @@ export async function fetchOmegaPayTransaction(params: {
   );
 }
 
-/**
- * 4. Buscar transferência — GET /gateway/transfers
- * Documentação: https://app.omegapayments.com.br/docs/v1/endpoint/transfers-search
- * Query params oficiais: id (opcional), clientIdentifier (opcional)
- * Aviso oficial: Requer permissão P_THIRD_PARTY_WITHDRAW ativa na conta; não usar para polling frequente.
- */
-export async function fetchOmegaPayTransfer(params: {
-  id?: string;
-  clientIdentifier?: string;
-}): Promise<OmegaPayTransferLookupResponse> {
+export async function fetchOmegaPayTransfer(
+  params: { id?: string; clientIdentifier?: string },
+  userId: string = LEGACY_ADMIN_USER_ID
+): Promise<OmegaPayTransferLookupResponse> {
   if (!params.id?.trim() && !params.clientIdentifier?.trim()) {
     throw new OmegaPayApiError(
       "Informe o ID da transferência (id) ou o identificador do cliente (clientIdentifier).",
@@ -222,8 +234,12 @@ export async function fetchOmegaPayTransfer(params: {
     );
   }
 
-  return omegaPayGet<OmegaPayTransferLookupResponse>("/gateway/transfers", {
-    id: params.id,
-    clientIdentifier: params.clientIdentifier,
-  });
+  return omegaPayGet<OmegaPayTransferLookupResponse>(
+    "/gateway/transfers",
+    userId,
+    {
+      id: params.id,
+      clientIdentifier: params.clientIdentifier,
+    }
+  );
 }
