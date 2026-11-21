@@ -25,6 +25,8 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<string | null>(null);
+  const [resending, setResending] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -34,12 +36,26 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
+      const hashParams = new URLSearchParams(
+        window.location.hash.replace(/^#/, "")
+      );
       const authError = params.get("auth_error");
+      const rawHashError =
+        hashParams.get("error_description") ||
+        hashParams.get("error_code") ||
+        params.get("error_description");
       const resetOk = params.get("reset");
       const confirmed = params.get("confirmed");
 
       if (authError) {
         setError(authError);
+      } else if (rawHashError) {
+        const lower = rawHashError.toLowerCase();
+        setError(
+          lower.includes("expired")
+            ? "Este link de autenticação expirou ou já foi utilizado. Solicite um novo link."
+            : "Link de autenticação inválido ou expirado. Tente novamente."
+        );
       } else if (resetOk === "1") {
         setNotice("Senha redefinida com sucesso. Faça login com sua nova senha.");
       } else if (confirmed === "1") {
@@ -76,6 +92,7 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setErrorCode(null);
     setNotice(null);
 
     const trimmedEmail = username.trim();
@@ -96,6 +113,9 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
       const data = await res.json();
       if (!res.ok) {
         setError(data.error || "Credenciais inválidas.");
+        if (typeof data.code === "string") {
+          setErrorCode(data.code);
+        }
         setLoading(false);
         return;
       }
@@ -104,6 +124,35 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
     } catch {
       setError("Erro de conexão ao autenticar. Tente novamente.");
       setLoading(false);
+    }
+  }
+
+  async function handleResendConfirmation() {
+    const trimmedEmail = username.trim().toLowerCase();
+    if (!trimmedEmail) return;
+    setResending(true);
+    setNotice(null);
+    try {
+      const res = await fetch("/api/auth/resend-confirmation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: trimmedEmail }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Não foi possível reenviar o e-mail.");
+      } else {
+        setError(null);
+        setErrorCode(null);
+        setNotice(
+          data.message ||
+            "Reenviamos o e-mail de confirmação. Verifique sua caixa de entrada e spam."
+        );
+      }
+    } catch {
+      setError("Erro de conexão ao reenviar confirmação.");
+    } finally {
+      setResending(false);
     }
   }
 
@@ -159,10 +208,24 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
             {error && (
               <div
                 role="alert"
-                className="mb-4 flex items-start gap-2.5 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300 animate-fade-in-up"
+                className="mb-4 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300 animate-fade-in-up space-y-2"
               >
-                <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-                <span>{error}</span>
+                <div className="flex items-start gap-2.5">
+                  <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                  <span>{error}</span>
+                </div>
+                {errorCode === "EMAIL_NOT_CONFIRMED" && (
+                  <button
+                    type="button"
+                    onClick={handleResendConfirmation}
+                    disabled={resending}
+                    className="w-full py-1.5 px-3 rounded-lg border border-rose-400/30 bg-rose-500/15 hover:bg-rose-500/25 text-rose-100 text-[11px] font-semibold transition disabled:opacity-50"
+                  >
+                    {resending
+                      ? "Reenviando e-mail..."
+                      : "Reenviar e-mail de confirmação"}
+                  </button>
+                )}
               </div>
             )}
 

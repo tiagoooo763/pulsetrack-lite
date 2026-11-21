@@ -117,7 +117,7 @@ export function IntegrationAndGuideTab({
   const [nexusSimFeedback, setNexusSimFeedback] = useState<string | null>(null);
   const [copiedNexusUrl, setCopiedNexusUrl] = useState(false);
 
-  const originUrl = typeof window !== "undefined" ? window.location.origin : "https://pulsetrack-lite.vercel.app";
+  const originUrl = typeof window !== "undefined" ? window.location.origin : "https://www.usedashfy.com.br";
   const omegaWebhookUrl = `${originUrl}/api/webhooks/omegapay`;
   const nexusWebhookUrl = `${originUrl}/api/webhooks/nexus`;
 

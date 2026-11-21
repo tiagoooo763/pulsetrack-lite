@@ -31,6 +31,8 @@ export default function CadastroPage() {
   const [confirmationMessage, setConfirmationMessage] = useState<string | null>(
     null
   );
+  const [resending, setResending] = useState(false);
+  const [resendFeedback, setResendFeedback] = useState<string | null>(null);
 
   const hasMinLen = password.length >= 8;
   const hasUpper = /[A-Z]/.test(password);
@@ -102,6 +104,29 @@ export default function CadastroPage() {
     }
   }
 
+  async function handleResendEmail() {
+    if (!email.trim()) return;
+    setResending(true);
+    setResendFeedback(null);
+    try {
+      const res = await fetch("/api/auth/resend-confirmation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim().toLowerCase() }),
+      });
+      const data = await res.json();
+      setResendFeedback(
+        res.ok
+          ? data.message || "Novo e-mail de confirmação enviado."
+          : data.error || "Não foi possível reenviar o e-mail agora."
+      );
+    } catch {
+      setResendFeedback("Erro de conexão ao reenviar o e-mail.");
+    } finally {
+      setResending(false);
+    }
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 bg-[#050507] relative overflow-hidden">
       {/* Subtle monochrome grid background */}
@@ -142,15 +167,40 @@ export default function CadastroPage() {
                 <p className="text-[11px] text-zinc-500 pt-1">
                   Enviado para{" "}
                   <span className="text-zinc-200 font-mono">{email}</span>
+                  <span className="block mt-1">
+                    Remetente: naoresponda@auth.usedashfy.com.br (verifique também o spam).
+                  </span>
                 </p>
               </div>
-              <Link
-                href="/login"
-                className="btn-pressable w-full inline-flex items-center justify-center gap-2 rounded-xl bg-white hover:bg-zinc-100 text-black font-semibold text-sm py-2.5 px-4"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                <span>Voltar para o Login</span>
-              </Link>
+
+              {resendFeedback && (
+                <div className="rounded-xl border border-white/10 bg-[#08080a] p-2.5 text-[11px] text-zinc-300">
+                  {resendFeedback}
+                </div>
+              )}
+
+              <div className="space-y-2.5">
+                <button
+                  type="button"
+                  onClick={handleResendEmail}
+                  disabled={resending}
+                  className="btn-pressable w-full inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-[#08080a] hover:bg-white/[0.06] text-white font-medium text-xs py-2.5 px-4 disabled:opacity-50"
+                >
+                  <span>
+                    {resending
+                      ? "Reenviando..."
+                      : "Não recebeu? Reenviar e-mail de confirmação"}
+                  </span>
+                </button>
+
+                <Link
+                  href="/login"
+                  className="btn-pressable w-full inline-flex items-center justify-center gap-2 rounded-xl bg-white hover:bg-zinc-100 text-black font-semibold text-sm py-2.5 px-4"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Voltar para o Login</span>
+                </Link>
+              </div>
             </div>
           ) : (
             <>

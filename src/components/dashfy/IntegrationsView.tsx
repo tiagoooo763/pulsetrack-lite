@@ -69,7 +69,7 @@ export function IntegrationsView({
   const originUrl =
     typeof window !== "undefined"
       ? window.location.origin
-      : "https://pulsetrack-lite.vercel.app";
+      : "https://www.usedashfy.com.br";
   const webhookParam = integrationStatus.webhookUserParam;
   const omegaWebhookUrl =
     webhookParam && !webhookParam.startsWith("legacy:")

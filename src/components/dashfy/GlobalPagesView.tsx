@@ -2,11 +2,13 @@
 
 import React, { useState } from "react";
 import {
+  AlertCircle,
   BookOpen,
   CheckCircle2,
   Database,
   HelpCircle,
   KeyRound,
+  Mail,
   Settings,
   ShieldCheck,
   UserCircle2,
@@ -43,6 +45,14 @@ export function GlobalPagesView({
     text: string;
   } | null>(null);
   const [savingAccount, setSavingAccount] = useState(false);
+
+  // Alterar e-mail (Supabase Auth)
+  const [newEmail, setNewEmail] = useState("");
+  const [changingEmail, setChangingEmail] = useState(false);
+  const [emailChangeMsg, setEmailChangeMsg] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   // Configurações (Gasto rápido)
   const [presetTitle, setPresetTitle] = useState(
@@ -109,6 +119,61 @@ export function GlobalPagesView({
       await onRefresh();
     } finally {
       setSavingAccount(false);
+    }
+  }
+
+  async function handleChangeEmail(e: React.FormEvent) {
+    e.preventDefault();
+    setEmailChangeMsg(null);
+    const trimmed = newEmail.trim().toLowerCase();
+    if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      setEmailChangeMsg({
+        type: "error",
+        text: "Informe um endereço de e-mail válido.",
+      });
+      return;
+    }
+    if (trimmed === data.profile.username.toLowerCase()) {
+      setEmailChangeMsg({
+        type: "error",
+        text: "O novo e-mail precisa ser diferente do e-mail atual.",
+      });
+      return;
+    }
+
+    setChangingEmail(true);
+    try {
+      const res = await fetch("/api/auth/change-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ newEmail: trimmed }),
+      });
+      const json = (await res.json()) as {
+        ok?: boolean;
+        message?: string;
+        error?: string;
+      };
+      if (!res.ok || !json.ok) {
+        setEmailChangeMsg({
+          type: "error",
+          text: json.error || "Não foi possível solicitar a alteração de e-mail.",
+        });
+      } else {
+        setNewEmail("");
+        setEmailChangeMsg({
+          type: "success",
+          text:
+            json.message ||
+            "Enviamos um link de confirmação para concluir a alteração do seu e-mail.",
+        });
+      }
+    } catch {
+      setEmailChangeMsg({
+        type: "error",
+        text: "Erro de conexão ao solicitar alteração de e-mail.",
+      });
+    } finally {
+      setChangingEmail(false);
     }
   }
 
@@ -246,6 +311,75 @@ export function GlobalPagesView({
               </span>
               <span className="text-emerald-400 font-semibold">Conectada</span>
             </div>
+          </div>
+
+          {/* Alterar E-mail de Acesso (Supabase Auth) */}
+          <div className="pt-4 border-t border-white/10 space-y-3">
+            <div className="flex items-center gap-2">
+              <Mail className="w-4 h-4 text-white" />
+              <div>
+                <h4 className="text-xs font-semibold text-white">
+                  Alterar e-mail de acesso
+                </h4>
+                <p className="text-[11px] text-zinc-400">
+                  Envia confirmação segura via Supabase Auth antes de concluir a troca.
+                </p>
+              </div>
+            </div>
+
+            {emailChangeMsg && (
+              <div
+                role={emailChangeMsg.type === "error" ? "alert" : "status"}
+                className={`rounded-xl border p-3 text-xs flex items-start gap-2 ${
+                  emailChangeMsg.type === "success"
+                    ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+                    : "border-rose-500/30 bg-rose-500/10 text-rose-300"
+                }`}
+              >
+                {emailChangeMsg.type === "success" ? (
+                  <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+                ) : (
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                )}
+                <span>{emailChangeMsg.text}</span>
+              </div>
+            )}
+
+            {data.profile.authProvider === "supabase" ? (
+              <form onSubmit={handleChangeEmail} className="space-y-2.5">
+                <div>
+                  <label
+                    htmlFor="account-new-email"
+                    className="block text-xs text-zinc-300 mb-1"
+                  >
+                    Novo E-mail
+                  </label>
+                  <input
+                    id="account-new-email"
+                    type="email"
+                    required
+                    value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)}
+                    placeholder="novo@email.com"
+                    className="w-full rounded-xl border border-white/10 bg-[#08080a] px-3 py-2 text-xs text-white placeholder-zinc-500 focus:border-white focus:outline-none"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={changingEmail}
+                  className="btn-pressable w-full py-2.5 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 text-white text-xs font-semibold disabled:opacity-50"
+                >
+                  {changingEmail
+                    ? "Enviando confirmação..."
+                    : "Solicitar Alteração de E-mail"}
+                </button>
+              </form>
+            ) : (
+              <p className="text-[11px] text-zinc-400 rounded-xl border border-white/10 bg-[#08080a] p-3">
+                Sua sessão atual está no modo legado. Crie ou acesse sua conta via
+                Supabase Auth para gerenciar a troca de e-mail por confirmação automática.
+              </p>
+            )}
           </div>
         </SpotlightCard>
       </div>

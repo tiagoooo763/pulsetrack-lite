@@ -66,6 +66,21 @@ export async function POST(request: NextRequest) {
         });
 
         if (!error && data.user) {
+          const isEmailConfirmed = Boolean(
+            data.user.email_confirmed_at || data.user.confirmed_at
+          );
+          if (data.user.email && !isEmailConfirmed) {
+            await supabase.auth.signOut().catch(() => {});
+            return NextResponse.json(
+              {
+                error:
+                  "Seu e-mail ainda não foi confirmado. Verifique sua caixa de entrada (ou spam) e clique no link de confirmação.",
+                code: "EMAIL_NOT_CONFIRMED",
+              },
+              { status: 403 }
+            );
+          }
+
           const email = (data.user.email || identifier).toLowerCase();
           const meta = (data.user.user_metadata || {}) as Record<string, unknown>;
           const displayName =

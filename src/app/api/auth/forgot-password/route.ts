@@ -68,15 +68,31 @@ export async function POST(request: NextRequest) {
     const appUrl = getPublicAppUrl(origin);
     const redirectTo = `${appUrl}/auth/callback?next=/redefinir-senha`;
 
-    await supabase.auth.resetPasswordForEmail(parsed.data.email, {
-      redirectTo,
-    });
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+      parsed.data.email,
+      {
+        redirectTo,
+      }
+    );
+
+    if (resetError) {
+      const msg = (resetError.message || "").toLowerCase();
+      if (msg.includes("rate limit") || resetError.status === 429) {
+        return NextResponse.json(
+          {
+            error:
+              "Muitas solicitações de envio de e-mail em pouco tempo. Aguarde alguns minutos antes de tentar novamente.",
+          },
+          { status: 429 }
+        );
+      }
+    }
 
     // Mensagem neutra para não vazar quais e-mails existem no sistema
     return NextResponse.json({
       ok: true,
       message:
-        "Se este e-mail estiver cadastrado, você receberá um link para redefinir sua senha em instantes.",
+        "Se este e-mail estiver cadastrado, enviamos um link de recuperação para sua caixa de entrada.",
     });
   } catch {
     return NextResponse.json(

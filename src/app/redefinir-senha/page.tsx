@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -23,6 +23,22 @@ export default function RedefinirSenhaPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const hashParams = new URLSearchParams(
+      window.location.hash.replace(/^#/, "")
+    );
+    const err =
+      hashParams.get("error_description") || hashParams.get("error_code");
+    if (err) {
+      setError(
+        err.toLowerCase().includes("expired")
+          ? "Este link de redefinição expirou ou já foi utilizado. Solicite um novo link."
+          : "Link de redefinição inválido. Solicite uma nova recuperação de senha."
+      );
+    }
+  }, []);
 
   const hasMinLen = password.length >= 8;
   const hasUpper = /[A-Z]/.test(password);

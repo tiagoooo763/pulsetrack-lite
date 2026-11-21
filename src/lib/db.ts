@@ -1302,11 +1302,26 @@ export async function ensureUserProfile(input: {
   role?: string;
 }): Promise<UserProfileRecord> {
   const existing = await getUserProfile(input.id);
-  if (existing) return existing;
+  const normalizedEmail = input.email.trim().toLowerCase();
+  if (existing) {
+    if (normalizedEmail && existing.email.toLowerCase() !== normalizedEmail) {
+      const db = await getDb();
+      const now = new Date().toISOString();
+      try {
+        await db.execute(
+          `UPDATE profiles SET email = ?, updated_at = ? WHERE id = ?`,
+          [normalizedEmail, now, input.id]
+        );
+        return { ...existing, email: normalizedEmail, updatedAt: now };
+      } catch {
+        // Ignora conflito eventual preservando o perfil existente
+      }
+    }
+    return existing;
+  }
 
   const db = await getDb();
   const now = new Date().toISOString();
-  const normalizedEmail = input.email.trim().toLowerCase();
   const fallbackName = normalizedEmail.split("@")[0] || "Usuário";
   const displayName = input.displayName?.trim() || fallbackName;
   const companyName = input.companyName?.trim() || "Dashfy Workspace";

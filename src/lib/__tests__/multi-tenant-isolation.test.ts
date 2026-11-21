@@ -100,6 +100,15 @@ describe("Dashfy — Isolamento Multi-Usuário (Usuário A vs Usuário B), Perfi
 
     expect(fetchedA?.displayName).toBe("Alice Atualizada");
     expect(fetchedB?.displayName).toBe("Bruno Tráfego");
+
+    // Sincronização após confirmação de alteração de e-mail via Supabase Auth
+    const syncedA = await ensureUserProfile({
+      id: USER_A,
+      email: "alice.novo@dashfy.test",
+    });
+    expect(syncedA.id).toBe(USER_A);
+    expect(syncedA.email).toBe("alice.novo@dashfy.test");
+    expect((await getUserProfile(USER_B))?.email).toBe("bruno@dashfy.test");
   });
 
   it("garante que novos usuários NÃO herdam credenciais de API do proprietário ou de outro usuário", async () => {

@@ -184,7 +184,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
     fetchDashboard();
   }, [fetchDashboard]);
 
-  // Processa retorno do callback OAuth do TikTok Business (?tiktok_connected=1 ou ?tiktok_error=...)
+  // Processa retorno do callback OAuth do TikTok Business e confirmações de e-mail
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
@@ -192,6 +192,26 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
     const tiktokError = params.get("tiktok_error");
     const targetDash = params.get("tiktok_dashboard") || "tiktok";
     const accountsCount = params.get("tiktok_accounts");
+    const authNotice = params.get("auth_notice");
+
+    if (authNotice === "email_confirmed") {
+      showToast(
+        "success",
+        "E-mail confirmado com sucesso! Bem-vindo ao seu painel Dashfy."
+      );
+      window.history.replaceState({}, "", window.location.pathname);
+      return;
+    }
+
+    if (authNotice === "email_changed") {
+      showToast(
+        "success",
+        "Seu novo e-mail de acesso foi confirmado e atualizado com sucesso!"
+      );
+      fetchDashboard(false);
+      window.history.replaceState({}, "", window.location.pathname);
+      return;
+    }
 
     if (!connected && !tiktokError) return;
 
@@ -214,7 +234,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
 
     // Limpa os parâmetros da URL sem recarregar a página
     window.history.replaceState({}, "", window.location.pathname);
-  }, [showToast]);
+  }, [showToast, fetchDashboard]);
 
   useEffect(() => {
     if (typeof window === "undefined" || !contentRef.current) return;

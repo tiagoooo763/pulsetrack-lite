@@ -108,6 +108,14 @@ export async function getAuthenticatedUser(): Promise<AuthenticatedUser | null> 
     if (supabase) {
       const { data, error } = await supabase.auth.getUser();
       if (!error && data?.user) {
+        // Impede acesso às funcionalidades privadas antes da confirmação do e-mail
+        const isEmailConfirmed = Boolean(
+          data.user.email_confirmed_at || data.user.confirmed_at
+        );
+        if (data.user.email && !isEmailConfirmed) {
+          return null;
+        }
+
         const email = (data.user.email || "").trim().toLowerCase();
         const meta = (data.user.user_metadata || {}) as Record<string, unknown>;
         const metaName =

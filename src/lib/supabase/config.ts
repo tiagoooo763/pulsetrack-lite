@@ -3,7 +3,7 @@
  * Aproveita o projeto Supabase atual sem criar outro banco de dados.
  */
 
-export const DEFAULT_VERCEL_APP_URL = "https://pulsetrack-lite.vercel.app";
+export const DEFAULT_VERCEL_APP_URL = "https://www.usedashfy.com.br";
 
 export function getSupabaseUrl(): string {
   const envUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
