@@ -15,16 +15,16 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Dashfy — Inteligência Financeira & Performance de Marketing",
+  title: "Dashfy — Inteligência Financeira & Operações",
   description:
-    "Plataforma SaaS de análise financeira e marketing com operações separadas para TikTok Ads e OmegaPay.",
+    "Dashboard financeiro minimalista de alta precisão com operações separadas para TikTok e OmegaPay.",
   icons: {
     icon: "/assets/logo-dashfy-icon.png",
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#060b17",
+  themeColor: "#050507",
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
@@ -37,7 +37,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" className={`dark ${inter.variable} ${jetbrainsMono.variable}`}>
-      <body className="min-h-screen bg-[#060b17] text-slate-100 font-sans antialiased selection:bg-[#1a86ff]/30 selection:text-white">
+      <body className="min-h-screen bg-[#050507] text-zinc-100 font-sans antialiased selection:bg-white/20 selection:text-white">
         {children}
       </body>
     </html>

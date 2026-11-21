@@ -122,13 +122,17 @@ export function Sidebar({
     }
   }
 
-  const globalItems: Array<{ id: GlobalPageId; label: string; icon: React.ComponentType<{ className?: string }> }> = [
+  const globalItems: Array<{
+    id: GlobalPageId;
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+  }> = [
     { id: "minha_conta", label: "Minha conta", icon: UserCircle2 },
     { id: "configuracoes", label: "Configurações", icon: Settings },
     { id: "suporte", label: "Suporte", icon: HelpCircle },
   ];
 
-  const initials = (userName || userEmail || "D")
+  const initials = (userName || userEmail || "T")
     .split(" ")
     .slice(0, 2)
     .map((p) => p[0]?.toUpperCase() || "")
@@ -136,24 +140,23 @@ export function Sidebar({
 
   return (
     <>
-      {/* Mobile Backdrop */}
       {mobileOpen && (
         <div
           onClick={onCloseMobile}
-          className="fixed inset-0 bg-slate-950/80 z-40 lg:hidden backdrop-blur-sm transition-opacity"
+          className="fixed inset-0 bg-black/80 z-40 lg:hidden backdrop-blur-md transition-opacity duration-300"
           aria-hidden="true"
         />
       )}
 
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-50 border-r border-slate-800/80 bg-[#0a1120] flex flex-col justify-between transition-all duration-300 ease-in-out ${
-          collapsed ? "w-[74px]" : "w-[268px]"
+        className={`fixed top-0 bottom-0 left-0 z-50 border-r border-white/10 bg-[#08080a] flex flex-col justify-between transition-all duration-300 ease-in-out ${
+          collapsed ? "w-[72px]" : "w-64"
         } ${mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}
       >
-        {/* TOPO DA SIDEBAR: LOGO DASHFY + BOTÃO RECOLHER */}
+        {/* TOPO DA SIDEBAR: LOGO DASHFY */}
         <div
-          className={`h-16 px-4 border-b border-slate-800/80 flex items-center ${
-            collapsed ? "justify-center" : "justify-between"
+          className={`p-5 border-b border-white/[0.08] flex items-center ${
+            collapsed ? "justify-center px-3" : "justify-between"
           } shrink-0`}
         >
           <button
@@ -163,7 +166,7 @@ export function Sidebar({
               onSelectDashboardTab(targetDash, "resumo");
               onCloseMobile();
             }}
-            className="flex items-center focus:outline-none group"
+            className="flex items-center focus:outline-none"
             aria-label="Ir para o Resumo Dashfy"
           >
             <DashfyBrand collapsed={collapsed} size="md" />
@@ -174,7 +177,7 @@ export function Sidebar({
               <button
                 type="button"
                 onClick={onToggleCollapsed}
-                className="hidden lg:flex p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/70 transition"
+                className="hidden lg:flex p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition"
                 title="Recolher menu lateral"
                 aria-label="Recolher menu lateral"
               >
@@ -183,22 +186,21 @@ export function Sidebar({
               <button
                 type="button"
                 onClick={onCloseMobile}
-                className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/70 transition"
+                className="lg:hidden p-1 rounded-lg text-zinc-400 hover:text-white"
                 aria-label="Fechar menu"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
           )}
         </div>
 
-        {/* Botão de expandir quando recolhida no desktop */}
         {collapsed && (
-          <div className="hidden lg:flex justify-center py-2 border-b border-slate-800/60">
+          <div className="hidden lg:flex justify-center py-2 border-b border-white/[0.06]">
             <button
               type="button"
               onClick={onToggleCollapsed}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/70 transition"
+              className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition"
               title="Expandir menu lateral"
               aria-label="Expandir menu lateral"
             >
@@ -207,28 +209,27 @@ export function Sidebar({
           </div>
         )}
 
-        {/* NAVEGAÇÃO PRINCIPAL COM SCROLL INTERNO */}
-        <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-4">
-          {/* SEÇÃO 1: DASHBOARDS (EXPANSÍVEL ESTILO UTMIFY) */}
+        {/* MENU PRINCIPAL */}
+        <nav className="flex-1 overflow-y-auto p-3 space-y-4">
           <div className="space-y-1">
             {!collapsed ? (
               <button
                 type="button"
                 onClick={() => setDashboardsGroupOpen((o) => !o)}
-                className="w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800/50 transition"
+                className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-zinc-300 hover:text-white hover:bg-white/[0.04] transition"
               >
                 <span className="flex items-center gap-2.5">
-                  <Layers className="w-4 h-4 text-[#1a86ff]" />
+                  <Layers className="w-4 h-4 text-zinc-300" />
                   <span>Dashboards</span>
                 </span>
                 {dashboardsGroupOpen ? (
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                  <ChevronDown className="w-3.5 h-3.5 text-zinc-500" />
                 ) : (
-                  <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                  <ChevronRight className="w-3.5 h-3.5 text-zinc-500" />
                 )}
               </button>
             ) : (
-              <div className="px-1 py-1 text-[10px] text-center font-semibold uppercase tracking-wider text-slate-500">
+              <div className="px-1 py-1 text-[10px] text-center font-semibold uppercase tracking-wider text-zinc-500">
                 Ops
               </div>
             )}
@@ -241,39 +242,36 @@ export function Sidebar({
 
                   return (
                     <div key={dash.id} className="space-y-0.5">
-                      {/* Cabeçalho da Operação (Operação TikTok / Operação OmegaPay) */}
                       <button
                         type="button"
                         onClick={() => handleDashboardHeaderClick(dash.id)}
                         title={dash.name}
                         className={`btn-pressable w-full flex items-center ${
                           collapsed ? "justify-center px-2 py-2.5" : "justify-between px-3 py-2"
-                        } rounded-xl text-xs font-semibold transition-all ${
+                        } rounded-xl text-xs font-medium transition-all ${
                           isDashActive
-                            ? "bg-[#1a86ff]/15 text-white border border-[#1a86ff]/35 shadow-sm shadow-[#1a86ff]/10"
-                            : "text-slate-300 hover:text-white hover:bg-slate-800/50 border border-transparent"
+                            ? "bg-white/10 text-white font-semibold border border-white/15"
+                            : "text-zinc-400 hover:text-white hover:bg-white/[0.04] border border-transparent"
                         }`}
                       >
                         <span className="flex items-center gap-2.5 min-w-0">
                           <span
-                            className="w-2.5 h-2.5 rounded-full shrink-0 ring-2 ring-slate-900"
-                            style={{ backgroundColor: dash.accentColor }}
+                            className={`w-2 h-2 rounded-full shrink-0 ${
+                              isDashActive ? "bg-white" : "bg-zinc-500"
+                            }`}
                           />
-                          {!collapsed && (
-                            <span className="truncate">{dash.name}</span>
-                          )}
+                          {!collapsed && <span className="truncate">{dash.name}</span>}
                         </span>
                         {!collapsed &&
                           (isExpanded ? (
-                            <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                            <ChevronDown className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
                           ) : (
-                            <ChevronRight className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                            <ChevronRight className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
                           ))}
                       </button>
 
-                      {/* Submenu lateral da operação (Estilo UTMify) */}
                       {!collapsed && isExpanded && (
-                        <div className="ml-3 pl-2.5 border-l border-slate-800/90 space-y-0.5 py-1">
+                        <div className="ml-3 pl-2.5 border-l border-white/[0.08] space-y-0.5 py-1">
                           {dash.tabs.map((tab) => {
                             const Icon = getTabIcon(tab.iconName);
                             const isTabActive =
@@ -289,17 +287,13 @@ export function Sidebar({
                                   onSelectDashboardTab(dash.id, tab.id);
                                   onCloseMobile();
                                 }}
-                                className={`btn-pressable w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[12px] font-medium transition-all ${
+                                className={`btn-pressable w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                                   isTabActive
-                                    ? "bg-[#1a86ff] text-white font-semibold shadow-md shadow-[#1a86ff]/25"
-                                    : "text-slate-400 hover:text-slate-100 hover:bg-slate-800/60"
+                                    ? "bg-white text-black font-semibold shadow-sm"
+                                    : "text-zinc-400 hover:text-white hover:bg-white/[0.04]"
                                 }`}
                               >
-                                <Icon
-                                  className={`w-3.5 h-3.5 shrink-0 ${
-                                    isTabActive ? "text-white" : "text-slate-400"
-                                  }`}
-                                />
+                                <Icon className="w-3.5 h-3.5 shrink-0" />
                                 <span className="truncate">{tab.label}</span>
                               </button>
                             );
@@ -313,11 +307,11 @@ export function Sidebar({
             )}
           </div>
 
-          {/* SEÇÃO 2: ITENS GLOBAIS DA PLATAFORMA */}
-          <div className="pt-3 border-t border-slate-800/80 space-y-1">
+          {/* ITENS GLOBAIS */}
+          <div className="pt-3 border-t border-white/[0.08] space-y-1">
             {!collapsed && (
-              <div className="px-2.5 pb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-                Plataforma
+              <div className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                Conta &amp; Sistema
               </div>
             )}
             {globalItems.map((item) => {
@@ -337,8 +331,8 @@ export function Sidebar({
                     collapsed ? "justify-center px-2 py-2.5" : "gap-2.5 px-3 py-2"
                   } rounded-xl text-xs font-medium transition-all ${
                     isActive
-                      ? "bg-[#1a86ff] text-white font-semibold shadow-md shadow-[#1a86ff]/25"
-                      : "text-slate-400 hover:text-white hover:bg-slate-800/60"
+                      ? "bg-white text-black font-semibold shadow-sm"
+                      : "text-zinc-400 hover:text-white hover:bg-white/[0.04]"
                   }`}
                 >
                   <Icon className="w-4 h-4 shrink-0" />
@@ -350,7 +344,7 @@ export function Sidebar({
         </nav>
 
         {/* RODAPÉ: PERFIL + SAIR */}
-        <div className="p-3 border-t border-slate-800/80 bg-[#070d19] shrink-0">
+        <div className="p-4 border-t border-white/[0.08] bg-[#050507]/80 shrink-0">
           <div
             className={`flex items-center ${
               collapsed ? "justify-center flex-col gap-2" : "justify-between gap-2"
@@ -362,20 +356,20 @@ export function Sidebar({
                 onSelectGlobalPage("minha_conta");
                 onCloseMobile();
               }}
-              className="flex items-center gap-2.5 min-w-0 text-left group"
+              className="flex items-center gap-2.5 min-w-0 text-left"
               title={`${userName} (${userEmail})`}
             >
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#1a86ff] to-blue-700 text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-sm">
-                {initials || "D"}
+              <div className="w-8 h-8 rounded-full bg-zinc-800 border border-white/10 flex items-center justify-center text-xs font-semibold text-white shrink-0">
+                {initials || "T"}
               </div>
               {!collapsed && (
-                <div className="min-w-0">
-                  <div className="text-xs font-semibold text-white truncate group-hover:text-[#38bdf8] transition">
-                    {userName}
-                  </div>
-                  <div className="text-[10px] text-slate-400 truncate">
+                <div className="truncate">
+                  <span className="text-xs font-medium text-white block truncate">
                     {userEmail}
-                  </div>
+                  </span>
+                  <span className="text-[10px] text-zinc-400 block">
+                    Administrador &bull; Supabase Live
+                  </span>
                 </div>
               )}
             </button>
@@ -383,8 +377,8 @@ export function Sidebar({
             <button
               type="button"
               onClick={onLogout}
-              className="btn-pressable p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition shrink-0"
-              title="Sair da plataforma"
+              className="btn-pressable p-1.5 text-zinc-400 hover:text-white rounded-lg hover:bg-white/5 transition shrink-0"
+              title="Sair"
               aria-label="Encerrar sessão"
             >
               <LogOut className="w-4 h-4" />

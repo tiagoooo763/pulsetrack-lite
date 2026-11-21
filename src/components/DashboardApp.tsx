@@ -68,29 +68,29 @@ function createDefaultFilters(): SummaryFilterState {
 
 function DashboardSkeleton() {
   return (
-    <div className="min-h-screen bg-[#060b17] flex">
-      <div className="hidden lg:block w-[268px] border-r border-slate-800/80 bg-[#0a1120] p-4 space-y-4">
-        <div className="h-9 w-36 rounded-lg bg-slate-800/70 animate-pulse" />
+    <div className="min-h-screen bg-[#050507] flex">
+      <div className="hidden lg:block w-64 border-r border-white/10 bg-[#08080a] p-4 space-y-4">
+        <div className="h-8 w-36 rounded-lg bg-white/10 animate-pulse" />
         <div className="space-y-2 pt-4">
           {Array.from({ length: 8 }).map((_, i) => (
             <div
               key={i}
-              className="h-8 rounded-lg bg-slate-800/50 animate-pulse"
+              className="h-8 rounded-lg bg-white/[0.04] animate-pulse"
             />
           ))}
         </div>
       </div>
       <div className="flex-1 p-6 space-y-5">
-        <div className="h-12 rounded-2xl bg-slate-900/80 border border-slate-800/80 animate-pulse" />
+        <div className="h-12 rounded-2xl bg-[#0c0c0e] border border-white/[0.08] animate-pulse" />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <div
               key={i}
-              className="h-32 rounded-2xl bg-slate-900/80 border border-slate-800/80 animate-pulse"
+              className="h-32 rounded-2xl bg-[#0c0c0e] border border-white/[0.08] animate-pulse"
             />
           ))}
         </div>
-        <div className="h-64 rounded-2xl bg-slate-900/80 border border-slate-800/80 animate-pulse" />
+        <div className="h-64 rounded-2xl bg-[#0c0c0e] border border-white/[0.08] animate-pulse" />
       </div>
     </div>
   );
@@ -433,8 +433,8 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[#060b17] text-slate-100 flex">
-      {/* SIDEBAR ESQUERDA FIXA E RECOLHÍVEL (ESTILO UTMIFY) */}
+    <div className="min-h-screen bg-[#050507] text-zinc-100 flex">
+      {/* SIDEBAR ESQUERDA FIXA E RECOLHÍVEL */}
       <Sidebar
         location={location}
         collapsed={sidebarCollapsed}
@@ -463,16 +463,16 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
       {/* ÁREA DE CONTEÚDO PRINCIPAL */}
       <div
         className={`flex-1 flex flex-col min-h-screen min-w-0 transition-all duration-300 ${
-          sidebarCollapsed ? "lg:pl-[74px]" : "lg:pl-[268px]"
+          sidebarCollapsed ? "lg:pl-[72px]" : "lg:pl-64"
         }`}
       >
         {/* TOP HEADER */}
-        <header className="sticky top-0 z-30 h-16 border-b border-slate-800/80 bg-[#060b17]/90 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between gap-3">
+        <header className="sticky top-0 z-30 border-b border-white/[0.08] bg-[#050507]/90 backdrop-blur-md px-4 sm:px-6 py-3.5 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <button
               type="button"
               onClick={() => setMobileMenuOpen(true)}
-              className="p-2 -ml-2 rounded-lg text-slate-400 hover:text-white lg:hidden"
+              className="p-2 -ml-2 rounded-lg text-zinc-400 hover:text-white lg:hidden"
               aria-label="Abrir menu lateral"
             >
               <Menu className="w-5 h-5" />
@@ -480,26 +480,21 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
 
             <div className="min-w-0">
               <div className="flex items-center gap-2 text-xs">
+                <span className="w-1.5 h-1.5 rounded-full bg-white shrink-0" />
                 {location.kind === "dashboard" ? (
                   <>
-                    <span
-                      className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold border border-slate-700/80 bg-[#0f172a] text-slate-200"
-                    >
-                      <span
-                        className="w-2 h-2 rounded-full"
-                        style={{ backgroundColor: activeDashDef.accentColor }}
-                      />
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium border border-white/10 bg-[#0c0c0e] text-zinc-300">
                       {activeDashDef.name}
                     </span>
-                    <span className="text-slate-600">/</span>
+                    <span className="text-zinc-600">/</span>
                   </>
                 ) : (
                   <>
-                    <span className="text-slate-400 font-medium">Dashfy</span>
-                    <span className="text-slate-600">/</span>
+                    <span className="text-zinc-400 font-medium">Dashfy</span>
+                    <span className="text-zinc-600">/</span>
                   </>
                 )}
-                <h1 className="text-sm sm:text-base font-semibold text-white truncate">
+                <h1 className="text-sm sm:text-base font-semibold text-white tracking-tight truncate">
                   {pageTitle}
                 </h1>
               </div>
@@ -507,14 +502,13 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            {/* Atalho rápido de lançamento de despesa */}
             {location.kind === "dashboard" && (
               <button
                 type="button"
                 onClick={handleQuickAddExpense}
                 disabled={quickAdding}
                 title={`Lançar + ${formatBRL(quickPreset.amount)} (${quickPreset.title}) em ${activeDashDef.name}`}
-                className="btn-pressable hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-500/35 bg-amber-500/10 hover:bg-amber-500/20 text-xs font-semibold text-amber-300 disabled:opacity-50"
+                className="btn-pressable hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/15 text-xs font-semibold text-amber-300 disabled:opacity-50"
               >
                 <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
                 <span>
@@ -529,11 +523,11 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
               type="button"
               onClick={() => fetchDashboard(true)}
               disabled={refreshing}
-              className="btn-pressable inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-800 bg-[#0f172a] hover:border-[#1a86ff]/50 text-xs font-medium text-slate-200 disabled:opacity-50"
+              className="btn-pressable inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-xs font-medium text-white disabled:opacity-50"
               title="Atualizar dados do painel"
             >
               <RefreshCw
-                className={`w-3.5 h-3.5 text-[#38bdf8] ${refreshing ? "animate-spin" : ""}`}
+                className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`}
               />
               <span className="hidden sm:inline">Atualizar</span>
             </button>
@@ -544,10 +538,10 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
         {toast && (
           <div className="px-4 sm:px-6 pt-4">
             <div
-              className={`rounded-xl border p-3 text-xs flex items-center justify-between animate-fade-in-up ${
+              className={`rounded-xl border p-3.5 text-xs flex items-center justify-between animate-fade-in-up ${
                 toast.type === "success"
-                  ? "border-emerald-500/35 bg-emerald-500/10 text-emerald-200"
-                  : "border-rose-500/35 bg-rose-500/10 text-rose-200"
+                  ? "border-white/20 bg-white/5 text-zinc-200"
+                  : "border-rose-500/30 bg-rose-500/10 text-rose-300"
               }`}
             >
               <span className="flex items-center gap-2">
@@ -557,7 +551,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
               <button
                 type="button"
                 onClick={() => setToast(null)}
-                className="ml-3 opacity-75 hover:opacity-100"
+                className="ml-3 text-zinc-400 hover:text-white"
               >
                 ✕
               </button>

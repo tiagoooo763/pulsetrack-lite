@@ -96,12 +96,12 @@ export function ExpensesView({
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
       <SpotlightCard className="p-5 sm:p-6 bento-card space-y-4">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-[#1a86ff]/15 border border-[#1a86ff]/30 flex items-center justify-center">
-            <Receipt className="w-4 h-4 text-[#38bdf8]" />
+          <div className="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
+            <Receipt className="w-4 h-4 text-white" />
           </div>
           <div>
             <h3 className="text-sm font-semibold text-white">Cadastrar Despesa</h3>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-zinc-400">
               Impacta diretamente o Lucro e ROI do Resumo
             </p>
           </div>
@@ -121,24 +121,24 @@ export function ExpensesView({
 
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
-            <label className="block text-xs text-slate-300 mb-1">Nome da Despesa *</label>
+            <label className="block text-xs text-zinc-300 mb-1">Nome da Despesa *</label>
             <input
               type="text"
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Ex: Criativos UGC / Tráfego Pago"
-              className="w-full rounded-xl border border-slate-800 bg-[#080f1e] px-3 py-2 text-xs text-white focus:border-[#1a86ff] focus:outline-none"
+              className="w-full rounded-xl border border-white/10 bg-[#08080a] px-3 py-2 text-xs text-white focus:border-white focus:outline-none"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-slate-300 mb-1">Categoria</label>
+              <label className="block text-xs text-zinc-300 mb-1">Categoria</label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value as ExpenseCategory)}
-                className="w-full rounded-xl border border-slate-800 bg-[#080f1e] px-2.5 py-2 text-xs text-white focus:border-[#1a86ff] focus:outline-none"
+                className="w-full rounded-xl border border-white/10 bg-[#08080a] px-2.5 py-2 text-xs text-white focus:border-white focus:outline-none"
               >
                 {Object.entries(EXPENSE_CATEGORIES).map(([k, v]) => (
                   <option key={k} value={k}>
@@ -148,13 +148,13 @@ export function ExpensesView({
               </select>
             </div>
             <div>
-              <label className="block text-xs text-slate-300 mb-1">Dashboard Relacionado</label>
+              <label className="block text-xs text-zinc-300 mb-1">Dashboard Relacionado</label>
               <select
                 value={targetDashboard}
                 onChange={(e) =>
                   setTargetDashboard(e.target.value as DashboardOperationId)
                 }
-                className="w-full rounded-xl border border-slate-800 bg-[#080f1e] px-2.5 py-2 text-xs text-white focus:border-[#1a86ff] focus:outline-none"
+                className="w-full rounded-xl border border-white/10 bg-[#08080a] px-2.5 py-2 text-xs text-white focus:border-white focus:outline-none"
               >
                 <option value="tiktok">Operação TikTok</option>
                 <option value="omegapay">Operação OmegaPay</option>
@@ -164,7 +164,7 @@ export function ExpensesView({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-slate-300 mb-1">Valor (R$) *</label>
+              <label className="block text-xs text-zinc-300 mb-1">Valor (R$) *</label>
               <input
                 type="text"
                 inputMode="decimal"
@@ -172,23 +172,23 @@ export function ExpensesView({
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="Ex: 150,00"
-                className="w-full rounded-xl border border-slate-800 bg-[#080f1e] px-3 py-2 text-xs text-white font-mono focus:border-[#1a86ff] focus:outline-none"
+                className="w-full rounded-xl border border-white/10 bg-[#08080a] px-3 py-2 text-xs text-white font-mono focus:border-white focus:outline-none"
               />
             </div>
             <div>
-              <label className="block text-xs text-slate-300 mb-1">Data *</label>
+              <label className="block text-xs text-zinc-300 mb-1">Data *</label>
               <input
                 type="date"
                 required
                 value={expenseDate}
                 onChange={(e) => setExpenseDate(e.target.value)}
-                className="w-full rounded-xl border border-slate-800 bg-[#080f1e] px-3 py-2 text-xs text-white focus:border-[#1a86ff] focus:outline-none"
+                className="w-full rounded-xl border border-white/10 bg-[#08080a] px-3 py-2 text-xs text-white focus:border-white focus:outline-none"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs text-slate-300 mb-1">
+            <label className="block text-xs text-zinc-300 mb-1">
               Campanha Associada (opcional)
             </label>
             <input
@@ -197,7 +197,7 @@ export function ExpensesView({
               value={campaignName}
               onChange={(e) => setCampaignName(e.target.value)}
               placeholder="Vincular a uma campanha específica"
-              className="w-full rounded-xl border border-slate-800 bg-[#080f1e] px-3 py-2 text-xs text-white focus:border-[#1a86ff] focus:outline-none"
+              className="w-full rounded-xl border border-white/10 bg-[#08080a] px-3 py-2 text-xs text-white focus:border-white focus:outline-none"
             />
             <datalist id="dashfy-campaign-suggestions">
               {campaignSuggestions.map((c) => (
@@ -207,20 +207,20 @@ export function ExpensesView({
           </div>
 
           <div>
-            <label className="block text-xs text-slate-300 mb-1">Observações</label>
+            <label className="block text-xs text-zinc-300 mb-1">Observações</label>
             <textarea
               rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Detalhes adicionais..."
-              className="w-full rounded-xl border border-slate-800 bg-[#080f1e] px-3 py-2 text-xs text-white focus:border-[#1a86ff] focus:outline-none"
+              className="w-full rounded-xl border border-white/10 bg-[#08080a] px-3 py-2 text-xs text-white focus:border-white focus:outline-none"
             />
           </div>
 
           <button
             type="submit"
             disabled={submitting}
-            className="btn-pressable w-full inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-[#1a86ff] hover:bg-[#3194ff] text-white text-xs font-semibold disabled:opacity-50"
+            className="btn-pressable w-full inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-white hover:bg-zinc-100 text-black text-xs font-semibold disabled:opacity-50"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>{submitting ? "Salvando..." : "Salvar Despesa"}</span>
@@ -234,24 +234,24 @@ export function ExpensesView({
             <h3 className="text-sm font-semibold text-white">
               Despesas — {dashboardId === "tiktok" ? "Operação TikTok" : "Operação OmegaPay"}
             </h3>
-            <p className="text-xs text-slate-400 font-mono">
+            <p className="text-xs text-zinc-400 font-mono">
               Total no período: <strong className="text-white">{formatBRL(totalAmount)}</strong>
             </p>
           </div>
-          <span className="text-xs font-mono text-slate-400">
+          <span className="text-xs font-mono text-zinc-400">
             {expenses.length} lançamento(s)
           </span>
         </div>
 
         {expenses.length === 0 ? (
-          <div className="py-12 text-center rounded-xl border border-dashed border-slate-800 text-xs text-slate-500">
+          <div className="py-12 text-center rounded-xl border border-dashed border-white/10 text-xs text-zinc-500">
             Nenhuma despesa registrada para esta operação no período selecionado.
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-slate-800/90">
+          <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-slate-800 bg-[#080f1e] text-slate-400 uppercase tracking-wider text-[10px]">
+                <tr className="border-b border-white/10 bg-[#08080a] text-zinc-400 uppercase tracking-wider text-[10px]">
                   <th className="py-2.5 px-3 font-semibold">Data</th>
                   <th className="py-2.5 px-3 font-semibold">Nome / Obs.</th>
                   <th className="py-2.5 px-3 font-semibold">Categoria</th>
@@ -260,26 +260,26 @@ export function ExpensesView({
                   <th className="py-2.5 px-3 font-semibold text-center">Ação</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60 bg-[#0c1425]">
+              <tbody className="divide-y divide-white/[0.04] bg-[#0c0c0e]">
                 {expenses.map((exp) => (
-                  <tr key={exp.id} className="hover:bg-slate-800/30">
-                    <td className="py-2.5 px-3 font-mono text-slate-400 whitespace-nowrap">
+                  <tr key={exp.id} className="hover:bg-white/[0.03]">
+                    <td className="py-2.5 px-3 font-mono text-zinc-400 whitespace-nowrap">
                       {formatDateBR(exp.expenseDate)}
                     </td>
                     <td className="py-2.5 px-3">
                       <div className="text-white font-medium">{exp.title}</div>
                       {exp.notes && (
-                        <div className="text-[10px] text-slate-400 truncate max-w-[200px]">
+                        <div className="text-[10px] text-zinc-400 truncate max-w-[200px]">
                           {exp.notes}
                         </div>
                       )}
                     </td>
                     <td className="py-2.5 px-3">
-                      <span className="px-2 py-0.5 rounded-full text-[10px] border border-slate-700 bg-slate-800/80 text-slate-300">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] border border-white/10 bg-white/[0.04] text-zinc-300">
                         {EXPENSE_CATEGORIES[exp.category]?.label || exp.category}
                       </span>
                     </td>
-                    <td className="py-2.5 px-3 text-slate-400 text-[11px]">
+                    <td className="py-2.5 px-3 text-zinc-400 text-[11px]">
                       {exp.campaignName || "—"}
                     </td>
                     <td className="py-2.5 px-3 text-right font-mono text-white font-semibold whitespace-nowrap">
@@ -289,7 +289,7 @@ export function ExpensesView({
                       <button
                         type="button"
                         onClick={() => handleDelete(exp.id)}
-                        className="p-1 text-slate-500 hover:text-rose-400 transition"
+                        className="p-1 text-zinc-500 hover:text-rose-400 transition"
                         title="Excluir despesa"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -393,12 +393,12 @@ export function FeesView({
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
       <SpotlightCard className="p-5 sm:p-6 bento-card space-y-4">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-[#1a86ff]/15 border border-[#1a86ff]/30 flex items-center justify-center">
-            <Percent className="w-4 h-4 text-[#38bdf8]" />
+          <div className="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
+            <Percent className="w-4 h-4 text-white" />
           </div>
           <div>
             <h3 className="text-sm font-semibold text-white">Cadastrar Taxa / Imposto</h3>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-zinc-400">
               Taxas fixas ou percentuais deduzidas do lucro
             </p>
           </div>
@@ -418,24 +418,24 @@ export function FeesView({
 
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
-            <label className="block text-xs text-slate-300 mb-1">Nome da Taxa *</label>
+            <label className="block text-xs text-zinc-300 mb-1">Nome da Taxa *</label>
             <input
               type="text"
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Ex: Imposto Simples Nacional 6%"
-              className="w-full rounded-xl border border-slate-800 bg-[#080f1e] px-3 py-2 text-xs text-white focus:border-[#1a86ff] focus:outline-none"
+              className="w-full rounded-xl border border-white/10 bg-[#08080a] px-3 py-2 text-xs text-white focus:border-white focus:outline-none"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-slate-300 mb-1">Categoria</label>
+              <label className="block text-xs text-zinc-300 mb-1">Categoria</label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value as FeeCategory)}
-                className="w-full rounded-xl border border-slate-800 bg-[#080f1e] px-2.5 py-2 text-xs text-white focus:border-[#1a86ff] focus:outline-none"
+                className="w-full rounded-xl border border-white/10 bg-[#08080a] px-2.5 py-2 text-xs text-white focus:border-white focus:outline-none"
               >
                 {Object.entries(FEE_CATEGORIES).map(([k, v]) => (
                   <option key={k} value={k}>
@@ -445,13 +445,13 @@ export function FeesView({
               </select>
             </div>
             <div>
-              <label className="block text-xs text-slate-300 mb-1">Dashboard</label>
+              <label className="block text-xs text-zinc-300 mb-1">Dashboard</label>
               <select
                 value={targetDashboard}
                 onChange={(e) =>
                   setTargetDashboard(e.target.value as DashboardOperationId)
                 }
-                className="w-full rounded-xl border border-slate-800 bg-[#080f1e] px-2.5 py-2 text-xs text-white focus:border-[#1a86ff] focus:outline-none"
+                className="w-full rounded-xl border border-white/10 bg-[#08080a] px-2.5 py-2 text-xs text-white focus:border-white focus:outline-none"
               >
                 <option value="tiktok">Operação TikTok</option>
                 <option value="omegapay">Operação OmegaPay</option>
@@ -461,18 +461,18 @@ export function FeesView({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-slate-300 mb-1">Tipo</label>
+              <label className="block text-xs text-zinc-300 mb-1">Tipo</label>
               <select
                 value={feeType}
                 onChange={(e) => setFeeType(e.target.value as FeeType)}
-                className="w-full rounded-xl border border-slate-800 bg-[#080f1e] px-2.5 py-2 text-xs text-white focus:border-[#1a86ff] focus:outline-none"
+                className="w-full rounded-xl border border-white/10 bg-[#08080a] px-2.5 py-2 text-xs text-white focus:border-white focus:outline-none"
               >
                 <option value="PERCENTAGE">Percentual (%)</option>
                 <option value="FIXED">Valor Fixo (R$)</option>
               </select>
             </div>
             <div>
-              <label className="block text-xs text-slate-300 mb-1">
+              <label className="block text-xs text-zinc-300 mb-1">
                 {feeType === "PERCENTAGE" ? "Percentual (%) *" : "Valor (R$) *"}
               </label>
               <input
@@ -482,31 +482,31 @@ export function FeesView({
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
                 placeholder={feeType === "PERCENTAGE" ? "Ex: 6,0" : "Ex: 49,90"}
-                className="w-full rounded-xl border border-slate-800 bg-[#080f1e] px-3 py-2 text-xs text-white font-mono focus:border-[#1a86ff] focus:outline-none"
+                className="w-full rounded-xl border border-white/10 bg-[#08080a] px-3 py-2 text-xs text-white font-mono focus:border-white focus:outline-none"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-slate-300 mb-1">Data *</label>
+              <label className="block text-xs text-zinc-300 mb-1">Data *</label>
               <input
                 type="date"
                 required
                 value={feeDate}
                 onChange={(e) => setFeeDate(e.target.value)}
-                className="w-full rounded-xl border border-slate-800 bg-[#080f1e] px-3 py-2 text-xs text-white focus:border-[#1a86ff] focus:outline-none"
+                className="w-full rounded-xl border border-white/10 bg-[#08080a] px-3 py-2 text-xs text-white focus:border-white focus:outline-none"
               />
             </div>
             <div>
-              <label className="block text-xs text-slate-300 mb-1">Campanha (opcional)</label>
+              <label className="block text-xs text-zinc-300 mb-1">Campanha (opcional)</label>
               <input
                 type="text"
                 list="dashfy-fee-campaigns"
                 value={campaignName}
                 onChange={(e) => setCampaignName(e.target.value)}
                 placeholder="Opcional"
-                className="w-full rounded-xl border border-slate-800 bg-[#080f1e] px-3 py-2 text-xs text-white focus:border-[#1a86ff] focus:outline-none"
+                className="w-full rounded-xl border border-white/10 bg-[#08080a] px-3 py-2 text-xs text-white focus:border-white focus:outline-none"
               />
               <datalist id="dashfy-fee-campaigns">
                 {campaignSuggestions.map((c) => (
@@ -517,20 +517,20 @@ export function FeesView({
           </div>
 
           <div>
-            <label className="block text-xs text-slate-300 mb-1">Observações</label>
+            <label className="block text-xs text-zinc-300 mb-1">Observações</label>
             <textarea
               rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Detalhes da taxa..."
-              className="w-full rounded-xl border border-slate-800 bg-[#080f1e] px-3 py-2 text-xs text-white focus:border-[#1a86ff] focus:outline-none"
+              className="w-full rounded-xl border border-white/10 bg-[#08080a] px-3 py-2 text-xs text-white focus:border-white focus:outline-none"
             />
           </div>
 
           <button
             type="submit"
             disabled={submitting}
-            className="btn-pressable w-full inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-[#1a86ff] hover:bg-[#3194ff] text-white text-xs font-semibold disabled:opacity-50"
+            className="btn-pressable w-full inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-white hover:bg-zinc-100 text-black text-xs font-semibold disabled:opacity-50"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>{submitting ? "Salvando..." : "Salvar Taxa"}</span>
@@ -544,31 +544,31 @@ export function FeesView({
             <h3 className="text-sm font-semibold text-white">
               Taxas — {dashboardId === "tiktok" ? "Operação TikTok" : "Operação OmegaPay"}
             </h3>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-zinc-400">
               Impacto calculado no período sobre base de {formatBRL(revenueBase)}
             </p>
           </div>
           <div className="flex items-center gap-3 text-xs font-mono">
             {dashboardId === "omegapay" && (
-              <span className="px-2.5 py-1 rounded-lg border border-slate-800 bg-[#080f1e] text-slate-300">
+              <span className="px-2.5 py-1 rounded-lg border border-white/10 bg-[#08080a] text-zinc-300">
                 Checkout OmegaPay: <strong className="text-white">{formatBRL(checkoutFeesTotal)}</strong>
               </span>
             )}
-            <span className="px-2.5 py-1 rounded-lg border border-[#1a86ff]/30 bg-[#1a86ff]/10 text-[#60a5fa]">
+            <span className="px-2.5 py-1 rounded-lg border border-white/10 bg-white/5 text-zinc-200">
               Taxas Cadastradas: <strong>{formatBRL(customFeesImpact)}</strong>
             </span>
           </div>
         </div>
 
         {fees.length === 0 ? (
-          <div className="py-12 text-center rounded-xl border border-dashed border-slate-800 text-xs text-slate-500">
+          <div className="py-12 text-center rounded-xl border border-dashed border-white/10 text-xs text-zinc-500">
             Nenhuma taxa adicional cadastrada nesta operação.
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-slate-800/90">
+          <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-slate-800 bg-[#080f1e] text-slate-400 uppercase tracking-wider text-[10px]">
+                <tr className="border-b border-white/10 bg-[#08080a] text-zinc-400 uppercase tracking-wider text-[10px]">
                   <th className="py-2.5 px-3 font-semibold">Data</th>
                   <th className="py-2.5 px-3 font-semibold">Nome</th>
                   <th className="py-2.5 px-3 font-semibold">Categoria</th>
@@ -577,29 +577,29 @@ export function FeesView({
                   <th className="py-2.5 px-3 font-semibold text-center">Ação</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60 bg-[#0c1425]">
+              <tbody className="divide-y divide-white/[0.04] bg-[#0c0c0e]">
                 {fees.map((f) => {
                   const impact =
                     f.feeType === "PERCENTAGE"
                       ? (revenueBase * f.value) / 100
                       : f.value;
                   return (
-                    <tr key={f.id} className="hover:bg-slate-800/30">
-                      <td className="py-2.5 px-3 font-mono text-slate-400 whitespace-nowrap">
+                    <tr key={f.id} className="hover:bg-white/[0.03]">
+                      <td className="py-2.5 px-3 font-mono text-zinc-400 whitespace-nowrap">
                         {formatDateBR(f.feeDate)}
                       </td>
                       <td className="py-2.5 px-3">
                         <div className="text-white font-medium">{f.name}</div>
                         {f.notes && (
-                          <div className="text-[10px] text-slate-400">{f.notes}</div>
+                          <div className="text-[10px] text-zinc-400">{f.notes}</div>
                         )}
                       </td>
                       <td className="py-2.5 px-3">
-                        <span className="px-2 py-0.5 rounded-full text-[10px] border border-slate-700 bg-slate-800/80 text-slate-300">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] border border-white/10 bg-white/[0.04] text-zinc-300">
                           {FEE_CATEGORIES[f.category]?.label || f.category}
                         </span>
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono text-slate-300">
+                      <td className="py-2.5 px-3 text-right font-mono text-zinc-300">
                         {f.feeType === "PERCENTAGE"
                           ? `${f.value.toFixed(2)}%`
                           : formatBRL(f.value)}
@@ -611,7 +611,7 @@ export function FeesView({
                         <button
                           type="button"
                           onClick={() => handleDelete(f.id)}
-                          className="p-1 text-slate-500 hover:text-rose-400 transition"
+                          className="p-1 text-zinc-500 hover:text-rose-400 transition"
                           title="Excluir taxa"
                         >
                           <Trash2 className="w-3.5 h-3.5" />

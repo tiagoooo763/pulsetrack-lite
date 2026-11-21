@@ -318,15 +318,15 @@ export function TikTokAdsView({ campaigns, onRefresh }: TikTokAdsViewProps) {
   return (
     <div className="space-y-4">
       {notice && (
-        <div className="rounded-xl border border-[#1a86ff]/40 bg-[#1a86ff]/10 p-3 text-xs text-blue-200 flex items-center justify-between">
+        <div className="rounded-xl border border-white/15 bg-white/5 p-3 text-xs text-zinc-200 flex items-center justify-between">
           <span className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-[#38bdf8]" />
+            <CheckCircle2 className="w-4 h-4 text-white" />
             {notice}
           </span>
           <button
             type="button"
             onClick={() => setNotice(null)}
-            className="text-slate-400 hover:text-white"
+            className="text-zinc-400 hover:text-white"
           >
             ✕
           </button>
@@ -339,9 +339,9 @@ export function TikTokAdsView({ campaigns, onRefresh }: TikTokAdsViewProps) {
           <h3 className="text-sm font-semibold text-white">
             Gerenciador de Performance — TikTok Ads
           </h3>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-xs text-zinc-400 mt-0.5">
             Importe dados via CSV do TikTok Ads Manager ou cadastre manualmente.{" "}
-            <strong className="text-[#38bdf8]">Receita Atribuída</strong> e{" "}
+            <strong className="text-white">Receita Atribuída</strong> e{" "}
             <strong className="text-emerald-400">Lucro Estimado</strong> são calculados de forma independente da OmegaPay.
           </p>
         </div>
@@ -357,15 +357,15 @@ export function TikTokAdsView({ campaigns, onRefresh }: TikTokAdsViewProps) {
           <button
             type="button"
             onClick={handleDownloadTemplate}
-            className="btn-pressable inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-700/80 bg-[#080f1e] hover:border-slate-500 text-xs font-medium text-slate-200"
+            className="btn-pressable inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-white/15 bg-[#08080a] hover:border-white/25 text-xs font-medium text-zinc-200"
           >
-            <Download className="w-3.5 h-3.5 text-slate-400" />
+            <Download className="w-3.5 h-3.5 text-zinc-400" />
             <span>Modelo CSV</span>
           </button>
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="btn-pressable inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-[#1a86ff]/40 bg-[#1a86ff]/15 hover:bg-[#1a86ff]/25 text-xs font-semibold text-[#60a5fa]"
+            className="btn-pressable inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 text-xs font-semibold text-white"
           >
             <Upload className="w-3.5 h-3.5" />
             <span>Importar CSV</span>
@@ -373,7 +373,7 @@ export function TikTokAdsView({ campaigns, onRefresh }: TikTokAdsViewProps) {
           <button
             type="button"
             onClick={() => setManualOpen(true)}
-            className="btn-pressable inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#1a86ff] hover:bg-[#3194ff] text-xs font-semibold text-white shadow-md shadow-[#1a86ff]/25"
+            className="btn-pressable inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-zinc-100 text-xs font-semibold text-black shadow-sm"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Adicionar Campanha</span>
@@ -384,7 +384,7 @@ export function TikTokAdsView({ campaigns, onRefresh }: TikTokAdsViewProps) {
       {/* Abas de Nível Hierárquico (Campanhas / Conjuntos / Anúncios) + Busca */}
       <SpotlightCard className="p-5 sm:p-6 bento-card space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-          <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-[#080f1e] border border-slate-800 self-start">
+          <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-[#08080a] border border-white/10 self-start">
             {(
               [
                 { id: "campaigns", label: "Campanhas" },
@@ -398,8 +398,8 @@ export function TikTokAdsView({ campaigns, onRefresh }: TikTokAdsViewProps) {
                 onClick={() => setLevel(tab.id)}
                 className={`btn-pressable px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
                   level === tab.id
-                    ? "bg-[#1a86ff] text-white shadow-sm"
-                    : "text-slate-400 hover:text-white"
+                    ? "bg-white text-black shadow-sm"
+                    : "text-zinc-400 hover:text-white"
                 }`}
               >
                 {tab.label}
@@ -414,14 +414,14 @@ export function TikTokAdsView({ campaigns, onRefresh }: TikTokAdsViewProps) {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Filtrar campanha, conjunto ou anúncio..."
-                className="rounded-xl border border-slate-800 bg-[#080f1e] pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:border-[#1a86ff] focus:outline-none w-60"
+                className="rounded-xl border border-white/10 bg-[#08080a] pl-8 pr-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:border-white focus:outline-none w-60"
               />
-              <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2" />
+              <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-2.5 top-2" />
             </div>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as "ALL" | "ACTIVE" | "PAUSED")}
-              className="rounded-xl border border-slate-800 bg-[#080f1e] px-3 py-1.5 text-xs text-white focus:border-[#1a86ff] focus:outline-none"
+              className="rounded-xl border border-white/10 bg-[#08080a] px-3 py-1.5 text-xs text-white focus:border-white focus:outline-none"
             >
               <option value="ALL">Todos status</option>
               <option value="ACTIVE">Ativas</option>
@@ -432,20 +432,20 @@ export function TikTokAdsView({ campaigns, onRefresh }: TikTokAdsViewProps) {
 
         {/* Tabela de Performance */}
         {aggregatedRows.length === 0 ? (
-          <div className="py-12 text-center rounded-xl border border-dashed border-slate-800 bg-[#080f1e]/50 space-y-2">
-            <FileSpreadsheet className="w-7 h-7 text-slate-600 mx-auto" />
-            <p className="text-xs text-slate-400">
+          <div className="py-12 text-center rounded-xl border border-dashed border-white/10 bg-white/[0.01] space-y-2">
+            <FileSpreadsheet className="w-7 h-7 text-zinc-600 mx-auto" />
+            <p className="text-xs text-zinc-400">
               Nenhuma campanha ou anúncio registrado na Operação TikTok.
             </p>
-            <p className="text-[11px] text-slate-500">
+            <p className="text-[11px] text-zinc-500">
               Clique em <strong>Importar CSV</strong> ou <strong>Adicionar Campanha</strong> acima para começar.
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-slate-800/90">
+          <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-slate-800 bg-[#080f1e] text-slate-400 uppercase tracking-wider text-[10px]">
+                <tr className="border-b border-white/10 bg-[#08080a] text-zinc-400 uppercase tracking-wider text-[10px]">
                   <th className="py-2.5 px-3 font-semibold">
                     {level === "campaigns"
                       ? "Campanha"
@@ -460,7 +460,7 @@ export function TikTokAdsView({ campaigns, onRefresh }: TikTokAdsViewProps) {
                   <th className="py-2.5 px-3 font-semibold text-right">CPC</th>
                   <th className="py-2.5 px-3 font-semibold text-right">CPM</th>
                   <th className="py-2.5 px-3 font-semibold text-right">Conv.</th>
-                  <th className="py-2.5 px-3 font-semibold text-right text-[#38bdf8]">
+                  <th className="py-2.5 px-3 font-semibold text-right text-white">
                     Receita Atrib.
                   </th>
                   <th className="py-2.5 px-3 font-semibold text-right">ROAS</th>
@@ -472,19 +472,19 @@ export function TikTokAdsView({ campaigns, onRefresh }: TikTokAdsViewProps) {
                   )}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60 bg-[#0c1425]">
+              <tbody className="divide-y divide-white/[0.04] bg-[#0c0c0e]">
                 {aggregatedRows.map((row) => {
                   const cpc = row.clicks > 0 ? row.spend / row.clicks : 0;
                   const cpm = row.impressions > 0 ? (row.spend / row.impressions) * 1000 : 0;
                   const roas = row.spend > 0 ? row.attributedRevenue / row.spend : 0;
                   const profit = row.attributedRevenue - row.spend;
                   return (
-                    <tr key={row.key} className="hover:bg-slate-800/35 transition-colors">
+                    <tr key={row.key} className="hover:bg-white/[0.03] transition-colors">
                       <td className="py-2.5 px-3">
                         <div className="font-medium text-white max-w-[230px] truncate">
                           {row.name}
                         </div>
-                        <div className="text-[10px] text-slate-400 truncate max-w-[230px]">
+                        <div className="text-[10px] text-zinc-400 truncate max-w-[230px]">
                           {row.subLabel}
                           {row.statDate ? ` • ${formatDateBR(row.statDate)}` : ""}
                         </div>
@@ -494,39 +494,39 @@ export function TikTokAdsView({ campaigns, onRefresh }: TikTokAdsViewProps) {
                           className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
                             row.status === "ACTIVE"
                               ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
-                              : "border-slate-700 bg-slate-800/70 text-slate-400"
+                              : "border-white/10 bg-white/[0.04] text-zinc-400"
                           }`}
                         >
                           <span
                             className={`w-1.5 h-1.5 rounded-full ${
-                              row.status === "ACTIVE" ? "bg-emerald-400" : "bg-slate-500"
+                              row.status === "ACTIVE" ? "bg-emerald-400" : "bg-zinc-500"
                             }`}
                           />
                           {row.status === "ACTIVE" ? "Ativa" : "Pausada"}
                         </span>
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono text-slate-200 whitespace-nowrap">
+                      <td className="py-2.5 px-3 text-right font-mono text-zinc-200 whitespace-nowrap">
                         {formatBRL(row.spend)}
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono text-slate-300">
+                      <td className="py-2.5 px-3 text-right font-mono text-zinc-300">
                         {row.impressions.toLocaleString("pt-BR")}
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono text-slate-300">
+                      <td className="py-2.5 px-3 text-right font-mono text-zinc-300">
                         {row.clicks.toLocaleString("pt-BR")}
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono text-slate-300 whitespace-nowrap">
+                      <td className="py-2.5 px-3 text-right font-mono text-zinc-300 whitespace-nowrap">
                         {formatBRL(cpc)}
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono text-slate-300 whitespace-nowrap">
+                      <td className="py-2.5 px-3 text-right font-mono text-zinc-300 whitespace-nowrap">
                         {formatBRL(cpm)}
                       </td>
                       <td className="py-2.5 px-3 text-right font-mono text-white font-semibold">
                         {row.conversions}
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono text-[#38bdf8] font-semibold whitespace-nowrap">
+                      <td className="py-2.5 px-3 text-right font-mono text-white font-semibold whitespace-nowrap">
                         {formatBRL(row.attributedRevenue)}
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono text-slate-200 whitespace-nowrap">
+                      <td className="py-2.5 px-3 text-right font-mono text-zinc-200 whitespace-nowrap">
                         {row.spend > 0 ? `${roas.toFixed(2)}x` : "—"}
                       </td>
                       <td
@@ -535,7 +535,7 @@ export function TikTokAdsView({ campaigns, onRefresh }: TikTokAdsViewProps) {
                             ? "text-emerald-400"
                             : profit < 0
                               ? "text-rose-400"
-                              : "text-slate-400"
+                              : "text-zinc-400"
                         }`}
                       >
                         {formatBRL(profit)}
@@ -546,7 +546,7 @@ export function TikTokAdsView({ campaigns, onRefresh }: TikTokAdsViewProps) {
                             <button
                               type="button"
                               onClick={() => handleToggleStatus(row.rawId!, row.status)}
-                              className="p-1 text-slate-400 hover:text-white rounded hover:bg-slate-800"
+                              className="p-1 text-zinc-400 hover:text-white rounded hover:bg-white/[0.05]"
                               title={row.status === "ACTIVE" ? "Marcar como pausada" : "Marcar como ativa"}
                             >
                               {row.status === "ACTIVE" ? (
@@ -558,7 +558,7 @@ export function TikTokAdsView({ campaigns, onRefresh }: TikTokAdsViewProps) {
                             <button
                               type="button"
                               onClick={() => handleDelete(row.rawId!)}
-                              className="p-1 text-slate-500 hover:text-rose-400 rounded hover:bg-rose-500/10"
+                              className="p-1 text-zinc-500 hover:text-rose-400 rounded hover:bg-rose-500/10"
                               title="Excluir registro"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -571,7 +571,7 @@ export function TikTokAdsView({ campaigns, onRefresh }: TikTokAdsViewProps) {
                 })}
               </tbody>
               <tfoot>
-                <tr className="border-t border-slate-700 bg-[#080f1e] font-semibold text-white">
+                <tr className="border-t border-white/10 bg-[#08080a] font-semibold text-white">
                   <td className="py-2.5 px-3">Total ({aggregatedRows.length})</td>
                   <td />
                   <td className="py-2.5 px-3 text-right font-mono">{formatBRL(totals.spend)}</td>
@@ -584,7 +584,7 @@ export function TikTokAdsView({ campaigns, onRefresh }: TikTokAdsViewProps) {
                   <td className="py-2.5 px-3 text-right font-mono">{formatBRL(totals.cpc)}</td>
                   <td className="py-2.5 px-3 text-right font-mono">{formatBRL(totals.cpm)}</td>
                   <td className="py-2.5 px-3 text-right font-mono">{totals.conversions}</td>
-                  <td className="py-2.5 px-3 text-right font-mono text-[#38bdf8]">
+                  <td className="py-2.5 px-3 text-right font-mono text-white">
                     {formatBRL(totals.revenue)}
                   </td>
                   <td className="py-2.5 px-3 text-right font-mono">
@@ -607,29 +607,29 @@ export function TikTokAdsView({ campaigns, onRefresh }: TikTokAdsViewProps) {
 
       {/* MODAL DE PRÉ-VISUALIZAÇÃO CSV */}
       {csvPreview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="w-full max-w-2xl rounded-2xl border border-slate-700/80 bg-[#0f172a] p-5 sm:p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="w-full max-w-2xl rounded-2xl border border-white/15 bg-[#0c0c0e] p-5 sm:p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div>
                 <h3 className="text-sm font-semibold text-white">
                   Confirmar Importação CSV — TikTok Ads
                 </h3>
-                <p className="text-xs text-slate-400">
-                  Arquivo: <span className="font-mono text-slate-200">{csvFileName}</span> ({csvPreview.length} linhas detectadas)
+                <p className="text-xs text-zinc-400">
+                  Arquivo: <span className="font-mono text-zinc-200">{csvFileName}</span> ({csvPreview.length} linhas detectadas)
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setCsvPreview(null)}
-                className="p-1.5 text-slate-400 hover:text-white"
+                className="p-1.5 text-zinc-400 hover:text-white"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="max-h-64 overflow-y-auto rounded-xl border border-slate-800">
+            <div className="max-h-64 overflow-y-auto rounded-xl border border-white/10">
               <table className="w-full text-left text-[11px]">
-                <thead className="bg-[#080f1e] text-slate-400 uppercase">
+                <thead className="bg-[#08080a] text-zinc-400 uppercase">
                   <tr>
                     <th className="p-2">Data</th>
                     <th className="p-2">Campanha</th>
@@ -639,15 +639,15 @@ export function TikTokAdsView({ campaigns, onRefresh }: TikTokAdsViewProps) {
                     <th className="p-2 text-right">Receita</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/70">
+                <tbody className="divide-y divide-white/[0.04]">
                   {csvPreview.slice(0, 10).map((r, i) => (
                     <tr key={i}>
-                      <td className="p-2 font-mono text-slate-400">{r.statDate}</td>
+                      <td className="p-2 font-mono text-zinc-400">{r.statDate}</td>
                       <td className="p-2 text-white truncate max-w-[160px]">{r.campaignName}</td>
-                      <td className="p-2 text-slate-300 truncate max-w-[120px]">{r.adName}</td>
+                      <td className="p-2 text-zinc-300 truncate max-w-[120px]">{r.adName}</td>
                       <td className="p-2 text-right font-mono">{formatBRL(r.spend)}</td>
                       <td className="p-2 text-right font-mono">{r.conversions}</td>
-                      <td className="p-2 text-right font-mono text-[#38bdf8]">
+                      <td className="p-2 text-right font-mono text-white">
                         {formatBRL(r.attributedRevenue)}
                       </td>
                     </tr>
@@ -656,11 +656,11 @@ export function TikTokAdsView({ campaigns, onRefresh }: TikTokAdsViewProps) {
               </table>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/10">
               <button
                 type="button"
                 onClick={() => setCsvPreview(null)}
-                className="px-3.5 py-2 rounded-xl text-xs text-slate-400 hover:text-white"
+                className="px-3.5 py-2 rounded-xl text-xs text-zinc-400 hover:text-white"
               >
                 Cancelar
               </button>
@@ -668,7 +668,7 @@ export function TikTokAdsView({ campaigns, onRefresh }: TikTokAdsViewProps) {
                 type="button"
                 onClick={handleConfirmCsvImport}
                 disabled={importingCsv}
-                className="btn-pressable px-4 py-2 rounded-xl bg-[#1a86ff] hover:bg-[#3194ff] text-white text-xs font-semibold disabled:opacity-50"
+                className="btn-pressable px-4 py-2 rounded-xl bg-white hover:bg-zinc-100 text-black text-xs font-semibold disabled:opacity-50"
               >
                 {importingCsv
                   ? "Importando..."
@@ -681,21 +681,21 @@ export function TikTokAdsView({ campaigns, onRefresh }: TikTokAdsViewProps) {
 
       {/* MODAL DE CADASTRO MANUAL */}
       {manualOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-2xl border border-slate-700/80 bg-[#0f172a] p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-2xl border border-white/15 bg-[#0c0c0e] p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div>
                 <h3 className="text-sm font-semibold text-white">
                   Novo Registro de Campanha TikTok Ads
                 </h3>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-zinc-400">
                   Dados salvos exclusivamente na Operação TikTok
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setManualOpen(false)}
-                className="p-1.5 text-slate-400 hover:text-white"
+                className="p-1.5 text-zinc-400 hover:text-white"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -710,118 +710,118 @@ export function TikTokAdsView({ campaigns, onRefresh }: TikTokAdsViewProps) {
             <form onSubmit={handleCreateManual} className="space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs text-slate-300 mb-1">Conta de Anúncio</label>
+                  <label className="block text-xs text-zinc-300 mb-1">Conta de Anúncio</label>
                   <input
                     type="text"
                     value={formAdAccount}
                     onChange={(e) => setFormAdAccount(e.target.value)}
-                    className="w-full rounded-xl border border-slate-800 bg-[#080f1e] px-3 py-2 text-xs text-white focus:border-[#1a86ff] focus:outline-none"
+                    className="w-full rounded-xl border border-white/10 bg-[#08080a] px-3 py-2 text-xs text-white focus:border-white focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-slate-300 mb-1">Data *</label>
+                  <label className="block text-xs text-zinc-300 mb-1">Data *</label>
                   <input
                     type="date"
                     required
                     value={formDate}
                     onChange={(e) => setFormDate(e.target.value)}
-                    className="w-full rounded-xl border border-slate-800 bg-[#080f1e] px-3 py-2 text-xs text-white focus:border-[#1a86ff] focus:outline-none"
+                    className="w-full rounded-xl border border-white/10 bg-[#08080a] px-3 py-2 text-xs text-white focus:border-white focus:outline-none"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs text-slate-300 mb-1">Nome da Campanha *</label>
+                <label className="block text-xs text-zinc-300 mb-1">Nome da Campanha *</label>
                 <input
                   type="text"
                   required
                   value={formCampaign}
                   onChange={(e) => setFormCampaign(e.target.value)}
                   placeholder="Ex: [TT] CBO Escala Produto X"
-                  className="w-full rounded-xl border border-slate-800 bg-[#080f1e] px-3 py-2 text-xs text-white focus:border-[#1a86ff] focus:outline-none"
+                  className="w-full rounded-xl border border-white/10 bg-[#08080a] px-3 py-2 text-xs text-white focus:border-white focus:outline-none"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs text-slate-300 mb-1">Conjunto (Ad Group)</label>
+                  <label className="block text-xs text-zinc-300 mb-1">Conjunto (Ad Group)</label>
                   <input
                     type="text"
                     value={formAdgroup}
                     onChange={(e) => setFormAdgroup(e.target.value)}
                     placeholder="Ex: Aberto 25-44"
-                    className="w-full rounded-xl border border-slate-800 bg-[#080f1e] px-3 py-2 text-xs text-white focus:border-[#1a86ff] focus:outline-none"
+                    className="w-full rounded-xl border border-white/10 bg-[#08080a] px-3 py-2 text-xs text-white focus:border-white focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-slate-300 mb-1">Anúncio (Criativo)</label>
+                  <label className="block text-xs text-zinc-300 mb-1">Anúncio (Criativo)</label>
                   <input
                     type="text"
                     value={formAd}
                     onChange={(e) => setFormAd(e.target.value)}
                     placeholder="Ex: UGC Hook 03"
-                    className="w-full rounded-xl border border-slate-800 bg-[#080f1e] px-3 py-2 text-xs text-white focus:border-[#1a86ff] focus:outline-none"
+                    className="w-full rounded-xl border border-white/10 bg-[#08080a] px-3 py-2 text-xs text-white focus:border-white focus:outline-none"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs text-slate-300 mb-1">Produto Associado</label>
+                <label className="block text-xs text-zinc-300 mb-1">Produto Associado</label>
                 <input
                   type="text"
                   value={formProduct}
                   onChange={(e) => setFormProduct(e.target.value)}
-                  className="w-full rounded-xl border border-slate-800 bg-[#080f1e] px-3 py-2 text-xs text-white focus:border-[#1a86ff] focus:outline-none"
+                  className="w-full rounded-xl border border-white/10 bg-[#08080a] px-3 py-2 text-xs text-white focus:border-white focus:outline-none"
                 />
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-xs text-slate-300 mb-1">Investimento (R$)</label>
+                  <label className="block text-xs text-zinc-300 mb-1">Investimento (R$)</label>
                   <input
                     type="text"
                     inputMode="decimal"
                     value={formSpend}
                     onChange={(e) => setFormSpend(e.target.value)}
                     placeholder="150,00"
-                    className="w-full rounded-xl border border-slate-800 bg-[#080f1e] px-3 py-2 text-xs text-white font-mono focus:border-[#1a86ff] focus:outline-none"
+                    className="w-full rounded-xl border border-white/10 bg-[#08080a] px-3 py-2 text-xs text-white font-mono focus:border-white focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-slate-300 mb-1">Impressões</label>
+                  <label className="block text-xs text-zinc-300 mb-1">Impressões</label>
                   <input
                     type="number"
                     min={0}
                     value={formImpressions}
                     onChange={(e) => setFormImpressions(e.target.value)}
                     placeholder="12000"
-                    className="w-full rounded-xl border border-slate-800 bg-[#080f1e] px-3 py-2 text-xs text-white font-mono focus:border-[#1a86ff] focus:outline-none"
+                    className="w-full rounded-xl border border-white/10 bg-[#08080a] px-3 py-2 text-xs text-white font-mono focus:border-white focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-slate-300 mb-1">Cliques</label>
+                  <label className="block text-xs text-zinc-300 mb-1">Cliques</label>
                   <input
                     type="number"
                     min={0}
                     value={formClicks}
                     onChange={(e) => setFormClicks(e.target.value)}
                     placeholder="320"
-                    className="w-full rounded-xl border border-slate-800 bg-[#080f1e] px-3 py-2 text-xs text-white font-mono focus:border-[#1a86ff] focus:outline-none"
+                    className="w-full rounded-xl border border-white/10 bg-[#08080a] px-3 py-2 text-xs text-white font-mono focus:border-white focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-slate-300 mb-1">Conversões</label>
+                  <label className="block text-xs text-zinc-300 mb-1">Conversões</label>
                   <input
                     type="number"
                     min={0}
                     value={formConversions}
                     onChange={(e) => setFormConversions(e.target.value)}
                     placeholder="8"
-                    className="w-full rounded-xl border border-slate-800 bg-[#080f1e] px-3 py-2 text-xs text-white font-mono focus:border-[#1a86ff] focus:outline-none"
+                    className="w-full rounded-xl border border-white/10 bg-[#08080a] px-3 py-2 text-xs text-white font-mono focus:border-white focus:outline-none"
                   />
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-xs text-[#38bdf8] font-medium mb-1">
+                  <label className="block text-xs text-white font-medium mb-1">
                     Receita Atribuída (R$)
                   </label>
                   <input
@@ -830,23 +830,23 @@ export function TikTokAdsView({ campaigns, onRefresh }: TikTokAdsViewProps) {
                     value={formRevenue}
                     onChange={(e) => setFormRevenue(e.target.value)}
                     placeholder="690,00"
-                    className="w-full rounded-xl border border-[#1a86ff]/40 bg-[#080f1e] px-3 py-2 text-xs text-white font-mono focus:border-[#1a86ff] focus:outline-none"
+                    className="w-full rounded-xl border border-white/15 bg-[#050507] px-3 py-2 text-xs text-white font-mono focus:border-white focus:outline-none"
                   />
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-white/10">
                 <button
                   type="button"
                   onClick={() => setManualOpen(false)}
-                  className="px-3.5 py-2 rounded-xl text-xs text-slate-400 hover:text-white"
+                  className="px-3.5 py-2 rounded-xl text-xs text-zinc-400 hover:text-white"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="btn-pressable px-4 py-2 rounded-xl bg-[#1a86ff] hover:bg-[#3194ff] text-white text-xs font-semibold disabled:opacity-50"
+                  className="btn-pressable px-4 py-2 rounded-xl bg-white hover:bg-zinc-100 text-black text-xs font-semibold disabled:opacity-50"
                 >
                   {submitting ? "Salvando..." : "Salvar Campanha"}
                 </button>

@@ -114,14 +114,14 @@ export function ReportsView({
     <div className="space-y-5">
       <SpotlightCard className="p-5 sm:p-6 bento-card flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#1a86ff]/15 border border-[#1a86ff]/30 flex items-center justify-center shrink-0">
-            <FileBarChart2 className="w-5 h-5 text-[#38bdf8]" />
+          <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
+            <FileBarChart2 className="w-5 h-5 text-white" />
           </div>
           <div>
             <h3 className="text-sm font-semibold text-white">
               Relatório Executivo — {isTikTok ? "Operação TikTok" : "Operação OmegaPay"}
             </h3>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-zinc-400 mt-0.5">
               Exporte os dados filtrados da operação atual em CSV pronto para Excel ou Google Sheets.
             </p>
           </div>
@@ -129,7 +129,7 @@ export function ReportsView({
         <button
           type="button"
           onClick={handleExportCsv}
-          className="btn-pressable inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#1a86ff] hover:bg-[#3194ff] text-white text-xs font-semibold shrink-0"
+          className="btn-pressable inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-zinc-100 text-black text-xs font-semibold shrink-0"
         >
           <Download className="w-4 h-4" />
           <span>Exportar CSV Completo</span>
@@ -138,38 +138,38 @@ export function ReportsView({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <SpotlightCard className="p-5 bento-card space-y-3">
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
             Demonstrativo Financeiro do Período
           </h4>
           <div className="space-y-2 text-xs">
-            <div className="flex justify-between py-1.5 border-b border-slate-800/80">
-              <span className="text-slate-400">
+            <div className="flex justify-between py-1.5 border-b border-white/[0.06]">
+              <span className="text-zinc-400">
                 {isTikTok ? "Receita Atribuída" : "Faturamento Bruto"}
               </span>
               <span className="font-mono text-white font-semibold">
                 {formatBRL(metrics.grossRevenue)}
               </span>
             </div>
-            <div className="flex justify-between py-1.5 border-b border-slate-800/80">
-              <span className="text-slate-400">Taxas Totais</span>
+            <div className="flex justify-between py-1.5 border-b border-white/[0.06]">
+              <span className="text-zinc-400">Taxas Totais</span>
               <span className="font-mono text-rose-400">
                 -{formatBRL(metrics.checkoutOrPlatformFees + metrics.customFeesTotal)}
               </span>
             </div>
-            <div className="flex justify-between py-1.5 border-b border-slate-800/80">
-              <span className="text-slate-400">Faturamento Líquido</span>
+            <div className="flex justify-between py-1.5 border-b border-white/[0.06]">
+              <span className="text-zinc-400">Faturamento Líquido</span>
               <span className="font-mono text-white font-semibold">
                 {formatBRL(metrics.netRevenue)}
               </span>
             </div>
-            <div className="flex justify-between py-1.5 border-b border-slate-800/80">
-              <span className="text-slate-400">Gastos com Anúncios</span>
+            <div className="flex justify-between py-1.5 border-b border-white/[0.06]">
+              <span className="text-zinc-400">Gastos com Anúncios</span>
               <span className="font-mono text-rose-400">
                 -{formatBRL(metrics.adExpenses)}
               </span>
             </div>
-            <div className="flex justify-between py-1.5 border-b border-slate-800/80">
-              <span className="text-slate-400">Outras Despesas</span>
+            <div className="flex justify-between py-1.5 border-b border-white/[0.06]">
+              <span className="text-zinc-400">Outras Despesas</span>
               <span className="font-mono text-rose-400">
                 -{formatBRL(metrics.otherExpenses)}
               </span>
@@ -190,30 +190,30 @@ export function ReportsView({
         </SpotlightCard>
 
         <SpotlightCard className="p-5 bento-card space-y-3">
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
             Indicadores de Eficiência
           </h4>
           <div className="space-y-2 text-xs">
-            <div className="flex justify-between py-1.5 border-b border-slate-800/80">
-              <span className="text-slate-400">ROAS</span>
+            <div className="flex justify-between py-1.5 border-b border-white/[0.06]">
+              <span className="text-zinc-400">ROAS</span>
               <span className="font-mono text-white font-semibold">
                 {metrics.roas !== null ? `${metrics.roas.toFixed(2)}x` : "—"}
               </span>
             </div>
-            <div className="flex justify-between py-1.5 border-b border-slate-800/80">
-              <span className="text-slate-400">ROI (%)</span>
+            <div className="flex justify-between py-1.5 border-b border-white/[0.06]">
+              <span className="text-zinc-400">ROI (%)</span>
               <span className="font-mono text-white font-semibold">
                 {metrics.roiPct !== null ? `${metrics.roiPct.toFixed(1)}%` : "—"}
               </span>
             </div>
-            <div className="flex justify-between py-1.5 border-b border-slate-800/80">
-              <span className="text-slate-400">Margem Líquida</span>
+            <div className="flex justify-between py-1.5 border-b border-white/[0.06]">
+              <span className="text-zinc-400">Margem Líquida</span>
               <span className="font-mono text-white font-semibold">
                 {metrics.marginPct.toFixed(1)}%
               </span>
             </div>
-            <div className="flex justify-between py-1.5 border-b border-slate-800/80">
-              <span className="text-slate-400">
+            <div className="flex justify-between py-1.5 border-b border-white/[0.06]">
+              <span className="text-zinc-400">
                 {isTikTok ? "Total de Conversões" : "Taxa de Aprovação"}
               </span>
               <span className="font-mono text-white font-semibold">
@@ -221,7 +221,7 @@ export function ReportsView({
               </span>
             </div>
             <div className="flex justify-between py-1.5">
-              <span className="text-slate-400">Produtos Ativos</span>
+              <span className="text-zinc-400">Produtos Ativos</span>
               <span className="font-mono text-white font-semibold">
                 {metrics.productBreakdown.length}
               </span>
@@ -251,14 +251,14 @@ export function OrdersView({
   return (
     <SpotlightCard className="p-5 sm:p-6 bento-card space-y-4">
       <div className="flex items-center gap-2.5">
-        <div className="w-8 h-8 rounded-xl bg-[#1a86ff]/15 border border-[#1a86ff]/30 flex items-center justify-center">
-          <ShoppingBag className="w-4 h-4 text-[#38bdf8]" />
+        <div className="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
+          <ShoppingBag className="w-4 h-4 text-white" />
         </div>
         <div>
           <h3 className="text-sm font-semibold text-white">
             Pedidos — {isTikTok ? "Conversões Atribuídas TikTok" : "Pedidos OmegaPay"}
           </h3>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-zinc-400">
             {isTikTok
               ? "Conversões atribuídas agrupadas por campanha, anúncio e produto"
               : "Pedidos sincronizados via checkout e webhooks oficiais OmegaPay"}
@@ -268,39 +268,39 @@ export function OrdersView({
 
       {isTikTok ? (
         tiktokWithOrders.length === 0 ? (
-          <div className="py-12 text-center rounded-xl border border-dashed border-slate-800 text-xs text-slate-500">
+          <div className="py-12 text-center rounded-xl border border-dashed border-white/10 text-xs text-zinc-500">
             Nenhuma conversão atribuída registrada na Operação TikTok.
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-slate-800/90">
+          <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-slate-800 bg-[#080f1e] text-slate-400 uppercase tracking-wider text-[10px]">
+                <tr className="border-b border-white/10 bg-[#08080a] text-zinc-400 uppercase tracking-wider text-[10px]">
                   <th className="py-2.5 px-3">Data</th>
                   <th className="py-2.5 px-3">Produto</th>
                   <th className="py-2.5 px-3">Campanha / Anúncio</th>
                   <th className="py-2.5 px-3 text-right">Qtd. Pedidos</th>
                   <th className="py-2.5 px-3 text-right">Ticket Médio</th>
-                  <th className="py-2.5 px-3 text-right text-[#38bdf8]">Receita Atrib.</th>
+                  <th className="py-2.5 px-3 text-right text-white">Receita Atrib.</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60 bg-[#0c1425]">
+              <tbody className="divide-y divide-white/[0.04] bg-[#0c0c0e]">
                 {tiktokWithOrders.map((c) => (
-                  <tr key={c.id} className="hover:bg-slate-800/30">
-                    <td className="py-2.5 px-3 font-mono text-slate-400">
+                  <tr key={c.id} className="hover:bg-white/[0.03]">
+                    <td className="py-2.5 px-3 font-mono text-zinc-400">
                       {formatDateBR(c.statDate)}
                     </td>
                     <td className="py-2.5 px-3 text-white font-medium">{c.productName}</td>
-                    <td className="py-2.5 px-3 text-slate-300">
-                      {c.campaignName} &bull; <span className="text-slate-400">{c.adName}</span>
+                    <td className="py-2.5 px-3 text-zinc-300">
+                      {c.campaignName} &bull; <span className="text-zinc-400">{c.adName}</span>
                     </td>
                     <td className="py-2.5 px-3 text-right font-mono text-white font-semibold">
                       {c.conversions}
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono text-slate-300">
+                    <td className="py-2.5 px-3 text-right font-mono text-zinc-300">
                       {formatBRL(c.attributedRevenue / Math.max(1, c.conversions))}
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono text-[#38bdf8] font-semibold">
+                    <td className="py-2.5 px-3 text-right font-mono text-white font-semibold">
                       {formatBRL(c.attributedRevenue)}
                     </td>
                   </tr>
@@ -310,14 +310,14 @@ export function OrdersView({
           </div>
         )
       ) : transactions.length === 0 ? (
-        <div className="py-12 text-center rounded-xl border border-dashed border-slate-800 text-xs text-slate-500">
+        <div className="py-12 text-center rounded-xl border border-dashed border-white/10 text-xs text-zinc-500">
           Nenhum pedido recebido na Operação OmegaPay no período.
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-slate-800/90">
+        <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="border-b border-slate-800 bg-[#080f1e] text-slate-400 uppercase tracking-wider text-[10px]">
+              <tr className="border-b border-white/10 bg-[#08080a] text-zinc-400 uppercase tracking-wider text-[10px]">
                 <th className="py-2.5 px-3">Pedido / ID</th>
                 <th className="py-2.5 px-3">Produto</th>
                 <th className="py-2.5 px-3">Pagamento</th>
@@ -326,16 +326,16 @@ export function OrdersView({
                 <th className="py-2.5 px-3 text-right">Data</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 bg-[#0c1425]">
+            <tbody className="divide-y divide-white/[0.04] bg-[#0c0c0e]">
               {transactions.map((t) => {
                 const meta = getTransactionStatusMeta(t.status);
                 return (
-                  <tr key={t.id} className="hover:bg-slate-800/30">
-                    <td className="py-2.5 px-3 font-mono text-slate-300">
+                  <tr key={t.id} className="hover:bg-white/[0.03]">
+                    <td className="py-2.5 px-3 font-mono text-zinc-300">
                       {t.orderId || t.id}
                     </td>
                     <td className="py-2.5 px-3 text-white font-medium">{t.productName}</td>
-                    <td className="py-2.5 px-3 text-slate-300">
+                    <td className="py-2.5 px-3 text-zinc-300">
                       {getPaymentMethodLabel(t.paymentMethod)} ({t.installments}x)
                     </td>
                     <td className="py-2.5 px-3 text-right font-mono text-white font-semibold">
@@ -349,7 +349,7 @@ export function OrdersView({
                         {meta.label}
                       </span>
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono text-slate-400">
+                    <td className="py-2.5 px-3 text-right font-mono text-zinc-400">
                       {formatDateTimeBR(t.paidAt || t.createdAt)}
                     </td>
                   </tr>
@@ -381,14 +381,14 @@ export function EventsView({
   return (
     <SpotlightCard className="p-5 sm:p-6 bento-card space-y-4">
       <div className="flex items-center gap-2.5">
-        <div className="w-8 h-8 rounded-xl bg-[#1a86ff]/15 border border-[#1a86ff]/30 flex items-center justify-center">
-          <Activity className="w-4 h-4 text-[#38bdf8]" />
+        <div className="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
+          <Activity className="w-4 h-4 text-white" />
         </div>
         <div>
           <h3 className="text-sm font-semibold text-white">
             Log de Eventos — {isTikTok ? "Operação TikTok" : "Webhooks OmegaPay"}
           </h3>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-zinc-400">
             {isTikTok
               ? "Histórico de registros e importações de campanhas/conversões TikTok"
               : "Auditoria sanitizada de todos os webhooks recebidos com chave de idempotência"}
@@ -398,7 +398,7 @@ export function EventsView({
 
       {isTikTok ? (
         tiktokCampaigns.length === 0 ? (
-          <div className="py-12 text-center rounded-xl border border-dashed border-slate-800 text-xs text-slate-500">
+          <div className="py-12 text-center rounded-xl border border-dashed border-white/10 text-xs text-zinc-500">
             Nenhum evento de importação registrado na Operação TikTok ainda.
           </div>
         ) : (
@@ -406,16 +406,16 @@ export function EventsView({
             {tiktokCampaigns.slice(0, 20).map((c) => (
               <div
                 key={c.id}
-                className="rounded-xl border border-slate-800 bg-[#080f1e] p-3 flex flex-wrap items-center justify-between gap-2 text-xs"
+                className="rounded-xl border border-white/10 bg-[#08080a] p-3 flex flex-wrap items-center justify-between gap-2 text-xs"
               >
                 <div>
-                  <span className="font-mono text-[#38bdf8] text-[11px] mr-2">
+                  <span className="font-mono text-white text-[11px] mr-2">
                     TIKTOK_IMPORT
                   </span>
                   <span className="text-white font-medium">{c.campaignName}</span>
-                  <span className="text-slate-400 ml-2">({c.adName})</span>
+                  <span className="text-zinc-400 ml-2">({c.adName})</span>
                 </div>
-                <div className="font-mono text-[11px] text-slate-400">
+                <div className="font-mono text-[11px] text-zinc-400">
                   {c.conversions} conv. &bull; {formatDateTimeBR(c.createdAt)}
                 </div>
               </div>
@@ -423,31 +423,31 @@ export function EventsView({
           </div>
         )
       ) : omegaWebhooks.length === 0 ? (
-        <div className="py-12 text-center rounded-xl border border-dashed border-slate-800 text-xs text-slate-500">
+        <div className="py-12 text-center rounded-xl border border-dashed border-white/10 text-xs text-zinc-500">
           Nenhum webhook recebido da OmegaPay ainda. Configure o endpoint na aba Integrações.
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-slate-800/90">
+        <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="border-b border-slate-800 bg-[#080f1e] text-slate-400 uppercase tracking-wider text-[10px]">
+              <tr className="border-b border-white/10 bg-[#08080a] text-zinc-400 uppercase tracking-wider text-[10px]">
                 <th className="py-2.5 px-3">Recebido em</th>
                 <th className="py-2.5 px-3">Evento</th>
                 <th className="py-2.5 px-3">Entidade</th>
                 <th className="py-2.5 px-3">Status Final</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 bg-[#0c1425]">
+            <tbody className="divide-y divide-white/[0.04] bg-[#0c0c0e]">
               {omegaWebhooks.map((w) => (
-                <tr key={w.id} className="hover:bg-slate-800/30">
-                  <td className="py-2.5 px-3 font-mono text-slate-400 whitespace-nowrap">
+                <tr key={w.id} className="hover:bg-white/[0.03]">
+                  <td className="py-2.5 px-3 font-mono text-zinc-400 whitespace-nowrap">
                     {formatDateTimeBR(w.receivedAt)}
                   </td>
-                  <td className="py-2.5 px-3 font-mono text-[#38bdf8] font-medium">
+                  <td className="py-2.5 px-3 font-mono text-white font-medium">
                     {w.eventType}
                   </td>
                   <td className="py-2.5 px-3 font-mono text-white">{w.entityId}</td>
-                  <td className="py-2.5 px-3 font-mono text-slate-300">
+                  <td className="py-2.5 px-3 font-mono text-zinc-300">
                     {w.statusAfter || "—"}
                   </td>
                 </tr>
@@ -550,12 +550,12 @@ export function NotificationsView({
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
       <SpotlightCard className="p-5 sm:p-6 bento-card space-y-4">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-[#1a86ff]/15 border border-[#1a86ff]/30 flex items-center justify-center">
-            <Bell className="w-4 h-4 text-[#38bdf8]" />
+          <div className="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
+            <Bell className="w-4 h-4 text-white" />
           </div>
           <div>
             <h3 className="text-sm font-semibold text-white">Alertas da Operação</h3>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-zinc-400">
               Monitoramento real baseado nos eventos desta operação
             </p>
           </div>
@@ -588,7 +588,7 @@ export function NotificationsView({
       <SpotlightCard className="p-5 sm:p-6 bento-card space-y-4">
         <div>
           <h3 className="text-sm font-semibold text-white">Preferências de Notificação</h3>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-zinc-400">
             Defina quais alertas devem ser destacados no Dashfy
           </p>
         </div>
@@ -604,16 +604,16 @@ export function NotificationsView({
           ).map((item) => (
             <label
               key={item.key}
-              className="flex items-center justify-between p-3 rounded-xl border border-slate-800 bg-[#080f1e] cursor-pointer"
+              className="flex items-center justify-between p-3 rounded-xl border border-white/10 bg-[#08080a] cursor-pointer"
             >
-              <span className="text-xs text-slate-200">{item.label}</span>
+              <span className="text-xs text-zinc-200">{item.label}</span>
               <input
                 type="checkbox"
                 checked={localPrefs[item.key]}
                 onChange={(e) =>
                   setLocalPrefs((prev) => ({ ...prev, [item.key]: e.target.checked }))
                 }
-                className="w-4 h-4 accent-[#1a86ff] rounded"
+                className="w-4 h-4 accent-white rounded"
               />
             </label>
           ))}
@@ -630,7 +630,7 @@ export function NotificationsView({
           type="button"
           onClick={handleSavePrefs}
           disabled={saving}
-          className="btn-pressable w-full py-2.5 rounded-xl bg-[#1a86ff] hover:bg-[#3194ff] text-white text-xs font-semibold disabled:opacity-50"
+          className="btn-pressable w-full py-2.5 rounded-xl bg-white hover:bg-zinc-100 text-black text-xs font-semibold disabled:opacity-50"
         >
           {saving ? "Salvando..." : "Salvar Preferências"}
         </button>

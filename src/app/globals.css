@@ -4,21 +4,18 @@
 
 :root {
   color-scheme: dark;
-  --bg-deep: #060b17;
-  --bg-sidebar: #0a1120;
-  --surface-card: #0f172a;
-  --surface-elevated: #16223a;
-  --brand-blue: #1a86ff;
-  --brand-blue-hover: #3b9eff;
-  --border-subtle: rgba(148, 163, 184, 0.12);
-  --border-hover: rgba(59, 130, 246, 0.35);
+  --bg-deep: #050507;
+  --surface-card: #0c0c0e;
+  --surface-elevated: #141418;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-hover: rgba(255, 255, 255, 0.18);
   --radius-card: 16px;
   --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 body {
   background-color: var(--bg-deep);
-  color: #f1f5f9;
+  color: #ededed;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11", "tnum";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -36,27 +33,18 @@ body {
   border-radius: var(--radius-card);
   background-color: var(--surface-card);
   border: 1px solid var(--border-subtle);
-  transition:
-    border-color 0.25s var(--ease-spring),
-    transform 0.25s var(--ease-spring),
-    box-shadow 0.25s var(--ease-spring);
+  transition: border-color 0.25s var(--ease-spring), transform 0.25s var(--ease-spring), box-shadow 0.25s var(--ease-spring);
   overflow: hidden;
 }
 
 .card-spotlight:hover {
   border-color: var(--border-hover);
-  box-shadow:
-    0 12px 32px -12px rgba(2, 6, 23, 0.85),
-    0 0 24px -8px rgba(26, 134, 255, 0.14);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.8), 0 0 20px -5px rgba(255, 255, 255, 0.03);
 }
 
 /* Microinteraction tactile button */
 .btn-pressable {
-  transition:
-    transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1),
-    background-color 0.2s ease,
-    border-color 0.2s ease,
-    color 0.2s ease;
+  transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1), background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .btn-pressable:hover {
@@ -85,26 +73,26 @@ body {
 
 /* Custom subtle scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #060b17;
+  background: #050507;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1e293b;
+  background: #222226;
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: #3a3a42;
 }
 
-/* Accessible focus ring */
+/* Accessible focus ring replacement */
 :focus-visible {
-  outline: 2px solid rgba(26, 134, 255, 0.65);
+  outline: 2px solid rgba(255, 255, 255, 0.4);
   outline-offset: 2px;
 }
 

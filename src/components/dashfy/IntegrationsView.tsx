@@ -197,8 +197,8 @@ export function IntegrationsView({
         <SpotlightCard className="p-5 sm:p-6 bento-card space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#1a86ff]/15 border border-[#1a86ff]/30 flex items-center justify-center shrink-0">
-                <Plug className="w-5 h-5 text-[#38bdf8]" />
+              <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
+                <Plug className="w-5 h-5 text-white" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
@@ -209,7 +209,7 @@ export function IntegrationsView({
                     Operacional
                   </span>
                 </div>
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs text-zinc-400 mt-1">
                   Exporte o relatório de campanhas/conjuntos/anúncios no TikTok Ads Manager em CSV e importe diretamente na aba TikTok Ads. Os dados ficam 100% isolados da OmegaPay.
                 </p>
               </div>
@@ -218,7 +218,7 @@ export function IntegrationsView({
             <button
               type="button"
               onClick={() => onNavigateTab("tiktok_ads")}
-              className="btn-pressable inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#1a86ff] hover:bg-[#3194ff] text-white text-xs font-semibold shrink-0"
+              className="btn-pressable inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-zinc-100 text-black text-xs font-semibold shrink-0"
             >
               <Upload className="w-4 h-4" />
               <span>Abrir Importação CSV</span>
@@ -232,7 +232,7 @@ export function IntegrationsView({
               <h3 className="text-sm font-semibold text-white">
                 TikTok Marketing API (OAuth Direto)
               </h3>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-zinc-400 mt-0.5">
                 A sincronização automática via OAuth exige aprovação de aplicativo no portal TikTok for Business. Enquanto não está conectada, utilize a importação CSV oficial com precisão total.
               </p>
             </div>
@@ -252,8 +252,8 @@ export function IntegrationsView({
       <SpotlightCard className="p-5 sm:p-6 bento-card">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-start gap-3.5">
-            <div className="w-11 h-11 rounded-xl bg-[#1a86ff]/15 border border-[#1a86ff]/35 flex items-center justify-center shrink-0">
-              <Plug className="w-5 h-5 text-[#38bdf8]" />
+            <div className="w-11 h-11 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
+              <Plug className="w-5 h-5 text-white" />
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-2">
@@ -279,11 +279,11 @@ export function IntegrationsView({
                       : "Sincronização Pausada"}
                 </span>
               </div>
-              <p className="text-xs text-slate-400 mt-1">
-                API Oficial: <span className="font-mono text-slate-300">{integrationStatus.apiBaseUrl}</span>
+              <p className="text-xs text-zinc-400 mt-1">
+                API Oficial: <span className="font-mono text-zinc-300">{integrationStatus.apiBaseUrl}</span>
                 {" • "}
                 Última sincronização:{" "}
-                <span className="font-mono text-slate-200">
+                <span className="font-mono text-zinc-200">
                   {integrationStatus.lastSyncAt
                     ? formatDateTimeBR(integrationStatus.lastSyncAt)
                     : "Ainda não sincronizada"}
@@ -299,7 +299,7 @@ export function IntegrationsView({
               disabled={togglingSync}
               className={`btn-pressable inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border text-xs font-semibold transition ${
                 integrationStatus.syncEnabled
-                  ? "border-slate-700 bg-[#080f1e] text-slate-200 hover:border-rose-500/50 hover:text-rose-300"
+                  ? "border-white/10 bg-[#08080a] text-zinc-200 hover:border-rose-500/50 hover:text-rose-300"
                   : "border-emerald-500/40 bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25"
               }`}
             >
@@ -315,7 +315,7 @@ export function IntegrationsView({
               type="button"
               onClick={handleTestConnection}
               disabled={testingConn}
-              className="btn-pressable inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-[#1a86ff]/40 bg-[#1a86ff]/15 hover:bg-[#1a86ff]/25 text-xs font-semibold text-[#60a5fa] disabled:opacity-50"
+              className="btn-pressable inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 text-xs font-semibold text-white disabled:opacity-50"
             >
               <ShieldCheck className="w-3.5 h-3.5" />
               <span>{testingConn ? "Testando..." : "Testar Conexão"}</span>
@@ -325,7 +325,7 @@ export function IntegrationsView({
               type="button"
               onClick={onSyncOmegaBalance}
               disabled={syncingBalance || !integrationStatus.syncEnabled}
-              className="btn-pressable inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#1a86ff] hover:bg-[#3194ff] text-xs font-semibold text-white disabled:opacity-50"
+              className="btn-pressable inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-zinc-100 text-xs font-semibold text-black disabled:opacity-50"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${syncingBalance ? "animate-spin" : ""}`} />
               <span>{syncingBalance ? "Sincronizando..." : "Sincronizar Saldo"}</span>
@@ -362,14 +362,14 @@ export function IntegrationsView({
         {/* Formulário de Credenciais (Armazenadas apenas no Backend) */}
         <SpotlightCard className="p-5 sm:p-6 bento-card space-y-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-[#1a86ff]/15 border border-[#1a86ff]/30 flex items-center justify-center">
-              <KeyRound className="w-4 h-4 text-[#38bdf8]" />
+            <div className="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
+              <KeyRound className="w-4 h-4 text-white" />
             </div>
             <div>
               <h3 className="text-sm font-semibold text-white">
                 Credenciais da API OmegaPay
               </h3>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-zinc-400">
                 Armazenadas exclusivamente no servidor (nunca enviadas ao navegador)
               </p>
             </div>
@@ -380,7 +380,7 @@ export function IntegrationsView({
               className={`px-2.5 py-1 rounded-lg border ${
                 integrationStatus.hasApiCredentials
                   ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
-                  : "border-slate-700 bg-slate-800/60 text-slate-400"
+                  : "border-white/10 bg-white/[0.04] text-zinc-400"
               }`}
             >
               API Key / Secret: {integrationStatus.hasApiCredentials ? "Configuradas" : "Não configuradas"}
@@ -389,7 +389,7 @@ export function IntegrationsView({
               className={`px-2.5 py-1 rounded-lg border ${
                 integrationStatus.hasWebhookToken
                   ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
-                  : "border-slate-700 bg-slate-800/60 text-slate-400"
+                  : "border-white/10 bg-white/[0.04] text-zinc-400"
               }`}
             >
               Webhook Token: {integrationStatus.hasWebhookToken ? "Configurado" : "Não configurado"}
@@ -410,7 +410,7 @@ export function IntegrationsView({
 
           <form onSubmit={handleSaveOmegaCreds} className="space-y-3">
             <div>
-              <label className="block text-xs text-slate-300 mb-1">
+              <label className="block text-xs text-zinc-300 mb-1">
                 Chave Pública (x-public-key)
               </label>
               <input
@@ -422,12 +422,12 @@ export function IntegrationsView({
                     ? "•••••••• (deixe em branco para manter)"
                     : "Cole sua x-public-key da OmegaPay"
                 }
-                className="w-full rounded-xl border border-slate-800 bg-[#080f1e] px-3 py-2 text-xs text-white font-mono focus:border-[#1a86ff] focus:outline-none"
+                className="w-full rounded-xl border border-white/10 bg-[#08080a] px-3 py-2 text-xs text-white font-mono focus:border-white focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-xs text-slate-300 mb-1">
+              <label className="block text-xs text-zinc-300 mb-1">
                 Chave Secreta (x-secret-key)
               </label>
               <input
@@ -439,12 +439,12 @@ export function IntegrationsView({
                     ? "•••••••• (deixe em branco para manter)"
                     : "Cole sua x-secret-key da OmegaPay"
                 }
-                className="w-full rounded-xl border border-slate-800 bg-[#080f1e] px-3 py-2 text-xs text-white font-mono focus:border-[#1a86ff] focus:outline-none"
+                className="w-full rounded-xl border border-white/10 bg-[#08080a] px-3 py-2 text-xs text-white font-mono focus:border-white focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-xs text-slate-300 mb-1">
+              <label className="block text-xs text-zinc-300 mb-1">
                 Token de Validação do Webhook
               </label>
               <input
@@ -456,14 +456,14 @@ export function IntegrationsView({
                     ? "•••••••• (deixe em branco para manter)"
                     : "Cole o token exclusivo gerado no webhook OmegaPay"
                 }
-                className="w-full rounded-xl border border-slate-800 bg-[#080f1e] px-3 py-2 text-xs text-white font-mono focus:border-[#1a86ff] focus:outline-none"
+                className="w-full rounded-xl border border-white/10 bg-[#08080a] px-3 py-2 text-xs text-white font-mono focus:border-white focus:outline-none"
               />
             </div>
 
             <button
               type="submit"
               disabled={savingCreds}
-              className="btn-pressable w-full py-2.5 rounded-xl bg-[#1a86ff] hover:bg-[#3194ff] text-white text-xs font-semibold disabled:opacity-50"
+              className="btn-pressable w-full py-2.5 rounded-xl bg-white hover:bg-zinc-100 text-black text-xs font-semibold disabled:opacity-50"
             >
               {savingCreds ? "Salvando no servidor..." : "Salvar Credenciais no Backend"}
             </button>
@@ -476,13 +476,13 @@ export function IntegrationsView({
             <h3 className="text-sm font-semibold text-white">
               Configuração do Webhook OmegaPay
             </h3>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-zinc-400 mt-0.5">
               Cadastre a URL abaixo em <strong>Configurações &gt; Webhooks</strong> no painel da OmegaPay.
             </p>
           </div>
 
-          <div className="rounded-xl border border-[#1a86ff]/30 bg-[#080f1e] p-3 flex items-center justify-between gap-2">
-            <code className="text-[11px] font-mono text-[#38bdf8] break-all">
+          <div className="rounded-xl border border-white/10 bg-[#050507] p-3 flex items-center justify-between gap-2">
+            <code className="text-[11px] font-mono text-white break-all">
               {omegaWebhookUrl}
             </code>
             <button
@@ -492,16 +492,16 @@ export function IntegrationsView({
                 setCopiedUrl(true);
                 setTimeout(() => setCopiedUrl(false), 2500);
               }}
-              className="btn-pressable inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1a86ff] text-white text-xs font-semibold shrink-0"
+              className="btn-pressable inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white text-black text-xs font-semibold shrink-0"
             >
               {copiedUrl ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
               <span>{copiedUrl ? "Copiado" : "Copiar"}</span>
             </button>
           </div>
 
-          <div className="text-[11px] text-slate-400 space-y-1">
-            <div className="font-semibold text-slate-200">Eventos recomendados:</div>
-            <div className="font-mono text-[10px] text-slate-400">
+          <div className="text-[11px] text-zinc-400 space-y-1">
+            <div className="font-semibold text-zinc-200">Eventos recomendados:</div>
+            <div className="font-mono text-[10px] text-zinc-400">
               TRANSACTION_CREATED • TRANSACTION_PAID • TRANSACTION_REFUNDED • TRANSACTION_CANCELED • TRANSACTION_CHARGED_BACK • TRANSFER_COMPLETED
             </div>
           </div>
@@ -509,7 +509,7 @@ export function IntegrationsView({
           {/* Testador real de fluxo webhook */}
           <form
             onSubmit={handleSimulateWebhook}
-            className="pt-4 border-t border-slate-800 space-y-3"
+            className="pt-4 border-t border-white/10 space-y-3"
           >
             <div className="text-xs font-semibold text-white">
               Validar Pipeline de Webhook (Teste Local Seguro)
@@ -518,7 +518,7 @@ export function IntegrationsView({
               <select
                 value={simEvent}
                 onChange={(e) => setSimEvent(e.target.value)}
-                className="rounded-xl border border-slate-800 bg-[#080f1e] px-2.5 py-2 text-xs text-white focus:border-[#1a86ff] focus:outline-none"
+                className="rounded-xl border border-white/10 bg-[#08080a] px-2.5 py-2 text-xs text-white focus:border-white focus:outline-none"
               >
                 <option value="TRANSACTION_PAID">TRANSACTION_PAID</option>
                 <option value="TRANSACTION_CREATED">TRANSACTION_CREATED</option>
@@ -530,34 +530,34 @@ export function IntegrationsView({
                 value={simProduct}
                 onChange={(e) => setSimProduct(e.target.value)}
                 placeholder="Nome do produto"
-                className="rounded-xl border border-slate-800 bg-[#080f1e] px-2.5 py-2 text-xs text-white focus:border-[#1a86ff] focus:outline-none"
+                className="rounded-xl border border-white/10 bg-[#08080a] px-2.5 py-2 text-xs text-white focus:border-white focus:outline-none"
               />
               <input
                 type="text"
                 value={simGross}
                 onChange={(e) => setSimGross(e.target.value)}
                 placeholder="Valor bruto"
-                className="rounded-xl border border-slate-800 bg-[#080f1e] px-2.5 py-2 text-xs text-white font-mono focus:border-[#1a86ff] focus:outline-none"
+                className="rounded-xl border border-white/10 bg-[#08080a] px-2.5 py-2 text-xs text-white font-mono focus:border-white focus:outline-none"
               />
               <input
                 type="text"
                 value={simFee}
                 onChange={(e) => setSimFee(e.target.value)}
                 placeholder="Taxa"
-                className="rounded-xl border border-slate-800 bg-[#080f1e] px-2.5 py-2 text-xs text-white font-mono focus:border-[#1a86ff] focus:outline-none"
+                className="rounded-xl border border-white/10 bg-[#08080a] px-2.5 py-2 text-xs text-white font-mono focus:border-white focus:outline-none"
               />
             </div>
 
             {simFeedback && (
-              <div className="text-xs text-[#38bdf8]">{simFeedback}</div>
+              <div className="text-xs text-white">{simFeedback}</div>
             )}
 
             <button
               type="submit"
               disabled={simLoading}
-              className="btn-pressable w-full inline-flex items-center justify-center gap-1.5 py-2 rounded-xl border border-slate-700 bg-[#080f1e] hover:border-[#1a86ff] text-xs font-semibold text-white disabled:opacity-50"
+              className="btn-pressable w-full inline-flex items-center justify-center gap-1.5 py-2 rounded-xl border border-white/10 bg-[#08080a] hover:border-white/30 text-xs font-semibold text-white disabled:opacity-50"
             >
-              <Send className="w-3.5 h-3.5 text-[#1a86ff]" />
+              <Send className="w-3.5 h-3.5 text-white" />
               <span>{simLoading ? "Processando..." : "Disparar Evento de Validação"}</span>
             </button>
           </form>

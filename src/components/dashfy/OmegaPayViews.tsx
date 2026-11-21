@@ -54,7 +54,7 @@ export function OmegaPaySalesView({ transactions }: OmegaPaySalesViewProps) {
           <h3 className="text-sm font-semibold text-white">
             Vendas &amp; Transações — Operação OmegaPay
           </h3>
-          <p className="text-xs text-slate-400 font-mono">
+          <p className="text-xs text-zinc-400 font-mono">
             {filtered.length} transações encontradas
           </p>
         </div>
@@ -66,14 +66,14 @@ export function OmegaPaySalesView({ transactions }: OmegaPaySalesViewProps) {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar por ID ou produto..."
-              className="rounded-xl border border-slate-800 bg-[#080f1e] pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:border-[#1a86ff] focus:outline-none"
+              className="rounded-xl border border-white/10 bg-[#08080a] pl-8 pr-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:border-white focus:outline-none"
             />
-            <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2" />
+            <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-2.5 top-2" />
           </div>
           <select
             value={method}
             onChange={(e) => setMethod(e.target.value)}
-            className="rounded-xl border border-slate-800 bg-[#080f1e] px-3 py-1.5 text-xs text-white focus:border-[#1a86ff] focus:outline-none"
+            className="rounded-xl border border-white/10 bg-[#08080a] px-3 py-1.5 text-xs text-white focus:border-white focus:outline-none"
           >
             <option value="ALL">Todos métodos</option>
             <option value="PIX">PIX</option>
@@ -83,7 +83,7 @@ export function OmegaPaySalesView({ transactions }: OmegaPaySalesViewProps) {
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
-            className="rounded-xl border border-slate-800 bg-[#080f1e] px-3 py-1.5 text-xs text-white focus:border-[#1a86ff] focus:outline-none"
+            className="rounded-xl border border-white/10 bg-[#08080a] px-3 py-1.5 text-xs text-white focus:border-white focus:outline-none"
           >
             <option value="ALL">Todos status</option>
             <option value="COMPLETED">Aprovadas</option>
@@ -96,14 +96,14 @@ export function OmegaPaySalesView({ transactions }: OmegaPaySalesViewProps) {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="py-12 text-center rounded-xl border border-dashed border-slate-800 text-xs text-slate-500">
+        <div className="py-12 text-center rounded-xl border border-dashed border-white/10 text-xs text-zinc-500">
           Nenhuma venda OmegaPay encontrada para os filtros aplicados.
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-slate-800/90">
+        <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="border-b border-slate-800 bg-[#080f1e] text-slate-400 uppercase tracking-wider text-[10px]">
+              <tr className="border-b border-white/10 bg-[#08080a] text-zinc-400 uppercase tracking-wider text-[10px]">
                 <th className="py-2.5 px-3 font-semibold">Data</th>
                 <th className="py-2.5 px-3 font-semibold">Produto</th>
                 <th className="py-2.5 px-3 font-semibold">ID Transação</th>
@@ -114,23 +114,23 @@ export function OmegaPaySalesView({ transactions }: OmegaPaySalesViewProps) {
                 <th className="py-2.5 px-3 font-semibold text-center">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 bg-[#0c1425]">
+            <tbody className="divide-y divide-white/[0.04] bg-[#0c0c0e]">
               {filtered.map((tx) => {
                 const meta = getTransactionStatusMeta(tx.status);
                 return (
-                  <tr key={tx.id} className="hover:bg-slate-800/30">
-                    <td className="py-2.5 px-3 text-slate-400 font-mono whitespace-nowrap">
+                  <tr key={tx.id} className="hover:bg-white/[0.03]">
+                    <td className="py-2.5 px-3 text-zinc-400 font-mono whitespace-nowrap">
                       {formatDateTimeBR(tx.paidAt || tx.createdAt)}
                     </td>
                     <td className="py-2.5 px-3 text-white font-medium max-w-[200px] truncate">
                       {tx.productName}
                     </td>
-                    <td className="py-2.5 px-3 text-slate-400 font-mono">{tx.id}</td>
-                    <td className="py-2.5 px-3 text-slate-300">
+                    <td className="py-2.5 px-3 text-zinc-400 font-mono">{tx.id}</td>
+                    <td className="py-2.5 px-3 text-zinc-300">
                       {getPaymentMethodLabel(tx.paymentMethod)}
                       {tx.installments > 1 ? ` (${tx.installments}x)` : ""}
                     </td>
-                    <td className="py-2.5 px-3 text-right text-slate-300 font-mono">
+                    <td className="py-2.5 px-3 text-right text-zinc-300 font-mono">
                       {formatBRL(tx.grossAmount)}
                     </td>
                     <td className="py-2.5 px-3 text-right text-rose-400/90 font-mono">
@@ -175,36 +175,36 @@ export function OmegaPayReceivablesView({ transfers }: OmegaPayReceivablesViewPr
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <SpotlightCard className="p-5 bento-card">
-          <div className="flex items-center justify-between text-xs text-slate-400 uppercase font-semibold">
+          <div className="flex items-center justify-between text-xs text-zinc-400 uppercase font-semibold">
             <span>Total Recebido</span>
             <CheckCircle2 className="w-4 h-4 text-emerald-400" />
           </div>
           <div className="mt-2.5 text-2xl font-bold font-mono text-emerald-400">
             {formatBRL(completedTotal)}
           </div>
-          <div className="text-[11px] text-slate-500 mt-1">Saques concluídos na OmegaPay</div>
+          <div className="text-[11px] text-zinc-500 mt-1">Saques concluídos na OmegaPay</div>
         </SpotlightCard>
 
         <SpotlightCard className="p-5 bento-card">
-          <div className="flex items-center justify-between text-xs text-slate-400 uppercase font-semibold">
+          <div className="flex items-center justify-between text-xs text-zinc-400 uppercase font-semibold">
             <span>Em Processamento</span>
             <Clock className="w-4 h-4 text-amber-400" />
           </div>
           <div className="mt-2.5 text-2xl font-bold font-mono text-white">
             {formatBRL(pendingTotal)}
           </div>
-          <div className="text-[11px] text-slate-500 mt-1">Transferências pendentes</div>
+          <div className="text-[11px] text-zinc-500 mt-1">Transferências pendentes</div>
         </SpotlightCard>
 
         <SpotlightCard className="p-5 bento-card">
-          <div className="flex items-center justify-between text-xs text-slate-400 uppercase font-semibold">
+          <div className="flex items-center justify-between text-xs text-zinc-400 uppercase font-semibold">
             <span>Taxas de Saque</span>
-            <Landmark className="w-4 h-4 text-[#1a86ff]" />
+            <Landmark className="w-4 h-4 text-white" />
           </div>
-          <div className="mt-2.5 text-2xl font-bold font-mono text-slate-200">
+          <div className="mt-2.5 text-2xl font-bold font-mono text-zinc-200">
             {formatBRL(totalFees)}
           </div>
-          <div className="text-[11px] text-slate-500 mt-1">{transfers.length} transferências</div>
+          <div className="text-[11px] text-zinc-500 mt-1">{transfers.length} transferências</div>
         </SpotlightCard>
       </div>
 
@@ -213,20 +213,20 @@ export function OmegaPayReceivablesView({ transfers }: OmegaPayReceivablesViewPr
           <h3 className="text-sm font-semibold text-white">
             Histórico de Recebimentos &amp; Saques
           </h3>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-zinc-400">
             Eventos oficiais TRANSFER_CREATED, TRANSFER_COMPLETED e TRANSFER_FAILED
           </p>
         </div>
 
         {transfers.length === 0 ? (
-          <div className="py-12 text-center rounded-xl border border-dashed border-slate-800 text-xs text-slate-500">
+          <div className="py-12 text-center rounded-xl border border-dashed border-white/10 text-xs text-zinc-500">
             Nenhum saque ou transferência recebida no período selecionado.
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-slate-800/90">
+          <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-slate-800 bg-[#080f1e] text-slate-400 uppercase tracking-wider text-[10px]">
+                <tr className="border-b border-white/10 bg-[#08080a] text-zinc-400 uppercase tracking-wider text-[10px]">
                   <th className="py-2.5 px-3 font-semibold">Data</th>
                   <th className="py-2.5 px-3 font-semibold">ID Transferência</th>
                   <th className="py-2.5 px-3 font-semibold text-right">Solicitado</th>
@@ -235,19 +235,19 @@ export function OmegaPayReceivablesView({ transfers }: OmegaPayReceivablesViewPr
                   <th className="py-2.5 px-3 font-semibold text-center">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60 bg-[#0c1425]">
+              <tbody className="divide-y divide-white/[0.04] bg-[#0c0c0e]">
                 {transfers.map((tf) => {
                   const meta = getTransferStatusMeta(tf.status);
                   return (
-                    <tr key={tf.id} className="hover:bg-slate-800/30">
-                      <td className="py-2.5 px-3 font-mono text-slate-400 whitespace-nowrap">
+                    <tr key={tf.id} className="hover:bg-white/[0.03]">
+                      <td className="py-2.5 px-3 font-mono text-zinc-400 whitespace-nowrap">
                         {formatDateTimeBR(tf.updatedAt || tf.createdAt)}
                       </td>
                       <td className="py-2.5 px-3 font-mono text-white">{tf.id}</td>
-                      <td className="py-2.5 px-3 text-right font-mono text-slate-300">
+                      <td className="py-2.5 px-3 text-right font-mono text-zinc-300">
                         {formatBRL(tf.amount)}
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono text-slate-400">
+                      <td className="py-2.5 px-3 text-right font-mono text-zinc-400">
                         {formatBRL(tf.feeAmount)}
                       </td>
                       <td className="py-2.5 px-3 text-right font-mono text-emerald-400 font-semibold">
@@ -330,45 +330,45 @@ export function OmegaPayBalanceView({
     <div className="space-y-5">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <SpotlightCard className="p-5 bento-card">
-          <div className="flex items-center justify-between text-xs text-slate-400 uppercase font-semibold">
+          <div className="flex items-center justify-between text-xs text-zinc-400 uppercase font-semibold">
             <span>Disponível para Saque</span>
             <Wallet className="w-4 h-4 text-emerald-400" />
           </div>
           <div className="mt-3 text-2xl sm:text-3xl font-bold font-mono text-emerald-400">
             {formatBRL(available)}
           </div>
-          <div className="text-[11px] text-slate-500 mt-2">Liberado na OmegaPay</div>
+          <div className="text-[11px] text-zinc-500 mt-2">Liberado na OmegaPay</div>
         </SpotlightCard>
 
         <SpotlightCard className="p-5 bento-card">
-          <div className="flex items-center justify-between text-xs text-slate-400 uppercase font-semibold">
+          <div className="flex items-center justify-between text-xs text-zinc-400 uppercase font-semibold">
             <span>Saldo Pendente</span>
             <Clock className="w-4 h-4 text-amber-400" />
           </div>
           <div className="mt-3 text-2xl sm:text-3xl font-bold font-mono text-white">
             {formatBRL(pending)}
           </div>
-          <div className="text-[11px] text-slate-500 mt-2">Aguardando liquidação</div>
+          <div className="text-[11px] text-zinc-500 mt-2">Aguardando liquidação</div>
         </SpotlightCard>
 
         <SpotlightCard className="p-5 bento-card">
-          <div className="flex items-center justify-between text-xs text-slate-400 uppercase font-semibold">
+          <div className="flex items-center justify-between text-xs text-zinc-400 uppercase font-semibold">
             <span>Reserva / Retido</span>
-            <Lock className="w-4 h-4 text-slate-400" />
+            <Lock className="w-4 h-4 text-zinc-400" />
           </div>
-          <div className="mt-3 text-2xl sm:text-3xl font-bold font-mono text-slate-200">
+          <div className="mt-3 text-2xl sm:text-3xl font-bold font-mono text-zinc-200">
             {formatBRL(fundLock)}
           </div>
-          <div className="text-[11px] text-slate-500 mt-2">Fund lock / garantia</div>
+          <div className="text-[11px] text-zinc-500 mt-2">Fund lock / garantia</div>
         </SpotlightCard>
 
         <SpotlightCard className="p-5 bento-card flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between text-xs text-slate-400 uppercase font-semibold">
+            <div className="flex items-center justify-between text-xs text-zinc-400 uppercase font-semibold">
               <span>Saldo Total OmegaPay</span>
-              <Landmark className="w-4 h-4 text-[#1a86ff]" />
+              <Landmark className="w-4 h-4 text-white" />
             </div>
-            <div className="mt-3 text-2xl sm:text-3xl font-bold font-mono text-[#38bdf8]">
+            <div className="mt-3 text-2xl sm:text-3xl font-bold font-mono text-white">
               {formatBRL(total)}
             </div>
           </div>
@@ -376,7 +376,7 @@ export function OmegaPayBalanceView({
             type="button"
             onClick={onSyncBalance}
             disabled={syncingBalance || !syncEnabled}
-            className="btn-pressable mt-3 w-full inline-flex items-center justify-center gap-2 py-2 rounded-xl bg-[#1a86ff] hover:bg-[#3194ff] text-white text-xs font-semibold disabled:opacity-50"
+            className="btn-pressable mt-3 w-full inline-flex items-center justify-center gap-2 py-2 rounded-xl bg-white hover:bg-zinc-100 text-black text-xs font-semibold disabled:opacity-50"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${syncingBalance ? "animate-spin" : ""}`} />
             <span>
@@ -392,10 +392,10 @@ export function OmegaPayBalanceView({
           <h3 className="text-sm font-semibold text-white">
             Consulta Pontual na API OmegaPay (GET)
           </h3>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-zinc-400">
             Consulte uma transação ou transferência específica diretamente na OmegaPay sem polling contínuo.
             {balance?.fetchedAt && (
-              <span className="ml-2 text-slate-300 font-mono">
+              <span className="ml-2 text-zinc-300 font-mono">
                 Última atualização de saldo: {formatDateTimeBR(balance.fetchedAt)}
               </span>
             )}
@@ -406,7 +406,7 @@ export function OmegaPayBalanceView({
           <select
             value={lookupType}
             onChange={(e) => setLookupType(e.target.value as "transaction" | "transfer")}
-            className="rounded-xl border border-slate-800 bg-[#080f1e] px-3 py-2 text-xs text-white focus:border-[#1a86ff] focus:outline-none"
+            className="rounded-xl border border-white/10 bg-[#08080a] px-3 py-2 text-xs text-white focus:border-white focus:outline-none"
           >
             <option value="transaction">Transação (/gateway/transactions)</option>
             <option value="transfer">Transferência (/gateway/transfers)</option>
@@ -414,7 +414,7 @@ export function OmegaPayBalanceView({
           <select
             value={lookupField}
             onChange={(e) => setLookupField(e.target.value as "id" | "clientIdentifier")}
-            className="rounded-xl border border-slate-800 bg-[#080f1e] px-3 py-2 text-xs text-white focus:border-[#1a86ff] focus:outline-none"
+            className="rounded-xl border border-white/10 bg-[#08080a] px-3 py-2 text-xs text-white focus:border-white focus:outline-none"
           >
             <option value="id">Por ID</option>
             <option value="clientIdentifier">Por clientIdentifier</option>
@@ -424,12 +424,12 @@ export function OmegaPayBalanceView({
             value={lookupValue}
             onChange={(e) => setLookupValue(e.target.value)}
             placeholder="Digite o ID..."
-            className="rounded-xl border border-slate-800 bg-[#080f1e] px-3 py-2 text-xs text-white font-mono focus:border-[#1a86ff] focus:outline-none"
+            className="rounded-xl border border-white/10 bg-[#08080a] px-3 py-2 text-xs text-white font-mono focus:border-white focus:outline-none"
           />
           <button
             type="submit"
             disabled={lookupLoading}
-            className="btn-pressable inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#1a86ff] hover:bg-[#3194ff] text-white text-xs font-semibold py-2 px-4 disabled:opacity-50"
+            className="btn-pressable inline-flex items-center justify-center gap-1.5 rounded-xl bg-white hover:bg-zinc-100 text-black text-xs font-semibold py-2 px-4 disabled:opacity-50"
           >
             <Search className="w-3.5 h-3.5" />
             <span>{lookupLoading ? "Consultando..." : "Consultar API"}</span>
@@ -442,7 +442,7 @@ export function OmegaPayBalanceView({
           </div>
         )}
         {lookupResult && (
-          <pre className="rounded-xl border border-slate-800 bg-[#080f1e] p-3 text-[11px] font-mono text-slate-300 overflow-x-auto">
+          <pre className="rounded-xl border border-white/10 bg-[#08080a] p-3 text-[11px] font-mono text-zinc-300 overflow-x-auto">
             {JSON.stringify(lookupResult, null, 2)}
           </pre>
         )}
