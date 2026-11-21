@@ -44,6 +44,42 @@ export interface DashboardConfigRecord {
   mode: DashboardOperationMode;
 }
 
+export interface TikTokAdvertiserSummary {
+  advertiserId: string;
+  advertiserName: string;
+  currency?: string;
+  status?: string;
+  bcId?: string | null;
+}
+
+export interface TikTokBusinessCenterSummary {
+  bcId: string;
+  name: string;
+  currency?: string;
+  status?: string;
+  role?: string;
+}
+
+export interface TikTokConnectionPublicRecord {
+  id: string;
+  dashboardId: string;
+  label: string;
+  status: "ACTIVE" | "ERROR" | "REVOKED";
+  scope: string[];
+  advertisers: TikTokAdvertiserSummary[];
+  businessCenters: TikTokBusinessCenterSummary[];
+  lastError: string | null;
+  lastSyncAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TikTokConnectionInternalRecord
+  extends TikTokConnectionPublicRecord {
+  userId: string;
+  accessTokenEnc: string;
+}
+
 export type ExpenseCategory =
   | "META_ADS"
   | "TIKTOK_ADS"
@@ -416,6 +452,24 @@ export async function getDb(): Promise<DbExecutor> {
           fund_lock REAL NOT NULL DEFAULT 0,
           fetched_at TEXT NOT NULL,
           PRIMARY KEY (user_id, gateway)
+        )
+      `);
+
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS tiktok_connections (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL,
+          dashboard_id TEXT NOT NULL DEFAULT 'tiktok',
+          label TEXT NOT NULL DEFAULT 'TikTok Business',
+          access_token_enc TEXT NOT NULL,
+          scope_json TEXT NOT NULL DEFAULT '[]',
+          advertisers_json TEXT NOT NULL DEFAULT '[]',
+          business_centers_json TEXT NOT NULL DEFAULT '[]',
+          status TEXT NOT NULL DEFAULT 'ACTIVE',
+          last_error TEXT,
+          last_sync_at TEXT,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL
         )
       `);
 
@@ -1404,6 +1458,7 @@ export async function claimLegacyDataForOwner(
     "custom_fees",
     "automation_rules",
     "webhook_events",
+    "tiktok_connections",
   ]) {
     try {
       await db.execute(
@@ -1778,4 +1833,264 @@ function mapRuleRow(row: Record<string, unknown>): AutomationRuleRecord {
     enabled: Number(row.enabled ?? 1) === 1,
     createdAt: String(row.created_at || ""),
   };
+}
+
+// ============================================================
+// TIKTOK OAUTH CONNECTIONS (Multi-conta & Isoladas por userId)
+// ============================================================
+
+function safeParseJsonArray<T>(raw: unknown): T[] {
+  if (Array.isArray(raw)) return raw as T[];
+  if (typeof raw !== "string" || !raw.trim()) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as T[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function mapTikTokConnectionPublic(
+  row: Record<string, unknown>
+): TikTokConnectionPublicRecord {
+  const rawStatus = String(row.status || "ACTIVE").toUpperCase();
+  const status: TikTokConnectionPublicRecord["status"] =
+    rawStatus === "REVOKED"
+      ? "REVOKED"
+      : rawStatus === "ERROR"
+        ? "ERROR"
+        : "ACTIVE";
+
+  return {
+    id: String(row.id),
+    dashboardId: String(row.dashboard_id || "tiktok").trim() || "tiktok",
+    label: String(row.label || "TikTok Business").trim() || "TikTok Business",
+    status,
+    scope: safeParseJsonArray<string>(row.scope_json),
+    advertisers: safeParseJsonArray<TikTokAdvertiserSummary>(
+      row.advertisers_json
+    ),
+    businessCenters: safeParseJsonArray<TikTokBusinessCenterSummary>(
+      row.business_centers_json
+    ),
+    lastError: row.last_error ? String(row.last_error) : null,
+    lastSyncAt: row.last_sync_at ? String(row.last_sync_at) : null,
+    createdAt: String(row.created_at || ""),
+    updatedAt: String(row.updated_at || ""),
+  };
+}
+
+function mapTikTokConnectionInternal(
+  row: Record<string, unknown>
+): TikTokConnectionInternalRecord {
+  return {
+    ...mapTikTokConnectionPublic(row),
+    userId: String(row.user_id || LEGACY_ADMIN_USER_ID),
+    accessTokenEnc: String(row.access_token_enc || ""),
+  };
+}
+
+export async function listTikTokConnections(
+  userId: string
+): Promise<TikTokConnectionPublicRecord[]> {
+  const db = await getDb();
+  const rows = await db.query(
+    `SELECT id, dashboard_id, label, scope_json, advertisers_json, business_centers_json, status, last_error, last_sync_at, created_at, updated_at
+     FROM tiktok_connections
+     WHERE user_id = ?
+     ORDER BY created_at DESC`,
+    [userId]
+  );
+  return rows.map(mapTikTokConnectionPublic);
+}
+
+export async function getTikTokConnectionWithToken(
+  id: string,
+  userId: string
+): Promise<TikTokConnectionInternalRecord | null> {
+  const db = await getDb();
+  const rows = await db.query(
+    `SELECT * FROM tiktok_connections WHERE id = ? AND user_id = ? LIMIT 1`,
+    [id, userId]
+  );
+  if (rows.length === 0) return null;
+  return mapTikTokConnectionInternal(rows[0]);
+}
+
+export async function upsertTikTokConnection(input: {
+  id?: string;
+  userId: string;
+  dashboardId?: string;
+  label?: string;
+  accessTokenEnc: string;
+  scope: string[];
+  advertisers: TikTokAdvertiserSummary[];
+  businessCenters: TikTokBusinessCenterSummary[];
+  status?: "ACTIVE" | "ERROR" | "REVOKED";
+  lastError?: string | null;
+  lastSyncAt?: string | null;
+}): Promise<TikTokConnectionPublicRecord> {
+  const db = await getDb();
+  const now = new Date().toISOString();
+  const dashboardId = (input.dashboardId || "tiktok").trim() || "tiktok";
+  const defaultLabel =
+    input.label?.trim() ||
+    input.businessCenters[0]?.name ||
+    input.advertisers[0]?.advertiserName ||
+    "TikTok Business";
+  const status = input.status || "ACTIVE";
+
+  // Evita duplicação exata se o usuário reconectar o mesmo conjunto de contas no mesmo dashboard
+  let existingId = input.id;
+  if (!existingId && input.advertisers.length > 0) {
+    const newSignature = input.advertisers
+      .map((a) => a.advertiserId)
+      .sort()
+      .join(",");
+    const existingRows = await listTikTokConnections(input.userId);
+    const match = existingRows.find((conn) => {
+      if (conn.dashboardId !== dashboardId) return false;
+      const sig = conn.advertisers
+        .map((a) => a.advertiserId)
+        .sort()
+        .join(",");
+      return sig.length > 0 && sig === newSignature;
+    });
+    if (match) {
+      existingId = match.id;
+    }
+  }
+
+  if (existingId) {
+    const check = await db.query(
+      `SELECT id FROM tiktok_connections WHERE id = ? AND user_id = ? LIMIT 1`,
+      [existingId, input.userId]
+    );
+    if (check.length > 0) {
+      await db.execute(
+        `UPDATE tiktok_connections
+         SET dashboard_id = ?, label = ?, access_token_enc = ?, scope_json = ?, advertisers_json = ?,
+             business_centers_json = ?, status = ?, last_error = ?, last_sync_at = ?, updated_at = ?
+         WHERE id = ? AND user_id = ?`,
+        [
+          dashboardId,
+          defaultLabel.slice(0, 80),
+          input.accessTokenEnc,
+          JSON.stringify(input.scope),
+          JSON.stringify(input.advertisers),
+          JSON.stringify(input.businessCenters),
+          status,
+          input.lastError ?? null,
+          input.lastSyncAt ?? now,
+          now,
+          existingId,
+          input.userId,
+        ]
+      );
+      const updated = await db.query(
+        `SELECT id, dashboard_id, label, scope_json, advertisers_json, business_centers_json, status, last_error, last_sync_at, created_at, updated_at
+         FROM tiktok_connections WHERE id = ? AND user_id = ? LIMIT 1`,
+        [existingId, input.userId]
+      );
+      return mapTikTokConnectionPublic(updated[0]);
+    }
+  }
+
+  const id = crypto.randomUUID();
+  await db.execute(
+    `INSERT INTO tiktok_connections (
+      id, user_id, dashboard_id, label, access_token_enc, scope_json,
+      advertisers_json, business_centers_json, status, last_error,
+      last_sync_at, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      id,
+      input.userId,
+      dashboardId,
+      defaultLabel.slice(0, 80),
+      input.accessTokenEnc,
+      JSON.stringify(input.scope),
+      JSON.stringify(input.advertisers),
+      JSON.stringify(input.businessCenters),
+      status,
+      input.lastError ?? null,
+      input.lastSyncAt ?? now,
+      now,
+      now,
+    ]
+  );
+
+  const created = await db.query(
+    `SELECT id, dashboard_id, label, scope_json, advertisers_json, business_centers_json, status, last_error, last_sync_at, created_at, updated_at
+     FROM tiktok_connections WHERE id = ? AND user_id = ? LIMIT 1`,
+    [id, input.userId]
+  );
+  return mapTikTokConnectionPublic(created[0]);
+}
+
+export async function updateTikTokConnectionStatus(
+  id: string,
+  userId: string,
+  patch: {
+    status?: "ACTIVE" | "ERROR" | "REVOKED";
+    lastError?: string | null;
+    lastSyncAt?: string | null;
+    advertisers?: TikTokAdvertiserSummary[];
+    businessCenters?: TikTokBusinessCenterSummary[];
+  }
+): Promise<boolean> {
+  const db = await getDb();
+  const existing = await db.query(
+    `SELECT * FROM tiktok_connections WHERE id = ? AND user_id = ? LIMIT 1`,
+    [id, userId]
+  );
+  if (existing.length === 0) return false;
+  const row = existing[0];
+  const now = new Date().toISOString();
+
+  await db.execute(
+    `UPDATE tiktok_connections
+     SET status = ?, last_error = ?, last_sync_at = ?, advertisers_json = ?, business_centers_json = ?, updated_at = ?
+     WHERE id = ? AND user_id = ?`,
+    [
+      patch.status ?? String(row.status || "ACTIVE"),
+      patch.lastError !== undefined
+        ? patch.lastError
+        : row.last_error
+          ? String(row.last_error)
+          : null,
+      patch.lastSyncAt !== undefined
+        ? patch.lastSyncAt
+        : row.last_sync_at
+          ? String(row.last_sync_at)
+          : null,
+      patch.advertisers !== undefined
+        ? JSON.stringify(patch.advertisers)
+        : String(row.advertisers_json || "[]"),
+      patch.businessCenters !== undefined
+        ? JSON.stringify(patch.businessCenters)
+        : String(row.business_centers_json || "[]"),
+      now,
+      id,
+      userId,
+    ]
+  );
+  return true;
+}
+
+export async function deleteTikTokConnection(
+  id: string,
+  userId: string
+): Promise<boolean> {
+  const db = await getDb();
+  const existing = await db.query(
+    `SELECT id FROM tiktok_connections WHERE id = ? AND user_id = ? LIMIT 1`,
+    [id, userId]
+  );
+  if (existing.length === 0) return false;
+  await db.execute(
+    `DELETE FROM tiktok_connections WHERE id = ? AND user_id = ?`,
+    [id, userId]
+  );
+  return true;
 }

@@ -119,7 +119,14 @@ const STEPS = [
   },
 ];
 
-const INTEGRATIONS = [
+const INTEGRATIONS: Array<{
+  icon: React.ComponentType<{ className?: string }>;
+  name: string;
+  status: string;
+  statusTone: "emerald" | "amber" | "blue";
+  description: string;
+  detail: string;
+}> = [
   {
     icon: Plug,
     name: "OmegaPay (API & Webhooks)",
@@ -141,12 +148,12 @@ const INTEGRATIONS = [
   {
     icon: Megaphone,
     name: "TikTok Ads (TikTok Marketing API)",
-    status: "Em desenvolvimento / Aguardando autorização",
-    statusTone: "amber" as const,
+    status: "OAuth 2.0 (Somente Leitura)",
+    statusTone: "emerald" as const,
     description:
-      "Integração planejada via OAuth oficial para leitura autorizada de campanhas, gastos publicitários, impressões, cliques e conversões diretamente no painel do anunciante.",
+      "Integração via OAuth oficial para conexão de Business Centers e contas de anúncios autorizadas, com consulta somente-leitura de gastos e relatórios de desempenho.",
     detail:
-      "Ainda não está ativa em produção. Enquanto aguarda autorização, o acompanhamento funciona via importação CSV.",
+      "Não cria, edita nem exclui anúncios. Tokens armazenados criptografados no backend e isolados por conta.",
   },
   {
     icon: Activity,

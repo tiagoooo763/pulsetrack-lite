@@ -184,6 +184,38 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
     fetchDashboard();
   }, [fetchDashboard]);
 
+  // Processa retorno do callback OAuth do TikTok Business (?tiktok_connected=1 ou ?tiktok_error=...)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const connected = params.get("tiktok_connected");
+    const tiktokError = params.get("tiktok_error");
+    const targetDash = params.get("tiktok_dashboard") || "tiktok";
+    const accountsCount = params.get("tiktok_accounts");
+
+    if (!connected && !tiktokError) return;
+
+    setLocation({
+      kind: "dashboard",
+      dashboardId: targetDash,
+      tabId: "integracoes",
+    });
+
+    if (connected === "1") {
+      showToast(
+        "success",
+        accountsCount
+          ? `TikTok Business conectado com sucesso (${accountsCount} conta(s) autorizada(s)).`
+          : "TikTok Business conectado com sucesso!"
+      );
+    } else if (tiktokError) {
+      showToast("error", tiktokError);
+    }
+
+    // Limpa os parâmetros da URL sem recarregar a página
+    window.history.replaceState({}, "", window.location.pathname);
+  }, [showToast]);
+
   useEffect(() => {
     if (typeof window === "undefined" || !contentRef.current) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -795,6 +827,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
 
           {location.kind === "dashboard" && location.tabId === "integracoes" && (
             <IntegrationsView
+              dashboardId={activeDashboard.id}
               dashboardMode={activeMode}
               integrationStatus={data.integrationStatus}
               onRefresh={() => fetchDashboard(false)}

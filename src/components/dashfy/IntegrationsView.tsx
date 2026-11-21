@@ -21,8 +21,10 @@ import type {
 import type { OmegaPayCredentialsResponse } from "@/lib/omegapay-types";
 import { formatDateTimeBR } from "@/lib/format";
 import { SpotlightCard } from "@/components/SpotlightCard";
+import { TikTokOAuthPanel } from "./TikTokOAuthPanel";
 
 interface IntegrationsViewProps {
+  dashboardId?: string;
   dashboardMode: DashboardOperationMode;
   integrationStatus: IntegrationStatusPayload;
   onRefresh: () => Promise<void>;
@@ -32,6 +34,7 @@ interface IntegrationsViewProps {
 }
 
 export function IntegrationsView({
+  dashboardId = "tiktok",
   dashboardMode,
   integrationStatus,
   onRefresh,
@@ -230,21 +233,7 @@ export function IntegrationsView({
           </div>
         </SpotlightCard>
 
-        <SpotlightCard className="p-5 sm:p-6 bento-card space-y-3">
-          <div className="flex items-center justify-between gap-2">
-            <div>
-              <h3 className="text-sm font-semibold text-white">
-                TikTok Marketing API (OAuth Direto)
-              </h3>
-              <p className="text-xs text-zinc-400 mt-0.5">
-                A sincronização automática via OAuth exige aprovação de aplicativo no portal TikTok for Business. Enquanto não está conectada, utilize a importação CSV oficial com precisão total.
-              </p>
-            </div>
-            <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold border border-amber-500/30 bg-amber-500/10 text-amber-300 shrink-0">
-              Via CSV Manual
-            </span>
-          </div>
-        </SpotlightCard>
+        <TikTokOAuthPanel dashboardId={dashboardId} />
       </div>
     );
   }
