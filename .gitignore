@@ -3,11 +3,12 @@
 /.pnp
 .pnp.js
 
-# local database
+# local database & private dev uploads
 /data/*.db
 /data/*.db-journal
 /data/*.db-wal
 /data/*.db-shm
+/data/private-sounds/
 
 # testing
 /coverage

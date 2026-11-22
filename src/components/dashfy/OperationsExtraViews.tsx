@@ -474,6 +474,7 @@ interface NotificationsViewProps {
   rules: AutomationRuleRecord[];
   prefs: NotificationPrefs;
   onRefresh: () => Promise<void>;
+  onOpenSoundSettings?: () => void;
 }
 
 export function NotificationsView({
@@ -483,6 +484,7 @@ export function NotificationsView({
   rules,
   prefs,
   onRefresh,
+  onOpenSoundSettings,
 }: NotificationsViewProps) {
   const [localPrefs, setLocalPrefs] = useState<NotificationPrefs>(prefs);
   const [saving, setSaving] = useState(false);
@@ -640,6 +642,21 @@ export function NotificationsView({
         >
           {saving ? "Salvando..." : "Salvar Preferências"}
         </button>
+
+        {onOpenSoundSettings && (
+          <div className="pt-3 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <div className="text-[11px] text-zinc-400">
+              Personalize o som, volume ou envie seu áudio de venda aprovada.
+            </div>
+            <button
+              type="button"
+              onClick={onOpenSoundSettings}
+              className="btn-pressable px-3.5 py-2 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 text-xs font-semibold text-white shrink-0"
+            >
+              Sons de vendas &rarr;
+            </button>
+          </div>
+        )}
       </SpotlightCard>
     </div>
   );

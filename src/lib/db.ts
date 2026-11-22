@@ -15,6 +15,14 @@ import {
   type OmegaPayTransactionStatus,
   type OmegaPayTransferStatus,
 } from "./omegapay-types";
+import {
+  DEFAULT_SOUND_PREFERENCES,
+  isValidSoundId,
+  normalizeSoundVolume,
+  type NotificationSoundId,
+  type SaleNotificationEvent,
+  type UserSoundPreferences,
+} from "./notification-sounds";
 
 export type {
   OmegaPayBalanceResponse,
@@ -204,6 +212,7 @@ export interface BalanceSnapshotRecord extends OmegaPayBalanceResponse {
 }
 
 interface DbExecutor {
+  readonly dialect: "postgres" | "sqlite";
   query(sql: string, params?: unknown[]): Promise<Record<string, unknown>[]>;
   execute(sql: string, params?: unknown[]): Promise<void>;
 }
@@ -228,6 +237,7 @@ async function createDbExecutor(): Promise<DbExecutor> {
     });
 
     return {
+      dialect: "postgres",
       async query(sql: string, params: unknown[] = []) {
         const pgSql = convertPlaceholdersToPg(sql);
         const res = await pool.query(pgSql, params);
@@ -259,6 +269,7 @@ async function createDbExecutor(): Promise<DbExecutor> {
   });
 
   return {
+    dialect: "sqlite",
     async query(sql: string, params: unknown[] = []) {
       const res = await client.execute({
         sql,
@@ -470,6 +481,36 @@ export async function getDb(): Promise<DbExecutor> {
           last_sync_at TEXT,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL
+        )
+      `);
+
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS user_notification_sound_preferences (
+          user_id TEXT PRIMARY KEY,
+          sound_enabled INTEGER NOT NULL DEFAULT 1,
+          selected_sound TEXT NOT NULL DEFAULT 'cash_register',
+          sound_volume INTEGER NOT NULL DEFAULT 70,
+          custom_sound_path TEXT,
+          custom_sound_name TEXT,
+          custom_sound_mime TEXT,
+          updated_at TEXT NOT NULL
+        )
+      `);
+
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS sale_notifications (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL,
+          transaction_id TEXT NOT NULL,
+          dedupe_key TEXT NOT NULL UNIQUE,
+          gateway TEXT NOT NULL DEFAULT 'OMEGAPAY',
+          product_name TEXT NOT NULL,
+          gross_amount REAL NOT NULL DEFAULT 0,
+          net_amount REAL NOT NULL DEFAULT 0,
+          payment_method TEXT NOT NULL DEFAULT 'PIX',
+          utm_source TEXT,
+          utm_campaign TEXT,
+          created_at TEXT NOT NULL
         )
       `);
 
@@ -1474,6 +1515,7 @@ export async function claimLegacyDataForOwner(
     "automation_rules",
     "webhook_events",
     "tiktok_connections",
+    "sale_notifications",
   ]) {
     try {
       await db.execute(
@@ -2108,4 +2150,269 @@ export async function deleteTikTokConnection(
     [id, userId]
   );
   return true;
+}
+
+// ============================================================
+// SALES NOTIFICATION SOUND PREFERENCES & CONFIRMED SALE EVENTS
+// ============================================================
+
+function mapSoundPreferencesRow(
+  userId: string,
+  row?: Record<string, unknown>
+): UserSoundPreferences {
+  if (!row) {
+    return {
+      userId,
+      ...DEFAULT_SOUND_PREFERENCES,
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
+  const rawSound = String(row.selected_sound || DEFAULT_SOUND_PREFERENCES.selectedSound);
+  const selectedSound: NotificationSoundId = isValidSoundId(rawSound)
+    ? rawSound
+    : DEFAULT_SOUND_PREFERENCES.selectedSound;
+
+  const rawEnabled = row.sound_enabled;
+  const soundEnabled =
+    typeof rawEnabled === "boolean"
+      ? rawEnabled
+      : Number(rawEnabled ?? 1) !== 0;
+
+  return {
+    userId: String(row.user_id || userId),
+    soundEnabled,
+    selectedSound,
+    soundVolume: normalizeSoundVolume(row.sound_volume),
+    customSoundPath: row.custom_sound_path ? String(row.custom_sound_path) : null,
+    customSoundName: row.custom_sound_name ? String(row.custom_sound_name) : null,
+    customSoundMime: row.custom_sound_mime ? String(row.custom_sound_mime) : null,
+    updatedAt: String(row.updated_at || new Date().toISOString()),
+  };
+}
+
+export async function getUserSoundPreferences(
+  userId: string
+): Promise<UserSoundPreferences> {
+  const db = await getDb();
+  const rows = await db.query(
+    `SELECT * FROM user_notification_sound_preferences WHERE user_id = ? LIMIT 1`,
+    [userId]
+  );
+  return mapSoundPreferencesRow(userId, rows[0]);
+}
+
+export async function upsertUserSoundPreferences(
+  userId: string,
+  patch: {
+    soundEnabled?: boolean;
+    selectedSound?: NotificationSoundId;
+    soundVolume?: number;
+    customSoundPath?: string | null;
+    customSoundName?: string | null;
+    customSoundMime?: string | null;
+  }
+): Promise<UserSoundPreferences> {
+  const db = await getDb();
+  const current = await getUserSoundPreferences(userId);
+  const now = new Date().toISOString();
+
+  const soundEnabled =
+    patch.soundEnabled !== undefined ? Boolean(patch.soundEnabled) : current.soundEnabled;
+  const customSoundPath =
+    patch.customSoundPath !== undefined ? patch.customSoundPath : current.customSoundPath;
+  const customSoundName =
+    patch.customSoundName !== undefined ? patch.customSoundName : current.customSoundName;
+  const customSoundMime =
+    patch.customSoundMime !== undefined ? patch.customSoundMime : current.customSoundMime;
+
+  let selectedSound: NotificationSoundId =
+    patch.selectedSound !== undefined && isValidSoundId(patch.selectedSound)
+      ? patch.selectedSound
+      : current.selectedSound;
+
+  // Se não existir áudio customizado salvo, não permite deixar selectedSound em 'custom'
+  if (selectedSound === "custom" && !customSoundPath) {
+    selectedSound = DEFAULT_SOUND_PREFERENCES.selectedSound;
+  }
+
+  const soundVolume =
+    patch.soundVolume !== undefined
+      ? normalizeSoundVolume(patch.soundVolume)
+      : current.soundVolume;
+
+  const existingRows = await db.query(
+    `SELECT user_id FROM user_notification_sound_preferences WHERE user_id = ? LIMIT 1`,
+    [userId]
+  );
+
+  // Compatível com SQLite (INTEGER 1/0) e PostgreSQL (BOOLEAN true/false)
+  const enabledDbValue = db.dialect === "postgres" ? soundEnabled : soundEnabled ? 1 : 0;
+
+  if (existingRows.length > 0) {
+    await db.execute(
+      `UPDATE user_notification_sound_preferences
+       SET sound_enabled = ?, selected_sound = ?, sound_volume = ?,
+           custom_sound_path = ?, custom_sound_name = ?, custom_sound_mime = ?, updated_at = ?
+       WHERE user_id = ?`,
+      [
+        enabledDbValue,
+        selectedSound,
+        soundVolume,
+        customSoundPath,
+        customSoundName,
+        customSoundMime,
+        now,
+        userId,
+      ]
+    );
+  } else {
+    await db.execute(
+      `INSERT INTO user_notification_sound_preferences (
+        user_id, sound_enabled, selected_sound, sound_volume,
+        custom_sound_path, custom_sound_name, custom_sound_mime, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        userId,
+        enabledDbValue,
+        selectedSound,
+        soundVolume,
+        customSoundPath,
+        customSoundName,
+        customSoundMime,
+        now,
+      ]
+    );
+  }
+
+  return getUserSoundPreferences(userId);
+}
+
+export async function resetUserSoundPreferences(
+  userId: string
+): Promise<UserSoundPreferences> {
+  return upsertUserSoundPreferences(userId, {
+    soundEnabled: DEFAULT_SOUND_PREFERENCES.soundEnabled,
+    selectedSound: DEFAULT_SOUND_PREFERENCES.selectedSound,
+    soundVolume: DEFAULT_SOUND_PREFERENCES.soundVolume,
+  });
+}
+
+function mapSaleNotificationRow(
+  row: Record<string, unknown>
+): SaleNotificationEvent {
+  return {
+    id: String(row.id),
+    transactionId: String(row.transaction_id || ""),
+    gateway: String(row.gateway || "OMEGAPAY"),
+    productName: String(row.product_name || "Venda aprovada"),
+    grossAmount: Number(row.gross_amount || 0),
+    netAmount: Number(row.net_amount || 0),
+    paymentMethod: String(row.payment_method || "PIX"),
+    utmSource: row.utm_source ? String(row.utm_source) : null,
+    utmCampaign: row.utm_campaign ? String(row.utm_campaign) : null,
+    createdAt: String(row.created_at || ""),
+  };
+}
+
+/**
+ * Registra de forma idempotente uma notificação de VENDA APROVADA (somente pagamentos confirmados
+ * por gateways/checkouts integrados — nunca conversões isoladas de relatório de anúncios).
+ */
+export async function recordApprovedSaleNotification(input: {
+  userId: string;
+  transactionId: string;
+  dedupeKey: string;
+  gateway: string;
+  productName: string;
+  grossAmount: number;
+  netAmount: number;
+  paymentMethod: string;
+  utmSource?: string | null;
+  utmCampaign?: string | null;
+}): Promise<{ inserted: boolean; notification?: SaleNotificationEvent }> {
+  const db = await getDb();
+  const existing = await db.query(
+    `SELECT id FROM sale_notifications WHERE dedupe_key = ? LIMIT 1`,
+    [input.dedupeKey]
+  );
+  if (existing.length > 0) {
+    return { inserted: false };
+  }
+
+  const id = crypto.randomUUID();
+  const now = new Date().toISOString();
+
+  try {
+    await db.execute(
+      `INSERT INTO sale_notifications (
+        id, user_id, transaction_id, dedupe_key, gateway, product_name,
+        gross_amount, net_amount, payment_method, utm_source, utm_campaign, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        id,
+        input.userId,
+        input.transactionId,
+        input.dedupeKey,
+        input.gateway,
+        input.productName.trim() || "Venda aprovada",
+        Number(input.grossAmount || 0),
+        Number(input.netAmount || 0),
+        input.paymentMethod || "PIX",
+        input.utmSource?.trim() || null,
+        input.utmCampaign?.trim() || null,
+        now,
+      ]
+    );
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.toLowerCase().includes("unique") || msg.toLowerCase().includes("duplicate")) {
+      return { inserted: false };
+    }
+    throw err;
+  }
+
+  return {
+    inserted: true,
+    notification: {
+      id,
+      transactionId: input.transactionId,
+      gateway: input.gateway,
+      productName: input.productName.trim() || "Venda aprovada",
+      grossAmount: Number(input.grossAmount || 0),
+      netAmount: Number(input.netAmount || 0),
+      paymentMethod: input.paymentMethod || "PIX",
+      utmSource: input.utmSource?.trim() || null,
+      utmCampaign: input.utmCampaign?.trim() || null,
+      createdAt: now,
+    },
+  };
+}
+
+export async function listSaleNotificationsSince(
+  userId: string,
+  sinceIso?: string | null,
+  limit = 20
+): Promise<SaleNotificationEvent[]> {
+  const db = await getDb();
+  const safeLimit = Math.max(1, Math.min(50, Math.round(limit)));
+  if (sinceIso && sinceIso.trim()) {
+    const rows = await db.query(
+      `SELECT * FROM sale_notifications
+       WHERE user_id = ? AND created_at > ?
+       ORDER BY created_at ASC
+       LIMIT ?`,
+      [userId, sinceIso.trim(), safeLimit]
+    );
+    return rows.map(mapSaleNotificationRow);
+  }
+
+  const rows = await db.query(
+    `SELECT * FROM sale_notifications
+     WHERE user_id = ?
+     ORDER BY created_at DESC
+     LIMIT ?`,
+    [userId, safeLimit]
+  );
+  return rows.map(mapSaleNotificationRow);
 }

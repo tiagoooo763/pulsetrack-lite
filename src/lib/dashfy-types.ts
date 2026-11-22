@@ -12,6 +12,7 @@ import type {
   TransferRecord,
   WebhookEventRecord,
 } from "./db";
+import type { UserSoundPreferences } from "./notification-sounds";
 
 export type {
   DashboardConfigRecord,
@@ -119,6 +120,7 @@ export interface DashfyDashboardPayload {
     authProvider?: "supabase" | "legacy";
     notificationPrefs: NotificationPrefs;
   };
+  soundPreferences?: UserSoundPreferences;
   integrationStatus: IntegrationStatusPayload;
 }
 

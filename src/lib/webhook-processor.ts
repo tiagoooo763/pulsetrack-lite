@@ -2,6 +2,7 @@ import crypto from "crypto";
 import {
   insertWebhookEvent,
   LEGACY_ADMIN_USER_ID,
+  recordApprovedSaleNotification,
   resolveTransactionStatus,
   upsertTransaction,
   upsertTransfer,
@@ -305,6 +306,39 @@ export async function processOmegaPayWebhook(
         createdAt,
         paidAt,
       });
+
+      // Dispara notificação real SOMENTE para pagamentos efetivamente aprovados (preservando UTM TikTok se presente)
+      if (
+        resolvedStatus === "COMPLETED" &&
+        (event === "TRANSACTION_PAID" || event === "SUBSCRIPTION_RENEWED")
+      ) {
+        const trackProps =
+          payload.trackProps && typeof payload.trackProps === "object"
+            ? (payload.trackProps as Record<string, unknown>)
+            : null;
+        const utmSource =
+          typeof trackProps?.utm_source === "string"
+            ? trackProps.utm_source.trim()
+            : null;
+        const utmCampaign =
+          typeof trackProps?.utm_campaign === "string"
+            ? trackProps.utm_campaign.trim()
+            : null;
+
+        await recordApprovedSaleNotification({
+          userId,
+          transactionId: tx.id.trim(),
+          dedupeKey: `sale:OMEGAPAY:${userId}:${tx.id.trim()}`,
+          gateway: "OMEGAPAY",
+          productName,
+          grossAmount,
+          netAmount: netAmount ?? grossAmount,
+          paymentMethod:
+            typeof tx.paymentMethod === "string" ? tx.paymentMethod : "PIX",
+          utmSource,
+          utmCampaign,
+        }).catch(() => {});
+      }
     }
   }
 

@@ -2,7 +2,13 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { gsap } from "gsap";
-import { CheckCircle2, Menu, RefreshCw, Zap } from "lucide-react";
+import { BellRing, CheckCircle2, Menu, RefreshCw, Volume2, Zap } from "lucide-react";
+import {
+  DEFAULT_SOUND_PREFERENCES,
+  type SaleNotificationEvent,
+  type UserSoundPreferences,
+} from "@/lib/notification-sounds";
+import { salesAudioEngine } from "@/lib/sales-audio-engine";
 import {
   DEFAULT_DASHBOARDS,
   getTabsForMode,
@@ -137,6 +143,18 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
     type: "success" | "error";
     message: string;
   } | null>(null);
+  const [saleAlertToast, setSaleAlertToast] =
+    useState<SaleNotificationEvent | null>(null);
+  const [autoplayBlocked, setAutoplayBlocked] = useState(false);
+
+  const soundPrefsRef = useRef<UserSoundPreferences>({
+    userId: "",
+    ...DEFAULT_SOUND_PREFERENCES,
+    updatedAt: "",
+  });
+  const saleWatermarkRef = useRef<string | null>(null);
+  const seenSaleIdsRef = useRef<Set<string>>(new Set());
+  const saleToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -169,6 +187,9 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
         if (res.ok) {
           const json = (await res.json()) as DashfyDashboardPayload;
           setData(json);
+          if (json.soundPreferences) {
+            soundPrefsRef.current = json.soundPreferences;
+          }
         }
       } catch {
         // Silencioso
@@ -183,6 +204,127 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
   useEffect(() => {
     fetchDashboard();
   }, [fetchDashboard]);
+
+  // Assina estado do motor de áudio (bloqueio de autoplay do navegador)
+  useEffect(() => {
+    return salesAudioEngine.subscribe((state) => {
+      setAutoplayBlocked(state.autoplayBlocked);
+    });
+  }, []);
+
+  // Monitora novos eventos REAIS de vendas aprovadas (sem tocar alertas antigos nem duplicados)
+  const currentUserId = data?.profile?.id || data?.profile?.username || "";
+  useEffect(() => {
+    if (!currentUserId) return;
+
+    const storageKey = `dashfy_seen_sales_${currentUserId}`;
+    try {
+      const saved = sessionStorage.getItem(storageKey);
+      if (saved) {
+        const arr = JSON.parse(saved);
+        if (Array.isArray(arr)) {
+          arr.forEach((id) => {
+            if (typeof id === "string") seenSaleIdsRef.current.add(id);
+          });
+        }
+      }
+    } catch {}
+
+    let cancelled = false;
+
+    const resolveCustomUrl = async (): Promise<string | null> => {
+      try {
+        const r = await fetch("/api/notifications/sounds/custom", {
+          cache: "no-store",
+        });
+        if (!r.ok) return null;
+        const j = (await r.json()) as { ok?: boolean; signedUrl?: string };
+        return j.ok && j.signedUrl ? j.signedUrl : null;
+      } catch {
+        return null;
+      }
+    };
+
+    const persistSeen = () => {
+      try {
+        const recent = Array.from(seenSaleIdsRef.current).slice(-120);
+        sessionStorage.setItem(storageKey, JSON.stringify(recent));
+      } catch {}
+    };
+
+    const initWatermark = async () => {
+      try {
+        const res = await fetch("/api/notifications/sales?init=1", {
+          cache: "no-store",
+        });
+        if (!res.ok || cancelled) return;
+        const json = (await res.json()) as { ok?: boolean; serverNow?: string };
+        if (json.ok && json.serverNow) {
+          saleWatermarkRef.current = json.serverNow;
+        }
+      } catch {}
+    };
+
+    const pollSales = async () => {
+      if (cancelled || !saleWatermarkRef.current) return;
+      if (
+        typeof document !== "undefined" &&
+        document.visibilityState === "hidden"
+      ) {
+        return;
+      }
+
+      try {
+        const res = await fetch(
+          `/api/notifications/sales?since=${encodeURIComponent(saleWatermarkRef.current)}`,
+          { cache: "no-store" }
+        );
+        if (!res.ok || cancelled) return;
+        const json = (await res.json()) as {
+          ok?: boolean;
+          serverNow?: string;
+          events?: SaleNotificationEvent[];
+        };
+        if (json.serverNow) {
+          saleWatermarkRef.current = json.serverNow;
+        }
+        const incoming = Array.isArray(json.events) ? json.events : [];
+        const fresh = incoming.filter(
+          (ev) => ev.id && !seenSaleIdsRef.current.has(ev.id)
+        );
+        if (fresh.length === 0) return;
+
+        for (const ev of fresh) {
+          seenSaleIdsRef.current.add(ev.id);
+        }
+        persistSeen();
+
+        const latestSale = fresh[fresh.length - 1];
+        setSaleAlertToast(latestSale);
+        if (saleToastTimerRef.current) clearTimeout(saleToastTimerRef.current);
+        saleToastTimerRef.current = setTimeout(
+          () => setSaleAlertToast(null),
+          6500
+        );
+
+        await salesAudioEngine.playSaleAlert({
+          prefs: soundPrefsRef.current,
+          resolveCustomUrl,
+        });
+
+        // Atualiza métricas do dashboard silenciosamente para refletir a nova venda
+        fetchDashboard(false);
+      } catch {}
+    };
+
+    initWatermark();
+    const interval = setInterval(pollSales, 12000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [currentUserId, fetchDashboard]);
 
   // Processa retorno do callback OAuth do TikTok Business e confirmações de e-mail
   useEffect(() => {
@@ -660,6 +802,28 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
+            {autoplayBlocked && (
+              <button
+                type="button"
+                onClick={async () => {
+                  const ok = await salesAudioEngine.unlockWithUserGesture(
+                    soundPrefsRef.current.soundVolume
+                  );
+                  if (ok) {
+                    showToast(
+                      "success",
+                      "Sons de notificações ativados para esta sessão."
+                    );
+                  }
+                }}
+                className="btn-pressable inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-500/35 bg-emerald-500/15 hover:bg-emerald-500/25 text-xs font-semibold text-emerald-300"
+                title="Seu navegador exige um clique inicial para reproduzir sons de vendas"
+              >
+                <Volume2 className="w-3.5 h-3.5" />
+                <span>Ativar sons de notificações</span>
+              </button>
+            )}
+
             {location.kind === "dashboard" && (
               <button
                 type="button"
@@ -691,6 +855,56 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
             </button>
           </div>
         </header>
+
+        {/* NOTIFICAÇÃO DE VENDA APROVADA EM TEMPO REAL */}
+        {saleAlertToast && (
+          <div className="px-4 sm:px-6 pt-4">
+            <div
+              role="status"
+              className="rounded-xl border border-emerald-500/35 bg-emerald-500/10 p-3.5 text-xs flex flex-wrap items-center justify-between gap-3 animate-fade-in-up"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shrink-0">
+                  <BellRing className="w-4 h-4 text-emerald-300" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-semibold text-white">
+                      Venda aprovada!
+                    </span>
+                    <span className="font-mono font-bold text-emerald-300">
+                      {formatBRL(saleAlertToast.grossAmount)}
+                    </span>
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono border border-white/15 bg-white/5 text-zinc-200">
+                      {saleAlertToast.gateway}
+                    </span>
+                    {saleAlertToast.utmSource &&
+                      saleAlertToast.utmSource.toLowerCase().includes("tiktok") && (
+                        <span className="px-1.5 py-0.5 rounded text-[10px] border border-white/15 bg-white/5 text-zinc-300">
+                          Atribuída: TikTok Ads
+                          {saleAlertToast.utmCampaign
+                            ? ` • ${saleAlertToast.utmCampaign}`
+                            : ""}
+                        </span>
+                      )}
+                  </div>
+                  <div className="text-[11px] text-emerald-100/80 truncate mt-0.5">
+                    {saleAlertToast.productName} &bull;{" "}
+                    {saleAlertToast.paymentMethod}
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSaleAlertToast(null)}
+                className="text-emerald-200/70 hover:text-white px-1"
+                aria-label="Fechar notificação de venda"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* TOAST FEEDBACK */}
         {toast && (
@@ -739,6 +953,12 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
               onNavigateDashboard={(dash, tab) =>
                 setLocation({ kind: "dashboard", dashboardId: dash, tabId: tab })
               }
+              onSoundPrefsSaved={(nextPrefs) => {
+                soundPrefsRef.current = nextPrefs;
+                setData((prev) =>
+                  prev ? { ...prev, soundPreferences: nextPrefs } : prev
+                );
+              }}
             />
           )}
 
@@ -899,6 +1119,9 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
               rules={activeRules}
               prefs={data.profile.notificationPrefs}
               onRefresh={() => fetchDashboard(false)}
+              onOpenSoundSettings={() =>
+                setLocation({ kind: "global", pageId: "configuracoes" })
+              }
             />
           )}
         </main>

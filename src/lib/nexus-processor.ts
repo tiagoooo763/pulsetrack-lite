@@ -1,6 +1,7 @@
 import {
   insertWebhookEvent,
   LEGACY_ADMIN_USER_ID,
+  recordApprovedSaleNotification,
   resolveTransactionStatus,
   upsertTransaction,
   type OmegaPayTransactionStatus,
@@ -255,6 +256,34 @@ export async function processNexusWebhook(
       createdAt: (dataObj.created_at || payload.created_at || now) as string,
       paidAt: status === "COMPLETED" ? now : null,
     });
+
+    if (status === "COMPLETED") {
+      const utmSource =
+        typeof dataObj.utm_source === "string"
+          ? dataObj.utm_source.trim()
+          : typeof payload.utm_source === "string"
+            ? payload.utm_source.trim()
+            : null;
+      const utmCampaign =
+        typeof dataObj.utm_campaign === "string"
+          ? dataObj.utm_campaign.trim()
+          : typeof payload.utm_campaign === "string"
+            ? payload.utm_campaign.trim()
+            : null;
+
+      await recordApprovedSaleNotification({
+        userId,
+        transactionId,
+        dedupeKey: `sale:NEXUS:${userId}:${transactionId}`,
+        gateway: "NEXUS",
+        productName,
+        grossAmount,
+        netAmount,
+        paymentMethod,
+        utmSource,
+        utmCampaign,
+      }).catch(() => {});
+    }
 
     safeLog("info", "Webhook Nexus processado com sucesso.", {
       transactionId,

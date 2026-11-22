@@ -3,6 +3,7 @@ import { getAuthenticatedUser } from "@/lib/auth";
 import {
   getAllBalanceSnapshots,
   getUserSetting,
+  getUserSoundPreferences,
   listAutomationRules,
   listCustomFees,
   listManualExpenses,
@@ -42,6 +43,7 @@ export async function GET() {
     omegaLastSyncAt,
     notifPrefsRaw,
     dashboardsConfigRaw,
+    soundPreferences,
   ] = await Promise.all([
     listTransactions(userId),
     listTransfers(userId),
@@ -59,6 +61,7 @@ export async function GET() {
     getUserSetting(userId, "OMEGAPAY_LAST_SYNC_AT"),
     getUserSetting(userId, "NOTIFICATION_PREFS"),
     getUserSetting(userId, "DASHFY_DASHBOARDS_CONFIG"),
+    getUserSoundPreferences(userId),
   ]);
 
   let dashboards: DashboardConfigRecord[] = DEFAULT_DASHBOARDS;
@@ -135,6 +138,7 @@ export async function GET() {
       authProvider: user.authProvider,
       notificationPrefs,
     },
+    soundPreferences,
     integrationStatus: {
       hasApiCredentials: creds.hasApiCredentials,
       hasWebhookToken: creds.hasWebhookToken,

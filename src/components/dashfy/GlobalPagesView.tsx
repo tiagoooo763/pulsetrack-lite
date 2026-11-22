@@ -21,13 +21,16 @@ import type {
 } from "@/lib/dashfy-types";
 import { EXPENSE_CATEGORIES } from "@/lib/format";
 import type { ExpenseCategory } from "@/lib/db";
+import type { UserSoundPreferences } from "@/lib/notification-sounds";
 import { SpotlightCard } from "@/components/SpotlightCard";
+import { SalesSoundSettingsSection } from "./SalesSoundSettingsSection";
 
 interface GlobalPagesViewProps {
   pageId: GlobalPageId;
   data: DashfyDashboardPayload;
   onRefresh: () => Promise<void>;
   onNavigateDashboard: (dash: DashboardOperationId, tab: OperationTabId) => void;
+  onSoundPrefsSaved?: (prefs: UserSoundPreferences) => void;
 }
 
 export function GlobalPagesView({
@@ -35,6 +38,7 @@ export function GlobalPagesView({
   data,
   onRefresh,
   onNavigateDashboard,
+  onSoundPrefsSaved,
 }: GlobalPagesViewProps) {
   // Minha Conta
   const [displayName, setDisplayName] = useState(data.profile.displayName);
@@ -388,7 +392,14 @@ export function GlobalPagesView({
 
   if (pageId === "configuracoes") {
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <div className="space-y-6">
+        {/* Configurações -> Notificações -> Sons de vendas */}
+        <SalesSoundSettingsSection
+          initialPreferences={data.soundPreferences}
+          onPreferencesSaved={onSoundPrefsSaved}
+        />
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <SpotlightCard className="p-5 sm:p-6 bento-card space-y-4">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
@@ -473,6 +484,7 @@ export function GlobalPagesView({
             </div>
           </div>
         </SpotlightCard>
+        </div>
       </div>
     );
   }
