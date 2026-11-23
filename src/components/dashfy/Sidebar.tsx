@@ -353,7 +353,7 @@ export function Sidebar({
                           <button
                             type="button"
                             onClick={(e) => startEditing(dash, e)}
-                            title="Renomear aba ou trocar modo (TikTok / OmegaPay)"
+                            title="Renomear operação ou escolher integração (TikTok / Gateway)"
                             aria-label={`Editar ${dash.name}`}
                             className="p-1.5 mr-1 rounded-lg text-zinc-500 hover:text-white hover:bg-white/10 transition shrink-0"
                           >
@@ -386,7 +386,7 @@ export function Sidebar({
 
                           <div>
                             <label className="block text-[10px] uppercase tracking-wider text-zinc-400 mb-1">
-                              Tipo de operação
+                              Integração principal
                             </label>
                             <select
                               value={editMode}
@@ -396,7 +396,7 @@ export function Sidebar({
                               className="w-full rounded-lg border border-white/15 bg-[#050507] px-2 py-1.5 text-xs text-white focus:border-white focus:outline-none"
                             >
                               <option value="tiktok">TikTok Ads</option>
-                              <option value="omegapay">OmegaPay</option>
+                              <option value="omegapay">Gateway (OmegaPay / Nexus)</option>
                             </select>
                           </div>
 

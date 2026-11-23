@@ -5,18 +5,24 @@ import {
   AlertCircle,
   Banknote,
   Bell,
+  BellRing,
   Check,
   CheckCircle2,
   Coins,
+  Gem,
   Music,
   Play,
   RotateCcw,
+  Smartphone,
   Sparkles,
   Square,
   Trash2,
+  Trophy,
   Upload,
   Volume2,
   VolumeX,
+  Wallet,
+  Zap,
 } from "lucide-react";
 import {
   DEFAULT_SOUND_PREFERENCES,
@@ -26,6 +32,15 @@ import {
   type UserSoundPreferences,
 } from "@/lib/notification-sounds";
 import { salesAudioEngine } from "@/lib/sales-audio-engine";
+import {
+  ensureDashfyServiceWorker,
+  getDeviceNotificationStatus,
+  isDeviceNotificationEnabledLocally,
+  requestDeviceNotificationPermission,
+  sendTestDeviceNotification,
+  setDeviceNotificationEnabledLocally,
+  type DeviceNotificationStatus,
+} from "@/lib/device-notifications";
 import { SpotlightCard } from "@/components/SpotlightCard";
 
 interface SalesSoundSettingsSectionProps {
@@ -37,8 +52,18 @@ function getSoundIcon(id: NotificationSoundId) {
   switch (id) {
     case "cash_register":
       return Banknote;
+    case "kaching_pro":
+      return Zap;
     case "coins":
       return Coins;
+    case "pix_money":
+      return Wallet;
+    case "gold_drop":
+      return Gem;
+    case "bill_count":
+      return Banknote;
+    case "jackpot_sale":
+      return Trophy;
     case "classic_bell":
       return Bell;
     case "soft_notification":
@@ -83,6 +108,12 @@ export function SalesSoundSettingsSection({
     text: string;
   } | null>(null);
 
+  const [deviceStatus, setDeviceStatus] =
+    useState<DeviceNotificationStatus>("default");
+  const [deviceEnabled, setDeviceEnabled] = useState(false);
+  const [requestingDevicePerm, setRequestingDevicePerm] = useState(false);
+  const [testingDeviceNotif, setTestingDeviceNotif] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchSoundPrefs = useCallback(async () => {
@@ -111,6 +142,10 @@ export function SalesSoundSettingsSection({
   }, []);
 
   useEffect(() => {
+    setDeviceStatus(getDeviceNotificationStatus());
+    setDeviceEnabled(isDeviceNotificationEnabledLocally());
+    void ensureDashfyServiceWorker();
+
     // Evita requisição redundante quando as preferências já vieram de /api/dashboard
     if (!initialPreferences) {
       fetchSoundPrefs();
@@ -123,6 +158,94 @@ export function SalesSoundSettingsSection({
       salesAudioEngine.stopPreview();
     };
   }, [fetchSoundPrefs, initialPreferences]);
+
+  async function handleEnableDeviceNotifications() {
+    setFeedback(null);
+    setRequestingDevicePerm(true);
+    try {
+      const res = await requestDeviceNotificationPermission();
+      setDeviceStatus(res.status);
+      setDeviceEnabled(res.granted);
+      if (res.granted) {
+        setFeedback({
+          type: "success",
+          text: "Notificações ativadas neste dispositivo! Cada venda aprovada cairá com o símbolo da Dashfy.",
+        });
+      } else if (res.status === "ios_needs_homescreen") {
+        setFeedback({
+          type: "error",
+          text: "No iPhone/iPad, toque em Compartilhar → Adicionar à Tela de Início e abra a Dashfy pelo ícone na tela inicial para ativar notificações nativas.",
+        });
+      } else if (res.status === "denied") {
+        setFeedback({
+          type: "error",
+          text: "Permissão bloqueada pelo navegador/telefone. Libere as notificações para usedashfy.com.br nas configurações do site.",
+        });
+      } else {
+        setFeedback({
+          type: "error",
+          text: "Permissão não concedida. Clique em 'Permitir' quando o telefone ou navegador perguntar.",
+        });
+      }
+    } finally {
+      setRequestingDevicePerm(false);
+    }
+  }
+
+  function handleToggleDeviceEnabled() {
+    if (deviceStatus !== "granted") {
+      void handleEnableDeviceNotifications();
+      return;
+    }
+    const next = !deviceEnabled;
+    setDeviceNotificationEnabledLocally(next);
+    setDeviceEnabled(next);
+    setFeedback({
+      type: "success",
+      text: next
+        ? "Notificações nativas no telefone/navegador reativadas."
+        : "Notificações nativas pausadas neste dispositivo.",
+    });
+  }
+
+  async function handleTestDeviceNotification() {
+    setFeedback(null);
+    setTestingDeviceNotif(true);
+    try {
+      const result = await sendTestDeviceNotification(197.0);
+      setDeviceStatus(getDeviceNotificationStatus());
+      setDeviceEnabled(isDeviceNotificationEnabledLocally());
+
+      // Toca também o som selecionado na prévia para experiência completa
+      if (soundEnabled && selectedSound !== "silent") {
+        let customUrl = customSignedUrl;
+        if (selectedSound === "custom" && !customUrl) {
+          customUrl = await resolveFreshCustomUrl();
+        }
+        await salesAudioEngine.playPreview({
+          soundId: selectedSound,
+          volumePercent: soundVolume,
+          customSignedUrl: customUrl,
+        });
+      }
+
+      if (!result.ok) {
+        setFeedback({
+          type: "error",
+          text:
+            result.error ||
+            "Não foi possível enviar a notificação nativa neste dispositivo.",
+        });
+      } else {
+        setFeedback({
+          type: "success",
+          text: "Notificação de teste enviada! Confira na barra do seu telefone/desktop o alerta 'Venda feita! • Dashfy'.",
+        });
+      }
+    } finally {
+      setTestingDeviceNotif(false);
+    }
+  }
 
   const hasUnsavedChanges =
     soundEnabled !== savedPrefs.soundEnabled ||
@@ -448,6 +571,108 @@ export function SalesSoundSettingsSection({
           <span>{feedback.text}</span>
         </div>
       )}
+
+      {/* CARD: NOTIFICAÇÃO NO TELEFONE & NAVEGADOR COM SÍMBOLO DA DASHFY */}
+      <div className="rounded-2xl border border-[#1d74ff]/25 bg-gradient-to-br from-[#0b152a] via-[#090d18] to-[#08080a] p-4 sm:p-5 space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#1d74ff]/15 border border-[#1d74ff]/35 flex items-center justify-center shrink-0">
+              <Smartphone className="w-5 h-5 text-[#5ea1ff]" />
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h4 className="text-sm font-semibold text-white">
+                  Notificações no Telefone e Navegador
+                </h4>
+                <span
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                    deviceStatus === "granted" && deviceEnabled
+                      ? "border-emerald-500/35 bg-emerald-500/15 text-emerald-300"
+                      : deviceStatus === "denied"
+                        ? "border-rose-500/35 bg-rose-500/15 text-rose-300"
+                        : "border-amber-500/35 bg-amber-500/15 text-amber-300"
+                  }`}
+                >
+                  {deviceStatus === "granted" && deviceEnabled
+                    ? "Ativadas neste dispositivo"
+                    : deviceStatus === "granted"
+                      ? "Pausadas neste dispositivo"
+                      : deviceStatus === "denied"
+                        ? "Bloqueadas no navegador"
+                        : deviceStatus === "ios_needs_homescreen"
+                          ? "iPhone: adicionar à Tela de Início"
+                          : "Aguardando ativação"}
+                </span>
+              </div>
+              <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+                Quando ativado, cada venda aprovada exibe o alerta nativo na barra do celular/computador com o símbolo da Dashfy e o valor recebido.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={handleToggleDeviceEnabled}
+              disabled={requestingDevicePerm}
+              className={`btn-pressable inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition ${
+                deviceStatus === "granted" && deviceEnabled
+                  ? "border border-white/15 bg-white/5 hover:bg-white/10 text-zinc-200"
+                  : "bg-[#1d74ff] hover:bg-[#2b7fff] text-white shadow-[0_8px_20px_-6px_rgba(29,116,255,0.65)]"
+              }`}
+            >
+              <BellRing className="w-3.5 h-3.5" />
+              <span>
+                {requestingDevicePerm
+                  ? "Solicitando..."
+                  : deviceStatus === "granted" && deviceEnabled
+                    ? "Pausar neste aparelho"
+                    : "Ativar no telefone"}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleTestDeviceNotification}
+              disabled={testingDeviceNotif}
+              className="btn-pressable inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-emerald-500/35 bg-emerald-500/15 hover:bg-emerald-500/25 text-xs font-semibold text-emerald-200 disabled:opacity-50"
+            >
+              <Play className="w-3.5 h-3.5" />
+              <span>
+                {testingDeviceNotif ? "Enviando..." : "Testar no celular + som"}
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {/* Prévia visual realista de como cai no celular */}
+        <div className="rounded-xl border border-white/10 bg-[#050811]/90 p-3 flex items-center gap-3 max-w-md shadow-lg">
+          <div className="w-10 h-10 rounded-xl bg-[#0a1428] border border-blue-400/25 flex items-center justify-center shrink-0 overflow-hidden">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/assets/logo-dashfy-icon.png"
+              alt="Dashfy"
+              className="w-7 h-7 object-contain"
+            />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-semibold text-white truncate">
+                Venda feita! &bull; Dashfy
+              </span>
+              <span className="text-[10px] text-zinc-500 shrink-0">agora</span>
+            </div>
+            <p className="text-[11px] text-zinc-300 truncate mt-0.5">
+              Você recebeu <strong className="text-emerald-300 font-mono">R$ 197,00</strong> — Produto Digital (PIX)
+            </p>
+          </div>
+        </div>
+
+        <p className="text-[11px] text-zinc-500">
+          Dica para iPhone (iOS): toque no botão <strong>Compartilhar</strong> do Safari e selecione{" "}
+          <strong>Adicionar à Tela de Início</strong> para receber notificações nativas da Dashfy como aplicativo.
+        </p>
+      </div>
 
       {/* Controle deslizante de volume (0% a 100%, padrão 70%) */}
       <div className="rounded-xl border border-white/10 bg-[#08080a] p-4 space-y-2.5">

@@ -1,6 +1,11 @@
 export type NotificationSoundId =
   | "cash_register"
+  | "kaching_pro"
   | "coins"
+  | "pix_money"
+  | "gold_drop"
+  | "bill_count"
+  | "jackpot_sale"
   | "classic_bell"
   | "soft_notification"
   | "custom"
@@ -58,15 +63,45 @@ export const SOUND_LIBRARY_OPTIONS: NotificationSoundOption[] = [
   {
     id: "cash_register",
     label: "Caixa registradora",
-    description: "Toque clássico e curto de venda aprovada (padrão)",
+    description: "Ka-Ching clássico de gaveta e campainha metálica (padrão)",
     audioUrl: "/sounds/cash-register.wav",
     isDefault: true,
   },
   {
+    id: "kaching_pro",
+    label: "Ka-Ching Turbo",
+    description: "Estalo de caixa com brilho metálico duplo de venda confirmada",
+    audioUrl: "/sounds/kaching-pro.wav",
+  },
+  {
     id: "coins",
-    label: "Moedas",
-    description: "Cascata rápida e leve de moedas",
+    label: "Chuva de moedas",
+    description: "Cascata realista de moedas metálicas tilintando",
     audioUrl: "/sounds/coins.wav",
+  },
+  {
+    id: "pix_money",
+    label: "Dinheiro na conta (Pix)",
+    description: "Acorde cristalino ascendente estilo pagamento instantâneo",
+    audioUrl: "/sounds/pix-money.wav",
+  },
+  {
+    id: "gold_drop",
+    label: "Moeda de ouro",
+    description: "Toque rápido e marcante de moeda caindo no cofre",
+    audioUrl: "/sounds/gold-drop.wav",
+  },
+  {
+    id: "bill_count",
+    label: "Notas & Cofre",
+    description: "Estalo rápido de cédulas seguido de confirmação dourada",
+    audioUrl: "/sounds/bill-count.wav",
+  },
+  {
+    id: "jackpot_sale",
+    label: "Venda Alta (Jackpot)",
+    description: "Fanfarra curta e elegante com tilintar de moedas",
+    audioUrl: "/sounds/jackpot-sale.wav",
   },
   {
     id: "classic_bell",
@@ -96,7 +131,12 @@ export const SOUND_LIBRARY_OPTIONS: NotificationSoundOption[] = [
 
 export const VALID_SOUND_IDS = new Set<NotificationSoundId>([
   "cash_register",
+  "kaching_pro",
   "coins",
+  "pix_money",
+  "gold_drop",
+  "bill_count",
+  "jackpot_sale",
   "classic_bell",
   "soft_notification",
   "custom",

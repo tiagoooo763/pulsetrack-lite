@@ -2,13 +2,17 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { BellRing, CheckCircle2, Menu, RefreshCw, Volume2, Zap } from "lucide-react";
+import { CheckCircle2, Menu, RefreshCw, Volume2, Zap } from "lucide-react";
 import {
   DEFAULT_SOUND_PREFERENCES,
   type SaleNotificationEvent,
   type UserSoundPreferences,
 } from "@/lib/notification-sounds";
 import { salesAudioEngine } from "@/lib/sales-audio-engine";
+import {
+  ensureDashfyServiceWorker,
+  showSaleDeviceNotification,
+} from "@/lib/device-notifications";
 import {
   DEFAULT_DASHBOARDS,
   getTabsForMode,
@@ -263,8 +267,9 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
     fetchDashboard();
   }, [fetchDashboard]);
 
-  // Assina estado do motor de áudio (bloqueio de autoplay do navegador)
+  // Assina estado do motor de áudio (bloqueio de autoplay do navegador) e registra Service Worker para notificações no celular
   useEffect(() => {
+    void ensureDashfyServiceWorker();
     return salesAudioEngine.subscribe((state) => {
       setAutoplayBlocked(state.autoplayBlocked);
     });
@@ -445,6 +450,9 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
             prefs: soundPrefsRef.current,
             resolveCustomUrl,
           });
+
+          // Dispara notificação nativa no telefone/navegador com o símbolo da Dashfy
+          void showSaleDeviceNotification(latestSale);
 
           // Atualiza métricas do dashboard silenciosamente para refletir a nova venda
           fetchDashboard(false);
@@ -1003,17 +1011,22 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
               role="status"
               className="rounded-xl border border-emerald-500/35 bg-emerald-500/10 p-3.5 text-xs flex flex-wrap items-center justify-between gap-3 animate-fade-in-up"
             >
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shrink-0">
-                  <BellRing className="w-4 h-4 text-emerald-300" />
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-xl bg-[#071426] border border-emerald-400/35 flex items-center justify-center shrink-0 overflow-hidden shadow-md">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/assets/logo-dashfy-icon.png"
+                    alt="Dashfy"
+                    className="w-7 h-7 object-contain"
+                  />
                 </div>
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-semibold text-white">
-                      Venda aprovada!
-                    </span>
-                    <span className="font-mono font-bold text-emerald-300">
-                      {formatBRL(saleAlertToast.grossAmount)}
+                      Venda feita! Você recebeu{" "}
+                      <span className="font-mono font-bold text-emerald-300">
+                        {formatBRL(saleAlertToast.grossAmount)}
+                      </span>
                     </span>
                     <span className="px-1.5 py-0.5 rounded text-[10px] font-mono border border-white/15 bg-white/5 text-zinc-200">
                       {saleAlertToast.gateway}
@@ -1208,6 +1221,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
           {location.kind === "dashboard" && location.tabId === "integracoes" && (
             <IntegrationsView
               dashboardId={activeDashboard.id}
+              dashboardName={activeDashboard.name}
               dashboardMode={activeMode}
               integrationStatus={data.integrationStatus}
               onRefresh={() => fetchDashboard(false)}
@@ -1218,6 +1232,12 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                   tabId,
                 })
               }
+              onChangeDashboardMode={async (nextMode) => {
+                await handleUpdateDashboardConfig(activeDashboard.id, {
+                  name: activeDashboard.name,
+                  mode: nextMode,
+                });
+              }}
               onSyncOmegaBalance={handleSyncOmegaBalance}
               syncingBalance={syncingBalance}
             />

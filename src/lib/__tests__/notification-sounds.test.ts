@@ -71,9 +71,9 @@ describe("Dashfy — Sistema de Sons Personalizados para Notificações de Venda
     } catch {}
   });
 
-  it("verifica que todos os 4 arquivos da biblioteca embutida existem e são WAV válidos", () => {
+  it("verifica que todos os 9 arquivos da biblioteca embutida (sons de dinheiro e vendas) existem e são WAV válidos", () => {
     const builtIns = SOUND_LIBRARY_OPTIONS.filter((o) => o.audioUrl);
-    expect(builtIns).toHaveLength(4);
+    expect(builtIns).toHaveLength(9);
 
     for (const opt of builtIns) {
       const filePath = path.join(process.cwd(), "public", opt.audioUrl!.replace(/^\//, ""));
@@ -95,11 +95,16 @@ describe("Dashfy — Sistema de Sons Personalizados para Notificações de Venda
     expect(initialA.soundVolume).toBe(70);
     expect(initialA.customSoundPath).toBeNull();
 
-    // 2. Seleciona outro som e salva
-    const updatedSound = await upsertUserSoundPreferences(USER_A, {
-      selectedSound: "coins",
+    // 2. Seleciona um dos novos sons de dinheiro (ex: pix_money e kaching_pro) e salva
+    const updatedPix = await upsertUserSoundPreferences(USER_A, {
+      selectedSound: "pix_money",
     });
-    expect(updatedSound.selectedSound).toBe("coins");
+    expect(updatedPix.selectedSound).toBe("pix_money");
+
+    const updatedSound = await upsertUserSoundPreferences(USER_A, {
+      selectedSound: "kaching_pro",
+    });
+    expect(updatedSound.selectedSound).toBe("kaching_pro");
 
     // 3. Altera volume (testando valor válido e clamping)
     const updatedVol = await upsertUserSoundPreferences(USER_A, {

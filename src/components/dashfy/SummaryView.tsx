@@ -1,10 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import {
   ArrowRight,
   Banknote,
-  BarChart3,
   CheckCircle2,
   Clock,
   DollarSign,
@@ -33,6 +32,10 @@ import {
 } from "@/lib/format";
 import { SpotlightCard } from "@/components/SpotlightCard";
 import { SummaryFiltersBar } from "./SummaryFiltersBar";
+import {
+  FinancialBreakdownDonut,
+  RevenueTrendChart,
+} from "./AnalyticsCharts";
 
 interface SummaryViewProps {
   dashboardMode: DashboardOperationMode;
@@ -67,15 +70,7 @@ export function SummaryView({
   tiktokCampaigns,
   omegaBalance,
 }: SummaryViewProps) {
-  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
   const isTikTok = dashboardMode === "tiktok";
-
-  const maxChartVal = Math.max(
-    1,
-    ...metrics.dailySeries.map((d) =>
-      Math.max(d.grossRevenue, d.netRevenue, d.expenses, Math.abs(d.profit))
-    )
-  );
 
   const topCampaigns = React.useMemo(() => {
     if (!isTikTok) return [];
@@ -103,7 +98,7 @@ export function SummaryView({
   }, [isTikTok, tiktokCampaigns]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <SummaryFiltersBar
         dashboardMode={dashboardMode}
         filters={filters}
@@ -379,111 +374,31 @@ export function SummaryView({
         </SpotlightCard>
       </section>
 
-      {/* GRÁFICO DE DESEMPENHO + VENDAS POR PRODUTO */}
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <SpotlightCard className="lg:col-span-2 p-5 sm:p-6 bento-card flex flex-col justify-between">
-          <div className="flex flex-wrap items-center justify-between gap-2 mb-5">
-            <div>
-              <h3 className="text-sm font-semibold text-white tracking-tight flex items-center gap-2">
-                <BarChart3 className="w-4 h-4 text-zinc-300" />
-                <span>Desempenho Diário — {dashboardName}</span>
-              </h3>
-              <p className="text-xs text-zinc-400 mt-0.5">
-                Evolução de {isTikTok ? "receita atribuída" : "faturamento"}, despesas e lucro
-              </p>
-            </div>
-            <div className="flex items-center gap-3 text-[11px] text-zinc-400">
-              <span className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-sm bg-white" />
-                {isTikTok ? "Receita Atrib." : "Faturamento"}
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-sm bg-zinc-600" />
-                Despesas
-              </span>
-            </div>
-          </div>
-
-          {metrics.dailySeries.length === 0 ? (
-            <div className="h-56 flex flex-col items-center justify-center rounded-xl border border-dashed border-white/10 bg-white/[0.01] text-xs text-zinc-500">
-              <BarChart3 className="w-6 h-6 text-zinc-600 mb-2" />
-              <span>Sem movimentações registradas no período selecionado.</span>
-            </div>
-          ) : (
-            <div className="relative h-60 w-full flex items-end gap-2 pt-8 pb-6 px-2 rounded-xl bg-[#08080a] border border-white/[0.06]">
-              {metrics.dailySeries.map((day, idx) => {
-                const revH = Math.max(4, (day.grossRevenue / maxChartVal) * 100);
-                const expH = Math.max(
-                  day.expenses > 0 ? 4 : 0,
-                  (day.expenses / maxChartVal) * 100
-                );
-                const isHovered = hoveredIdx === idx;
-                return (
-                  <div
-                    key={day.date}
-                    onMouseEnter={() => setHoveredIdx(idx)}
-                    onMouseLeave={() => setHoveredIdx(null)}
-                    className="flex-1 h-full flex flex-col justify-end items-center relative group cursor-pointer"
-                  >
-                    {isHovered && (
-                      <div className="absolute -top-2 z-20 -translate-y-full w-44 rounded-xl border border-white/15 bg-[#0c0c0e] p-2.5 shadow-xl text-[11px] pointer-events-none">
-                        <div className="font-mono font-semibold text-white mb-1">
-                          {formatDateBR(day.date)}
-                        </div>
-                        <div className="flex justify-between text-zinc-300">
-                          <span>Receita:</span>
-                          <span className="font-mono text-white">
-                            {formatBRL(day.grossRevenue)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-zinc-400">
-                          <span>Despesas:</span>
-                          <span className="font-mono text-zinc-300">
-                            {formatBRL(day.expenses)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-zinc-200 font-semibold pt-1 mt-1 border-t border-white/10">
-                          <span>Lucro:</span>
-                          <span
-                            className={`font-mono ${
-                              day.profit > 0
-                                ? "text-emerald-400"
-                                : day.profit < 0
-                                  ? "text-rose-400"
-                                  : "text-zinc-300"
-                            }`}
-                          >
-                            {formatBRL(day.profit)}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="w-full h-full flex items-end justify-center gap-1 px-0.5">
-                      <div
-                        className="w-1/2 max-w-[18px] rounded-t-md bg-white/90 transition-all duration-300 group-hover:bg-white"
-                        style={{ height: `${revH}%` }}
-                      />
-                      {day.expenses > 0 && (
-                        <div
-                          className="w-1/2 max-w-[14px] rounded-t-md bg-zinc-600 transition-all duration-300 group-hover:bg-zinc-500"
-                          style={{ height: `${expH}%` }}
-                        />
-                      )}
-                    </div>
-
-                    <span className="absolute -bottom-5 text-[10px] font-mono text-zinc-500 group-hover:text-zinc-200 whitespace-nowrap">
-                      {day.date.slice(8, 10)}/{day.date.slice(5, 7)}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+      {/* GRÁFICO DE DESEMPENHO (CURVA/BARRAS) + COMPOSIÇÃO FINANCEIRA + VENDAS POR PRODUTO */}
+      <section className="grid grid-cols-1 xl:grid-cols-12 gap-5">
+        <SpotlightCard className="xl:col-span-8 p-5 sm:p-6 bento-card">
+          <RevenueTrendChart
+            series={metrics.dailySeries}
+            title={`Desempenho Diário — ${dashboardName}`}
+            subtitle={`Evolução de ${isTikTok ? "receita atribuída" : "faturamento"}, despesas e lucro`}
+            revenueLabel={isTikTok ? "Receita Atrib." : "Faturamento"}
+          />
         </SpotlightCard>
 
+        <SpotlightCard className="xl:col-span-4 p-5 sm:p-6 bento-card flex flex-col justify-between space-y-5">
+          <FinancialBreakdownDonut
+            profit={metrics.profit}
+            adExpenses={metrics.adExpenses}
+            fees={metrics.checkoutOrPlatformFees + metrics.customFeesTotal}
+            otherExpenses={metrics.otherExpenses}
+            marginPct={metrics.marginPct}
+          />
+        </SpotlightCard>
+      </section>
+
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Vendas por Produto */}
-        <SpotlightCard className="p-5 sm:p-6 bento-card flex flex-col justify-between space-y-4">
+        <SpotlightCard className="lg:col-span-3 p-5 sm:p-6 bento-card flex flex-col justify-between space-y-4">
           <div>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold text-white tracking-tight flex items-center gap-2">

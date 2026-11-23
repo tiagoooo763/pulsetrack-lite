@@ -60,6 +60,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|assets/|sounds/|api/|privacidade|politica-de-privacidade|termos|termos-de-uso|robots.txt|sitemap.xml).*)",
+    "/((?!_next/static|_next/image|favicon.ico|sw.js|manifest.webmanifest|assets/|sounds/|api/|privacidade|politica-de-privacidade|termos|termos-de-uso|robots.txt|sitemap.xml).*)",
   ],
 };

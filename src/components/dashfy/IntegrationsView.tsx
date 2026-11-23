@@ -1,16 +1,19 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   AlertTriangle,
   CheckCircle2,
   Copy,
+  CreditCard,
   KeyRound,
+  Megaphone,
   Plug,
   Power,
   RefreshCw,
   Send,
   ShieldCheck,
+  Sparkles,
   Upload,
 } from "lucide-react";
 import type {
@@ -25,23 +28,46 @@ import { TikTokOAuthPanel } from "./TikTokOAuthPanel";
 
 interface IntegrationsViewProps {
   dashboardId?: string;
+  dashboardName?: string;
   dashboardMode: DashboardOperationMode;
   integrationStatus: IntegrationStatusPayload;
   onRefresh: () => Promise<void>;
   onNavigateTab: (tabId: OperationTabId) => void;
   onSyncOmegaBalance: () => Promise<void>;
+  onChangeDashboardMode?: (nextMode: DashboardOperationMode) => Promise<void>;
   syncingBalance: boolean;
 }
 
 export function IntegrationsView({
   dashboardId = "tiktok",
+  dashboardName = "Operação",
   dashboardMode,
   integrationStatus,
   onRefresh,
   onNavigateTab,
   onSyncOmegaBalance,
+  onChangeDashboardMode,
   syncingBalance,
 }: IntegrationsViewProps) {
+  const [selectedProvider, setSelectedProvider] =
+    useState<DashboardOperationMode>(dashboardMode);
+  const [switchingMode, setSwitchingMode] = useState(false);
+
+  useEffect(() => {
+    setSelectedProvider(dashboardMode);
+  }, [dashboardId, dashboardMode]);
+
+  async function handleSelectProvider(nextMode: DashboardOperationMode) {
+    setSelectedProvider(nextMode);
+    if (nextMode !== dashboardMode && onChangeDashboardMode) {
+      setSwitchingMode(true);
+      try {
+        await onChangeDashboardMode(nextMode);
+      } finally {
+        setSwitchingMode(false);
+      }
+    }
+  }
   const [publicKey, setPublicKey] = useState("");
   const [secretKey, setSecretKey] = useState("");
   const [webhookToken, setWebhookToken] = useState("");
@@ -197,57 +223,168 @@ export function IntegrationsView({
     }
   }
 
-  // ==================== INTEGRAÇÕES DA OPERAÇÃO TIKTOK ====================
-  if (dashboardMode === "tiktok") {
-    return (
-      <div className="space-y-5">
-        <SpotlightCard className="p-5 sm:p-6 bento-card space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
-                <Plug className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-semibold text-white">
-                    TikTok Ads Manager — Importação CSV
-                  </h3>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold border border-emerald-500/30 bg-emerald-500/10 text-emerald-300">
-                    Operacional
-                  </span>
-                </div>
-                <p className="text-xs text-zinc-400 mt-1">
-                  Exporte o relatório de campanhas/conjuntos/anúncios no TikTok Ads Manager em CSV e importe diretamente na aba TikTok Ads. Os dados ficam 100% isolados da OmegaPay.
-                </p>
-              </div>
-            </div>
+  const nexusWebhookUrl =
+    webhookParam && !webhookParam.startsWith("legacy:")
+      ? `${originUrl}/api/webhooks/nexus?u=${encodeURIComponent(webhookParam)}`
+      : `${originUrl}/api/webhooks/nexus`;
 
-            <button
-              type="button"
-              onClick={() => onNavigateTab("tiktok_ads")}
-              className="btn-pressable inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-zinc-100 text-black text-xs font-semibold shrink-0"
-            >
-              <Upload className="w-4 h-4" />
-              <span>Abrir Importação CSV</span>
-            </button>
-          </div>
-        </SpotlightCard>
-
-        <TikTokOAuthPanel dashboardId={dashboardId} />
-      </div>
-    );
-  }
-
-  // ==================== INTEGRAÇÕES DA OPERAÇÃO OMEGAPAY ====================
+  // ==================== SELETOR LIVRE DE INTEGRAÇÃO POR OPERAÇÃO ====================
   return (
-    <div className="space-y-5">
-      {/* CARD DE STATUS DA INTEGRAÇÃO OMEGAPAY */}
-      <SpotlightCard className="p-5 sm:p-6 bento-card">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div className="flex items-start gap-3.5">
-            <div className="w-11 h-11 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
-              <Plug className="w-5 h-5 text-white" />
+    <div className="space-y-6">
+      <SpotlightCard className="p-5 sm:p-6 bento-card space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <div className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#5ea1ff] mb-1">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Integração flexível • {dashboardName}</span>
             </div>
+            <h3 className="text-base font-semibold text-white tracking-tight">
+              Escolha o que integrar nesta operação
+            </h3>
+            <p className="text-xs text-zinc-400 mt-1">
+              Cada operação (Operação 1, Operação 2 ou Operação 3) pode ser conectada livremente ao{" "}
+              <strong className="text-zinc-200">TikTok Ads</strong> ou ao seu{" "}
+              <strong className="text-zinc-200">Gateway de Pagamento</strong>. Você pode alternar quando quiser.
+            </p>
+          </div>
+          {switchingMode && (
+            <span className="text-xs text-sky-300 font-medium shrink-0">
+              Atualizando operação...
+            </span>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* OPÇÃO 1: TIKTOK ADS */}
+          <button
+            type="button"
+            onClick={() => handleSelectProvider("tiktok")}
+            disabled={switchingMode}
+            className={`text-left rounded-2xl border p-4 sm:p-5 transition-all duration-200 flex items-start gap-3.5 ${
+              selectedProvider === "tiktok"
+                ? "border-[#1d74ff]/60 bg-[#1d74ff]/10 shadow-[0_12px_32px_-12px_rgba(29,116,255,0.45)]"
+                : "border-white/10 bg-[#08080a] hover:border-white/25 hover:bg-white/[0.03]"
+            }`}
+          >
+            <div
+              className={`w-11 h-11 rounded-xl border flex items-center justify-center shrink-0 ${
+                selectedProvider === "tiktok"
+                  ? "bg-[#1d74ff]/20 border-[#1d74ff]/40 text-[#5ea1ff]"
+                  : "bg-white/5 border-white/10 text-zinc-300"
+              }`}
+            >
+              <Megaphone className="w-5 h-5" />
+            </div>
+            <div className="min-w-0 flex-1 space-y-1.5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-sm font-semibold text-white">
+                  TikTok Ads (OAuth &amp; CSV)
+                </span>
+                <span
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                    dashboardMode === "tiktok"
+                      ? "border-emerald-500/35 bg-emerald-500/15 text-emerald-300"
+                      : "border-white/10 bg-white/[0.04] text-zinc-400"
+                  }`}
+                >
+                  {dashboardMode === "tiktok" ? "Ativo nesta operação" : "Selecionar"}
+                </span>
+              </div>
+              <p className="text-xs text-zinc-400 leading-relaxed">
+                Conecte seu TikTok Business Center via OAuth 2.0 oficial ou importe planilhas CSV de campanhas, gastos, cliques, ROAS e UTMs.
+              </p>
+            </div>
+          </button>
+
+          {/* OPÇÃO 2: GATEWAY DE PAGAMENTO (OMEGAPAY / NEXUS) */}
+          <button
+            type="button"
+            onClick={() => handleSelectProvider("omegapay")}
+            disabled={switchingMode}
+            className={`text-left rounded-2xl border p-4 sm:p-5 transition-all duration-200 flex items-start gap-3.5 ${
+              selectedProvider === "omegapay"
+                ? "border-emerald-500/55 bg-emerald-500/10 shadow-[0_12px_32px_-12px_rgba(16,185,129,0.4)]"
+                : "border-white/10 bg-[#08080a] hover:border-white/25 hover:bg-white/[0.03]"
+            }`}
+          >
+            <div
+              className={`w-11 h-11 rounded-xl border flex items-center justify-center shrink-0 ${
+                selectedProvider === "omegapay"
+                  ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300"
+                  : "bg-white/5 border-white/10 text-zinc-300"
+              }`}
+            >
+              <CreditCard className="w-5 h-5" />
+            </div>
+            <div className="min-w-0 flex-1 space-y-1.5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-sm font-semibold text-white">
+                  Gateway de Pagamento (OmegaPay / Nexus)
+                </span>
+                <span
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                    dashboardMode === "omegapay"
+                      ? "border-emerald-500/35 bg-emerald-500/15 text-emerald-300"
+                      : "border-white/10 bg-white/[0.04] text-zinc-400"
+                  }`}
+                >
+                  {dashboardMode === "omegapay" ? "Ativo nesta operação" : "Selecionar"}
+                </span>
+              </div>
+              <p className="text-xs text-zinc-400 leading-relaxed">
+                Conecte sua gateway via API e Webhooks autenticados para receber vendas em tempo real, notificações sonoras/mobile, taxas e saldo.
+              </p>
+            </div>
+          </button>
+        </div>
+      </SpotlightCard>
+
+      {/* CONTEÚDO DA INTEGRAÇÃO ESCOLHIDA */}
+      {selectedProvider === "tiktok" ? (
+        <div className="space-y-5">
+          <SpotlightCard className="p-5 sm:p-6 bento-card space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
+                  <Plug className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-semibold text-white">
+                      TikTok Ads Manager — Importação CSV
+                    </h3>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold border border-emerald-500/30 bg-emerald-500/10 text-emerald-300">
+                      Operacional
+                    </span>
+                  </div>
+                  <p className="text-xs text-zinc-400 mt-1">
+                    Exporte o relatório de campanhas/conjuntos/anúncios no TikTok Ads Manager em CSV e importe diretamente na aba TikTok Ads desta operação.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => onNavigateTab("tiktok_ads")}
+                className="btn-pressable inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-zinc-100 text-black text-xs font-semibold shrink-0"
+              >
+                <Upload className="w-4 h-4" />
+                <span>Abrir Importação CSV</span>
+              </button>
+            </div>
+          </SpotlightCard>
+
+          <TikTokOAuthPanel dashboardId={dashboardId} />
+        </div>
+      ) : (
+        <div className="space-y-5">
+          {/* CARD DE STATUS DA INTEGRAÇÃO OMEGAPAY */}
+          <SpotlightCard className="p-5 sm:p-6 bento-card">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div className="flex items-start gap-3.5">
+                <div className="w-11 h-11 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
+                  <Plug className="w-5 h-5 text-white" />
+                </div>
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <h3 className="text-base font-semibold text-white">OmegaPay Gateway</h3>
@@ -556,6 +693,42 @@ export function IntegrationsView({
           </form>
         </SpotlightCard>
       </div>
+
+      {/* Endpoint alternativo: Nexus Pay Webhook */}
+      <SpotlightCard className="p-5 sm:p-6 bento-card space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 className="text-sm font-semibold text-white">
+              Receptor Nexus Pay / Webhook Alternativo
+            </h3>
+            <p className="text-xs text-zinc-400 mt-0.5">
+              Também compatível com eventos Nexus Pay vinculados exclusivamente à sua conta Dashfy.
+            </p>
+          </div>
+          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold border border-blue-400/30 bg-blue-500/10 text-sky-300">
+            Receptor Ativo
+          </span>
+        </div>
+        <div className="rounded-xl border border-white/10 bg-[#050507] p-3 flex items-center justify-between gap-2">
+          <code className="text-[11px] font-mono text-zinc-200 break-all">
+            {nexusWebhookUrl}
+          </code>
+          <button
+            type="button"
+            onClick={() => {
+              navigator.clipboard.writeText(nexusWebhookUrl);
+              setCopiedUrl(true);
+              setTimeout(() => setCopiedUrl(false), 2500);
+            }}
+            className="btn-pressable inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/15 bg-white/5 hover:bg-white/10 text-white text-xs font-semibold shrink-0"
+          >
+            <Copy className="w-3.5 h-3.5" />
+            <span>Copiar</span>
+          </button>
+        </div>
+      </SpotlightCard>
+    </div>
+      )}
     </div>
   );
 }

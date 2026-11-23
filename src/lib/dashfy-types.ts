@@ -177,11 +177,12 @@ export function getTabsForMode(mode: DashboardOperationMode): TabMenuItem[] {
 }
 
 /**
- * 3 abas padrão totalmente renomeáveis e configuráveis entre TikTok ou OmegaPay.
+ * 3 operações padrão totalmente renomeáveis e livres: em qualquer operação o usuário
+ * escolhe na aba Integrações se deseja conectar TikTok Ads ou seu Gateway de Pagamento.
  */
 export const DEFAULT_DASHBOARDS: DashboardConfigRecord[] = [
-  { id: "tiktok", name: "Operação TikTok", mode: "tiktok" },
-  { id: "omegapay", name: "Operação OmegaPay", mode: "omegapay" },
+  { id: "tiktok", name: "Operação 1", mode: "tiktok" },
+  { id: "omegapay", name: "Operação 2", mode: "omegapay" },
   { id: "operacao_3", name: "Operação 3", mode: "tiktok" },
 ];
 

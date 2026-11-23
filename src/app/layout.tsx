@@ -56,6 +56,12 @@ export const metadata: Metadata = {
     icon: "/assets/logo-dashfy-icon.png",
     apple: "/assets/logo-dashfy-icon.png",
   },
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "Dashfy",
+    statusBarStyle: "black-translucent",
+  },
 };
 
 export const viewport: Viewport = {
