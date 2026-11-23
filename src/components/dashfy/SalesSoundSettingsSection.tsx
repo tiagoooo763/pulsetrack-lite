@@ -71,7 +71,7 @@ export function SalesSoundSettingsSection({
     initialPreferences?.soundVolume ?? DEFAULT_SOUND_PREFERENCES.soundVolume
   );
   const [customSignedUrl, setCustomSignedUrl] = useState<string | null>(null);
-  const [loadingPrefs, setLoadingPrefs] = useState(true);
+  const [loadingPrefs, setLoadingPrefs] = useState(!initialPreferences);
   const [saving, setSaving] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -111,7 +111,10 @@ export function SalesSoundSettingsSection({
   }, []);
 
   useEffect(() => {
-    fetchSoundPrefs();
+    // Evita requisição redundante quando as preferências já vieram de /api/dashboard
+    if (!initialPreferences) {
+      fetchSoundPrefs();
+    }
     const unsub = salesAudioEngine.subscribe((s) => {
       setPlayingPreviewId(s.playingPreviewId);
     });
@@ -119,7 +122,7 @@ export function SalesSoundSettingsSection({
       unsub();
       salesAudioEngine.stopPreview();
     };
-  }, [fetchSoundPrefs]);
+  }, [fetchSoundPrefs, initialPreferences]);
 
   const hasUnsavedChanges =
     soundEnabled !== savedPrefs.soundEnabled ||

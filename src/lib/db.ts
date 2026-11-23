@@ -23,6 +23,23 @@ import {
   type SaleNotificationEvent,
   type UserSoundPreferences,
 } from "./notification-sounds";
+import {
+  parseIsoTimestampParam,
+  toIsoTimestamp,
+  toNullableIsoTimestamp,
+} from "./date-utils";
+
+// Garante que colunas DATE, TIMESTAMP e TIMESTAMPTZ do PostgreSQL retornem strings ISO 8601
+// (evita que pg retorne Date e String(date) gere "Sun Nov 22 ... GMT+0000" -> erro PG 22007)
+try {
+  pgTypes.setTypeParser(1082, (val: string) => val);
+  pgTypes.setTypeParser(1184, (val: string) => toIsoTimestamp(val));
+  pgTypes.setTypeParser(1114, (val: string) =>
+    toIsoTimestamp(val.endsWith("Z") ? val : `${val.replace(" ", "T")}Z`)
+  );
+} catch {
+  // Ignora se types não estiver acessível
+}
 
 export type {
   OmegaPayBalanceResponse,
@@ -290,6 +307,34 @@ export async function getDb(): Promise<DbExecutor> {
   if (!dbExecutorPromise) {
     dbExecutorPromise = (async () => {
       const db = await createDbExecutor();
+
+      // Otimização de cold-start em produção (PostgreSQL/Supabase):
+      // Se o schema já foi criado pelas migrações, evita 29 DDLs sequenciais por cold start!
+      if (db.dialect === "postgres") {
+        try {
+          const check = await db.query(
+            `SELECT
+              to_regclass('public.profiles') AS profiles_tbl,
+              to_regclass('public.user_settings') AS settings_tbl,
+              to_regclass('public.tiktok_connections') AS tiktok_tbl,
+              to_regclass('public.user_notification_sound_preferences') AS sound_tbl,
+              to_regclass('public.sale_notifications') AS sales_tbl`
+          );
+          const row = check[0];
+          if (
+            row &&
+            row.profiles_tbl &&
+            row.settings_tbl &&
+            row.tiktok_tbl &&
+            row.sound_tbl &&
+            row.sales_tbl
+          ) {
+            return db;
+          }
+        } catch {
+          // Segue para bootstrap seguro caso alguma tabela ainda não exista
+        }
+      }
 
       await db.execute(`
         CREATE TABLE IF NOT EXISTS transactions (
@@ -963,34 +1008,40 @@ export async function upsertTransfer(input: {
 }
 
 export async function listTransactions(
-  userId: string = LEGACY_ADMIN_USER_ID
+  userId: string = LEGACY_ADMIN_USER_ID,
+  limit = 500
 ): Promise<TransactionRecord[]> {
   const db = await getDb();
+  const safeLimit = Math.max(1, Math.min(2000, Math.round(limit)));
   const rows = await db.query(
-    `SELECT * FROM transactions WHERE user_id = ? ORDER BY created_at DESC`,
-    [userId]
+    `SELECT * FROM transactions WHERE user_id = ? ORDER BY created_at DESC LIMIT ?`,
+    [userId, safeLimit]
   );
   return rows.map(mapTransactionRow);
 }
 
 export async function listTransfers(
-  userId: string = LEGACY_ADMIN_USER_ID
+  userId: string = LEGACY_ADMIN_USER_ID,
+  limit = 200
 ): Promise<TransferRecord[]> {
   const db = await getDb();
+  const safeLimit = Math.max(1, Math.min(1000, Math.round(limit)));
   const rows = await db.query(
-    `SELECT * FROM transfers WHERE user_id = ? ORDER BY created_at DESC`,
-    [userId]
+    `SELECT * FROM transfers WHERE user_id = ? ORDER BY created_at DESC LIMIT ?`,
+    [userId, safeLimit]
   );
   return rows.map(mapTransferRow);
 }
 
 export async function listManualExpenses(
-  userId: string = LEGACY_ADMIN_USER_ID
+  userId: string = LEGACY_ADMIN_USER_ID,
+  limit = 500
 ): Promise<ManualExpenseRecord[]> {
   const db = await getDb();
+  const safeLimit = Math.max(1, Math.min(2000, Math.round(limit)));
   const rows = await db.query(
-    `SELECT * FROM manual_expenses WHERE user_id = ? ORDER BY expense_date DESC, created_at DESC`,
-    [userId]
+    `SELECT * FROM manual_expenses WHERE user_id = ? ORDER BY expense_date DESC, created_at DESC LIMIT ?`,
+    [userId, safeLimit]
   );
   return rows.map(mapExpenseRow);
 }
@@ -1148,7 +1199,7 @@ export async function getLatestBalanceSnapshot(
       available: Number(r.available || 0),
       pending: Number(r.pending || 0),
       fundLock: Number(r.fund_lock || 0),
-      fetchedAt: r.fetched_at ? String(r.fetched_at) : null,
+      fetchedAt: toNullableIsoTimestamp(r.fetched_at),
     };
   }
 
@@ -1311,6 +1362,9 @@ function mapExpenseRow(row: Record<string, unknown>): ManualExpenseRecord {
 // PROFILES & USER SETTINGS (Multi-Tenant + Auto-Criação Idempotente)
 // ============================================================
 
+const claimedOwnersMemoryCache = new Map<string, number>();
+const CLAIM_CACHE_TTL_MS = 5 * 60 * 1000;
+
 export async function getUserProfile(
   userId: string
 ): Promise<UserProfileRecord | null> {
@@ -1327,8 +1381,8 @@ export async function getUserProfile(
     displayName: String(r.display_name || ""),
     companyName: String(r.company_name || "Dashfy Workspace"),
     role: String(r.role || "user"),
-    createdAt: String(r.created_at || ""),
-    updatedAt: String(r.updated_at || ""),
+    createdAt: toIsoTimestamp(r.created_at),
+    updatedAt: toIsoTimestamp(r.updated_at),
   };
 }
 
@@ -1412,6 +1466,34 @@ export async function updateUserProfile(
   );
 
   return getUserProfile(userId);
+}
+
+/**
+ * Busca TODAS as configurações de um usuário em 1 única consulta SQL
+ * (substitui até 10 queries sequenciais/paralelas na tabela user_settings).
+ */
+export async function getUserSettingsBatch(
+  userId: string
+): Promise<Record<string, string>> {
+  const db = await getDb();
+  const result: Record<string, string> = {};
+
+  if (userId === LEGACY_ADMIN_USER_ID) {
+    const legacyRows = await db.query(`SELECT key, value FROM server_settings`);
+    for (const r of legacyRows) {
+      if (r.key) result[String(r.key)] = String(r.value ?? "");
+    }
+  }
+
+  const rows = await db.query(
+    `SELECT key, value FROM user_settings WHERE user_id = ?`,
+    [userId]
+  );
+  for (const r of rows) {
+    if (r.key) result[String(r.key)] = String(r.value ?? "");
+  }
+
+  return result;
 }
 
 export async function getUserSetting(
@@ -1502,8 +1584,14 @@ export async function claimLegacyDataForOwner(
   if (!newUserId || newUserId === LEGACY_ADMIN_USER_ID) return;
   if (email.trim().toLowerCase() !== ownerEmail) return;
 
+  const cachedUntil = claimedOwnersMemoryCache.get(newUserId) || 0;
+  if (cachedUntil > Date.now()) return;
+
   const alreadyClaimed = await getUserSetting(newUserId, "LEGACY_DATA_CLAIMED");
-  if (alreadyClaimed === "true") return;
+  if (alreadyClaimed === "true") {
+    claimedOwnersMemoryCache.set(newUserId, Date.now() + CLAIM_CACHE_TTL_MS);
+    return;
+  }
 
   const db = await getDb();
   for (const tbl of [
@@ -1565,12 +1653,14 @@ export async function claimLegacyDataForOwner(
 // ============================================================
 
 export async function listTikTokCampaigns(
-  userId: string = LEGACY_ADMIN_USER_ID
+  userId: string = LEGACY_ADMIN_USER_ID,
+  limit = 500
 ): Promise<TikTokCampaignRecord[]> {
   const db = await getDb();
+  const safeLimit = Math.max(1, Math.min(2000, Math.floor(Number(limit) || 500)));
   const rows = await db.query(
-    `SELECT * FROM tiktok_campaigns WHERE user_id = ? ORDER BY stat_date DESC, created_at DESC`,
-    [userId]
+    `SELECT * FROM tiktok_campaigns WHERE user_id = ? ORDER BY stat_date DESC, created_at DESC LIMIT ?`,
+    [userId, safeLimit]
   );
   return rows.map(mapTikTokRow);
 }
@@ -1931,9 +2021,9 @@ function mapTikTokConnectionPublic(
       row.business_centers_json
     ),
     lastError: row.last_error ? String(row.last_error) : null,
-    lastSyncAt: row.last_sync_at ? String(row.last_sync_at) : null,
-    createdAt: String(row.created_at || ""),
-    updatedAt: String(row.updated_at || ""),
+    lastSyncAt: toNullableIsoTimestamp(row.last_sync_at),
+    createdAt: toIsoTimestamp(row.created_at),
+    updatedAt: toIsoTimestamp(row.updated_at),
   };
 }
 
@@ -2187,7 +2277,7 @@ function mapSoundPreferencesRow(
     customSoundPath: row.custom_sound_path ? String(row.custom_sound_path) : null,
     customSoundName: row.custom_sound_name ? String(row.custom_sound_name) : null,
     customSoundMime: row.custom_sound_mime ? String(row.custom_sound_mime) : null,
-    updatedAt: String(row.updated_at || new Date().toISOString()),
+    updatedAt: toIsoTimestamp(row.updated_at),
   };
 }
 
@@ -2311,7 +2401,7 @@ function mapSaleNotificationRow(
     paymentMethod: String(row.payment_method || "PIX"),
     utmSource: row.utm_source ? String(row.utm_source) : null,
     utmCampaign: row.utm_campaign ? String(row.utm_campaign) : null,
-    createdAt: String(row.created_at || ""),
+    createdAt: toIsoTimestamp(row.created_at),
   };
 }
 
@@ -2397,12 +2487,16 @@ export async function listSaleNotificationsSince(
   const db = await getDb();
   const safeLimit = Math.max(1, Math.min(50, Math.round(limit)));
   if (sinceIso && sinceIso.trim()) {
+    const parsed = parseIsoTimestampParam(sinceIso);
+    if (!parsed.valid || !parsed.iso) {
+      throw new Error(parsed.valid ? "Data ausente." : parsed.error);
+    }
     const rows = await db.query(
       `SELECT * FROM sale_notifications
        WHERE user_id = ? AND created_at > ?
        ORDER BY created_at ASC
        LIMIT ?`,
-      [userId, sinceIso.trim(), safeLimit]
+      [userId, parsed.iso, safeLimit]
     );
     return rows.map(mapSaleNotificationRow);
   }

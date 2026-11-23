@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { gsap } from "gsap";
+import dynamic from "next/dynamic";
 import { BellRing, CheckCircle2, Menu, RefreshCw, Volume2, Zap } from "lucide-react";
 import {
   DEFAULT_SOUND_PREFERENCES,
@@ -33,23 +33,81 @@ import { formatBRL } from "@/lib/format";
 import { Sidebar } from "./dashfy/Sidebar";
 import { GeneralOverviewView } from "./dashfy/GeneralOverviewView";
 import { SummaryView } from "./dashfy/SummaryView";
-import { TikTokAdsView } from "./dashfy/TikTokAdsView";
-import { UtmsView } from "./dashfy/UtmsView";
-import { RulesView } from "./dashfy/RulesView";
-import { ExpensesView, FeesView } from "./dashfy/ExpensesAndFeesView";
-import {
-  OmegaPayBalanceView,
-  OmegaPayReceivablesView,
-  OmegaPaySalesView,
-} from "./dashfy/OmegaPayViews";
-import { IntegrationsView } from "./dashfy/IntegrationsView";
-import {
-  EventsView,
-  NotificationsView,
-  OrdersView,
-  ReportsView,
-} from "./dashfy/OperationsExtraViews";
-import { GlobalPagesView } from "./dashfy/GlobalPagesView";
+
+function TabPanelSkeleton() {
+  return (
+    <div className="space-y-5 animate-pulse" aria-label="Carregando seção">
+      <div className="h-14 rounded-2xl bg-[#0c0c0e] border border-white/[0.08]" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div
+            key={i}
+            className="h-28 rounded-2xl bg-[#0c0c0e] border border-white/[0.08]"
+          />
+        ))}
+      </div>
+      <div className="h-64 rounded-2xl bg-[#0c0c0e] border border-white/[0.08]" />
+    </div>
+  );
+}
+
+// Carregamento sob demanda das abas secundárias para manter o bundle inicial do /dashboard enxuto
+const TikTokAdsView = dynamic(
+  () => import("./dashfy/TikTokAdsView").then((m) => m.TikTokAdsView),
+  { loading: () => <TabPanelSkeleton /> }
+);
+const UtmsView = dynamic(
+  () => import("./dashfy/UtmsView").then((m) => m.UtmsView),
+  { loading: () => <TabPanelSkeleton /> }
+);
+const RulesView = dynamic(
+  () => import("./dashfy/RulesView").then((m) => m.RulesView),
+  { loading: () => <TabPanelSkeleton /> }
+);
+const ExpensesView = dynamic(
+  () => import("./dashfy/ExpensesAndFeesView").then((m) => m.ExpensesView),
+  { loading: () => <TabPanelSkeleton /> }
+);
+const FeesView = dynamic(
+  () => import("./dashfy/ExpensesAndFeesView").then((m) => m.FeesView),
+  { loading: () => <TabPanelSkeleton /> }
+);
+const OmegaPaySalesView = dynamic(
+  () => import("./dashfy/OmegaPayViews").then((m) => m.OmegaPaySalesView),
+  { loading: () => <TabPanelSkeleton /> }
+);
+const OmegaPayReceivablesView = dynamic(
+  () => import("./dashfy/OmegaPayViews").then((m) => m.OmegaPayReceivablesView),
+  { loading: () => <TabPanelSkeleton /> }
+);
+const OmegaPayBalanceView = dynamic(
+  () => import("./dashfy/OmegaPayViews").then((m) => m.OmegaPayBalanceView),
+  { loading: () => <TabPanelSkeleton /> }
+);
+const IntegrationsView = dynamic(
+  () => import("./dashfy/IntegrationsView").then((m) => m.IntegrationsView),
+  { loading: () => <TabPanelSkeleton /> }
+);
+const ReportsView = dynamic(
+  () => import("./dashfy/OperationsExtraViews").then((m) => m.ReportsView),
+  { loading: () => <TabPanelSkeleton /> }
+);
+const OrdersView = dynamic(
+  () => import("./dashfy/OperationsExtraViews").then((m) => m.OrdersView),
+  { loading: () => <TabPanelSkeleton /> }
+);
+const EventsView = dynamic(
+  () => import("./dashfy/OperationsExtraViews").then((m) => m.EventsView),
+  { loading: () => <TabPanelSkeleton /> }
+);
+const NotificationsView = dynamic(
+  () => import("./dashfy/OperationsExtraViews").then((m) => m.NotificationsView),
+  { loading: () => <TabPanelSkeleton /> }
+);
+const GlobalPagesView = dynamic(
+  () => import("./dashfy/GlobalPagesView").then((m) => m.GlobalPagesView),
+  { loading: () => <TabPanelSkeleton /> }
+);
 
 interface DashboardAppProps {
   onLogout: () => void;
@@ -212,10 +270,14 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
     });
   }, []);
 
-  // Monitora novos eventos REAIS de vendas aprovadas (sem tocar alertas antigos nem duplicados)
+  // Monitora novos eventos REAIS de vendas aprovadas com polling adaptativo + backoff exponencial
   const currentUserId = data?.profile?.id || data?.profile?.username || "";
   useEffect(() => {
     if (!currentUserId) return;
+
+    const BASE_POLL_MS = 20_000;
+    const MAX_BACKOFF_MS = 120_000;
+    const ISO_TS_REGEX = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/;
 
     const storageKey = `dashfy_seen_sales_${currentUserId}`;
     try {
@@ -231,6 +293,35 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
     } catch {}
 
     let cancelled = false;
+    let inFlight = false;
+    let consecutiveErrors = 0;
+    let timerId: ReturnType<typeof setTimeout> | null = null;
+
+    const clearScheduled = () => {
+      if (timerId !== null) {
+        clearTimeout(timerId);
+        timerId = null;
+      }
+    };
+
+    const nextDelayMs = () => {
+      if (consecutiveErrors <= 0) return BASE_POLL_MS;
+      return Math.min(MAX_BACKOFF_MS, BASE_POLL_MS * Math.pow(2, consecutiveErrors));
+    };
+
+    const scheduleNext = (delayMs?: number) => {
+      if (cancelled) return;
+      clearScheduled();
+      if (
+        typeof document !== "undefined" &&
+        document.visibilityState === "hidden"
+      ) {
+        return;
+      }
+      timerId = setTimeout(() => {
+        void runCycle();
+      }, delayMs ?? nextDelayMs());
+    };
 
     const resolveCustomUrl = async (): Promise<string | null> => {
       try {
@@ -252,21 +343,28 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
       } catch {}
     };
 
-    const initWatermark = async () => {
+    const initWatermark = async (): Promise<"ok" | "auth_stop" | "error"> => {
       try {
         const res = await fetch("/api/notifications/sales?init=1", {
           cache: "no-store",
         });
-        if (!res.ok || cancelled) return;
+        if (cancelled) return "auth_stop";
+        if (res.status === 401 || res.status === 403) return "auth_stop";
+        if (!res.ok) return "error";
+
         const json = (await res.json()) as { ok?: boolean; serverNow?: string };
-        if (json.ok && json.serverNow) {
+        if (json.ok && json.serverNow && ISO_TS_REGEX.test(json.serverNow)) {
           saleWatermarkRef.current = json.serverNow;
+          return "ok";
         }
-      } catch {}
+        return "error";
+      } catch {
+        return "error";
+      }
     };
 
-    const pollSales = async () => {
-      if (cancelled || !saleWatermarkRef.current) return;
+    const runCycle = async () => {
+      if (cancelled || inFlight) return;
       if (
         typeof document !== "undefined" &&
         document.visibilityState === "hidden"
@@ -274,55 +372,117 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
         return;
       }
 
+      inFlight = true;
       try {
+        if (!saleWatermarkRef.current || !ISO_TS_REGEX.test(saleWatermarkRef.current)) {
+          const initResult = await initWatermark();
+          if (initResult === "auth_stop" || cancelled) return;
+          if (initResult === "error") {
+            consecutiveErrors = Math.min(consecutiveErrors + 1, 5);
+          } else {
+            consecutiveErrors = 0;
+          }
+          scheduleNext();
+          return;
+        }
+
         const res = await fetch(
           `/api/notifications/sales?since=${encodeURIComponent(saleWatermarkRef.current)}`,
           { cache: "no-store" }
         );
-        if (!res.ok || cancelled) return;
+        if (cancelled) return;
+
+        // Sessão expirada: interrompe polling para evitar loops desnecessários
+        if (res.status === 401 || res.status === 403) {
+          return;
+        }
+
+        // Data inválida/corrompida: reseta o watermark para reinicializar no próximo ciclo com backoff
+        if (res.status === 400) {
+          saleWatermarkRef.current = null;
+          consecutiveErrors = Math.min(consecutiveErrors + 1, 5);
+          scheduleNext();
+          return;
+        }
+
+        if (!res.ok) {
+          consecutiveErrors = Math.min(consecutiveErrors + 1, 5);
+          scheduleNext();
+          return;
+        }
+
         const json = (await res.json()) as {
           ok?: boolean;
           serverNow?: string;
           events?: SaleNotificationEvent[];
         };
-        if (json.serverNow) {
+        consecutiveErrors = 0;
+
+        if (json.serverNow && ISO_TS_REGEX.test(json.serverNow)) {
           saleWatermarkRef.current = json.serverNow;
         }
+
         const incoming = Array.isArray(json.events) ? json.events : [];
         const fresh = incoming.filter(
           (ev) => ev.id && !seenSaleIdsRef.current.has(ev.id)
         );
-        if (fresh.length === 0) return;
 
-        for (const ev of fresh) {
-          seenSaleIdsRef.current.add(ev.id);
+        if (fresh.length > 0) {
+          for (const ev of fresh) {
+            seenSaleIdsRef.current.add(ev.id);
+          }
+          persistSeen();
+
+          const latestSale = fresh[fresh.length - 1];
+          setSaleAlertToast(latestSale);
+          if (saleToastTimerRef.current) clearTimeout(saleToastTimerRef.current);
+          saleToastTimerRef.current = setTimeout(
+            () => setSaleAlertToast(null),
+            6500
+          );
+
+          await salesAudioEngine.playSaleAlert({
+            prefs: soundPrefsRef.current,
+            resolveCustomUrl,
+          });
+
+          // Atualiza métricas do dashboard silenciosamente para refletir a nova venda
+          fetchDashboard(false);
         }
-        persistSeen();
 
-        const latestSale = fresh[fresh.length - 1];
-        setSaleAlertToast(latestSale);
-        if (saleToastTimerRef.current) clearTimeout(saleToastTimerRef.current);
-        saleToastTimerRef.current = setTimeout(
-          () => setSaleAlertToast(null),
-          6500
-        );
-
-        await salesAudioEngine.playSaleAlert({
-          prefs: soundPrefsRef.current,
-          resolveCustomUrl,
-        });
-
-        // Atualiza métricas do dashboard silenciosamente para refletir a nova venda
-        fetchDashboard(false);
-      } catch {}
+        scheduleNext();
+      } catch {
+        consecutiveErrors = Math.min(consecutiveErrors + 1, 5);
+        scheduleNext();
+      } finally {
+        inFlight = false;
+      }
     };
 
-    initWatermark();
-    const interval = setInterval(pollSales, 12000);
+    const handleVisibilityChange = () => {
+      if (cancelled) return;
+      if (document.visibilityState === "visible") {
+        // Ao voltar para a aba, reagenda com pequeno atraso sem disparar rajadas
+        if (!inFlight && timerId === null) {
+          scheduleNext(1500);
+        }
+      } else {
+        clearScheduled();
+      }
+    };
+
+    // Inicia watermark imediatamente (1ª chamada = ?init=1, depois polling a cada 20s)
+    void runCycle();
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+    }
 
     return () => {
       cancelled = true;
-      clearInterval(interval);
+      clearScheduled();
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
+      }
     };
   }, [currentUserId, fetchDashboard]);
 
@@ -377,26 +537,6 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
     // Limpa os parâmetros da URL sem recarregar a página
     window.history.replaceState({}, "", window.location.pathname);
   }, [showToast, fetchDashboard]);
-
-  useEffect(() => {
-    if (typeof window === "undefined" || !contentRef.current) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const cards = contentRef.current.querySelectorAll(".bento-card");
-    if (cards.length > 0) {
-      gsap.fromTo(
-        cards,
-        { opacity: 0, y: 10 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.35,
-          stagger: 0.025,
-          ease: "power2.out",
-          clearProps: "all",
-        }
-      );
-    }
-  }, [location, filters.period]);
 
   // Lista dinâmica de abas/dashboards configuráveis (3 por padrão, renomeáveis e livres)
   const dashboards: DashboardConfigRecord[] = useMemo(() => {

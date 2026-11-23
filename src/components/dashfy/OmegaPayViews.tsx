@@ -28,10 +28,13 @@ interface OmegaPaySalesViewProps {
   transactions: TransactionRecord[];
 }
 
+const SALES_PAGE_SIZE = 25;
+
 export function OmegaPaySalesView({ transactions }: OmegaPaySalesViewProps) {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("ALL");
   const [method, setMethod] = useState("ALL");
+  const [page, setPage] = useState(1);
 
   const filtered = useMemo(() => {
     return transactions.filter((tx) => {
@@ -46,6 +49,13 @@ export function OmegaPaySalesView({ transactions }: OmegaPaySalesViewProps) {
       );
     });
   }, [transactions, search, status, method]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / SALES_PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const paginatedRows = useMemo(() => {
+    const start = (safePage - 1) * SALES_PAGE_SIZE;
+    return filtered.slice(start, start + SALES_PAGE_SIZE);
+  }, [filtered, safePage]);
 
   return (
     <SpotlightCard className="p-5 sm:p-6 bento-card space-y-4">
@@ -115,7 +125,7 @@ export function OmegaPaySalesView({ transactions }: OmegaPaySalesViewProps) {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/[0.04] bg-[#0c0c0e]">
-              {filtered.map((tx) => {
+              {paginatedRows.map((tx) => {
                 const meta = getTransactionStatusMeta(tx.status);
                 return (
                   <tr key={tx.id} className="hover:bg-white/[0.03]">
@@ -152,6 +162,31 @@ export function OmegaPaySalesView({ transactions }: OmegaPaySalesViewProps) {
               })}
             </tbody>
           </table>
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-4 py-3 border-t border-white/10 bg-[#08080a] text-xs text-zinc-400">
+              <span className="font-mono">
+                Página {safePage} de {totalPages} ({filtered.length} vendas)
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={safePage <= 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  className="px-3 py-1 rounded-lg border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] text-white disabled:opacity-40"
+                >
+                  Anterior
+                </button>
+                <button
+                  type="button"
+                  disabled={safePage >= totalPages}
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  className="px-3 py-1 rounded-lg border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] text-white disabled:opacity-40"
+                >
+                  Próxima
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </SpotlightCard>

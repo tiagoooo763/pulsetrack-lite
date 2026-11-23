@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import React from "react";
-import { isAuthenticated } from "@/lib/auth";
+import { cookies } from "next/headers";
+import { isAuthenticated, SESSION_COOKIE_NAME } from "@/lib/auth";
 import { PublicLandingPage } from "@/components/landing/PublicLandingPage";
 
 export const dynamic = "force-dynamic";
@@ -15,6 +16,16 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const authed = await isAuthenticated();
+  // Otimização: visitantes sem cookie de sessão não disparam round-trip ao Supabase/DB na página pública
+  const cookieStore = await cookies();
+  const hasAnySessionCookie = cookieStore
+    .getAll()
+    .some(
+      (c) =>
+        c.name === SESSION_COOKIE_NAME ||
+        (c.name.startsWith("sb-") && c.name.includes("auth-token"))
+    );
+
+  const authed = hasAnySessionCookie ? await isAuthenticated() : false;
   return <PublicLandingPage isLoggedIn={authed} />;
 }

@@ -1,6 +1,6 @@
 import {
   getUserProfile,
-  getUserSetting,
+  getUserSettingsBatch,
   LEGACY_ADMIN_USER_ID,
 } from "./db";
 import {
@@ -39,9 +39,18 @@ async function isLegacyOwnerAccount(userId: string): Promise<boolean> {
  * garantindo que novos usuários nunca herdem chaves de terceiros.
  */
 export async function getOmegaPayServerCredentials(
-  userId: string = LEGACY_ADMIN_USER_ID
+  userId: string = LEGACY_ADMIN_USER_ID,
+  preloadedSettings?: Record<string, string>,
+  preloadedUserEmail?: string
 ): Promise<OmegaPayServerCredentials> {
-  const allowEnvFallback = await isLegacyOwnerAccount(userId);
+  const ownerEmail = (
+    process.env.DASHBOARD_USER?.trim() || "mendoncat831@gmail.com"
+  ).toLowerCase();
+  const allowEnvFallback =
+    userId === LEGACY_ADMIN_USER_ID ||
+    (preloadedUserEmail
+      ? preloadedUserEmail.trim().toLowerCase() === ownerEmail
+      : await isLegacyOwnerAccount(userId));
 
   const envPublicKey = allowEnvFallback
     ? process.env.OMEGAPAY_PUBLIC_KEY?.trim() || ""
@@ -54,12 +63,10 @@ export async function getOmegaPayServerCredentials(
     : "";
   const envBaseUrl = process.env.OMEGAPAY_API_BASE_URL?.trim() || "";
 
-  const dbPublicKey =
-    (await getUserSetting(userId, "OMEGAPAY_PUBLIC_KEY"))?.trim() || "";
-  const dbSecretKey =
-    (await getUserSetting(userId, "OMEGAPAY_SECRET_KEY"))?.trim() || "";
-  const dbWebhookToken =
-    (await getUserSetting(userId, "OMEGAPAY_WEBHOOK_TOKEN"))?.trim() || "";
+  const settings = preloadedSettings ?? (await getUserSettingsBatch(userId));
+  const dbPublicKey = settings["OMEGAPAY_PUBLIC_KEY"]?.trim() || "";
+  const dbSecretKey = settings["OMEGAPAY_SECRET_KEY"]?.trim() || "";
+  const dbWebhookToken = settings["OMEGAPAY_WEBHOOK_TOKEN"]?.trim() || "";
 
   const publicKey = dbPublicKey || envPublicKey;
   const secretKey = dbSecretKey || envSecretKey;
