@@ -152,7 +152,7 @@ class SalesAudioEngine {
    */
   async unlockWithUserGesture(volumePercent = 70): Promise<boolean> {
     try {
-      const audio = new Audio("/sounds/soft-notification.wav");
+      const audio = new Audio("/sounds/classic-bell.wav");
       audio.volume = Math.max(0.05, Math.min(1, (volumePercent / 100) * 0.35));
       await audio.play();
       this.autoplayBlocked = false;

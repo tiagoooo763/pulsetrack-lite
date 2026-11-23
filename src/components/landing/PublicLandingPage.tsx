@@ -119,27 +119,27 @@ const DEMO_SERIES: Record<
 const SOUND_DEMO_ITEMS = [
   {
     id: "cash_register",
-    label: "Ka-Ching Clássico",
-    sub: "Caixa registradora",
+    label: "Caixa Registradora",
+    sub: "Ka-Ching real clássico",
     src: "/sounds/cash-register.wav",
+  },
+  {
+    id: "kaching_pro",
+    label: "Ka-Ching Turbo",
+    sub: "Caixa registradora forte",
+    src: "/sounds/kaching-pro.wav",
   },
   {
     id: "coins",
     label: "Chuva de Moedas",
-    sub: "Moedas metálicas",
+    sub: "Moedas metálicas reais",
     src: "/sounds/coins.wav",
   },
   {
-    id: "pix_money",
-    label: "Dinheiro na Conta",
-    sub: "Acorde Pix instantâneo",
-    src: "/sounds/pix-money.wav",
-  },
-  {
-    id: "jackpot_sale",
-    label: "Venda Alta (Jackpot)",
-    sub: "Fanfarra + moedas",
-    src: "/sounds/jackpot-sale.wav",
+    id: "bill_count",
+    label: "Contando Dinheiro",
+    sub: "Notas de dinheiro reais",
+    src: "/sounds/bill-count.wav",
   },
 ];
 
@@ -163,7 +163,7 @@ const FEATURES = [
     title: "Alertas no Celular & Sons de Venda",
     status: "Disponível",
     description:
-      "Receba notificações nativas com o símbolo da Dashfy ('Venda feita! Você recebeu R$...') e escolha entre 9 sons de dinheiro ou envie seu próprio áudio.",
+      "Receba notificações nativas com o símbolo da Dashfy ('Venda feita! Você recebeu R$...') e escolha entre sons reais de dinheiro ou envie seu próprio áudio.",
   },
   {
     icon: BarChart3,

@@ -63,57 +63,33 @@ export const SOUND_LIBRARY_OPTIONS: NotificationSoundOption[] = [
   {
     id: "cash_register",
     label: "Caixa registradora",
-    description: "Ka-Ching clássico de gaveta e campainha metálica (padrão)",
+    description: "Ka-Ching real de gaveta e campainha metálica (padrão)",
     audioUrl: "/sounds/cash-register.wav",
     isDefault: true,
   },
   {
     id: "kaching_pro",
     label: "Ka-Ching Turbo",
-    description: "Estalo de caixa com brilho metálico duplo de venda confirmada",
+    description: "Estalo forte de caixa registradora com brilho prolongado",
     audioUrl: "/sounds/kaching-pro.wav",
+  },
+  {
+    id: "classic_bell",
+    label: "Caixa Rápido",
+    description: "Toque curto (< 1s) de caixa registradora para vendas em sequência",
+    audioUrl: "/sounds/classic-bell.wav",
   },
   {
     id: "coins",
     label: "Chuva de moedas",
-    description: "Cascata realista de moedas metálicas tilintando",
+    description: "Som real de moedas metálicas tilintando na hora da venda",
     audioUrl: "/sounds/coins.wav",
   },
   {
-    id: "pix_money",
-    label: "Dinheiro na conta (Pix)",
-    description: "Acorde cristalino ascendente estilo pagamento instantâneo",
-    audioUrl: "/sounds/pix-money.wav",
-  },
-  {
-    id: "gold_drop",
-    label: "Moeda de ouro",
-    description: "Toque rápido e marcante de moeda caindo no cofre",
-    audioUrl: "/sounds/gold-drop.wav",
-  },
-  {
     id: "bill_count",
-    label: "Notas & Cofre",
-    description: "Estalo rápido de cédulas seguido de confirmação dourada",
+    label: "Contando dinheiro",
+    description: "Sequência real de notas de dinheiro sendo contadas",
     audioUrl: "/sounds/bill-count.wav",
-  },
-  {
-    id: "jackpot_sale",
-    label: "Venda Alta (Jackpot)",
-    description: "Fanfarra curta e elegante com tilintar de moedas",
-    audioUrl: "/sounds/jackpot-sale.wav",
-  },
-  {
-    id: "classic_bell",
-    label: "Sino clássico",
-    description: "Sino limpo e discreto de balcão",
-    audioUrl: "/sounds/classic-bell.wav",
-  },
-  {
-    id: "soft_notification",
-    label: "Notificação suave",
-    description: "Alerta moderno de dois tons suaves",
-    audioUrl: "/sounds/soft-notification.wav",
   },
   {
     id: "custom",
@@ -143,9 +119,17 @@ export const VALID_SOUND_IDS = new Set<NotificationSoundId>([
   "silent",
 ]);
 
+const LEGACY_SOUND_FALLBACK_URLS: Partial<Record<NotificationSoundId, string>> = {
+  pix_money: "/sounds/cash-register.wav",
+  gold_drop: "/sounds/coins.wav",
+  jackpot_sale: "/sounds/kaching-pro.wav",
+  soft_notification: "/sounds/classic-bell.wav",
+};
+
 export function getBuiltInSoundUrl(soundId: NotificationSoundId): string | null {
   const found = SOUND_LIBRARY_OPTIONS.find((opt) => opt.id === soundId);
-  return found?.audioUrl ?? null;
+  if (found) return found.audioUrl ?? null;
+  return LEGACY_SOUND_FALLBACK_URLS[soundId] ?? null;
 }
 
 export function normalizeSoundVolume(value: unknown): number {

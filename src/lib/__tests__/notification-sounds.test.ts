@@ -71,9 +71,9 @@ describe("Dashfy — Sistema de Sons Personalizados para Notificações de Venda
     } catch {}
   });
 
-  it("verifica que todos os 9 arquivos da biblioteca embutida (sons de dinheiro e vendas) existem e são WAV válidos", () => {
+  it("verifica que todos os 5 arquivos reais da biblioteca embutida (sons de dinheiro e vendas) existem e são WAV válidos", () => {
     const builtIns = SOUND_LIBRARY_OPTIONS.filter((o) => o.audioUrl);
-    expect(builtIns).toHaveLength(9);
+    expect(builtIns).toHaveLength(5);
 
     for (const opt of builtIns) {
       const filePath = path.join(process.cwd(), "public", opt.audioUrl!.replace(/^\//, ""));
