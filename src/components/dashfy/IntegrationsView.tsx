@@ -21,16 +21,19 @@ import type {
   IntegrationStatusPayload,
   OperationTabId,
 } from "@/lib/dashfy-types";
+import type { WebhookEventRecord } from "@/lib/db";
 import type { OmegaPayCredentialsResponse } from "@/lib/omegapay-types";
 import { formatDateTimeBR } from "@/lib/format";
 import { SpotlightCard } from "@/components/SpotlightCard";
 import { TikTokOAuthPanel } from "./TikTokOAuthPanel";
+import { ElevyPayIntegrationCard } from "./ElevyPayIntegrationCard";
 
 interface IntegrationsViewProps {
   dashboardId?: string;
   dashboardName?: string;
   dashboardMode: DashboardOperationMode;
   integrationStatus: IntegrationStatusPayload;
+  recentWebhooks?: WebhookEventRecord[];
   onRefresh: () => Promise<void>;
   onNavigateTab: (tabId: OperationTabId) => void;
   onSyncOmegaBalance: () => Promise<void>;
@@ -43,6 +46,7 @@ export function IntegrationsView({
   dashboardName = "Operação",
   dashboardMode,
   integrationStatus,
+  recentWebhooks = [],
   onRefresh,
   onNavigateTab,
   onSyncOmegaBalance,
@@ -319,7 +323,7 @@ export function IntegrationsView({
             <div className="min-w-0 flex-1 space-y-1.5">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="text-sm font-semibold text-white">
-                  Gateway de Pagamento (OmegaPay / Nexus)
+                  Gateways de Pagamento (ElevyPay / OmegaPay / Nexus)
                 </span>
                 <span
                   className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
@@ -378,6 +382,13 @@ export function IntegrationsView({
         </div>
       ) : (
         <div className="space-y-5">
+          {/* CARD COMPLETO DE INTEGRAÇÃO ELEVYPAY */}
+          <ElevyPayIntegrationCard
+            initialStatus={integrationStatus.elevypay}
+            recentWebhooks={recentWebhooks}
+            onRefresh={onRefresh}
+          />
+
           {/* CARD DE STATUS DA INTEGRAÇÃO OMEGAPAY */}
           <SpotlightCard className="p-5 sm:p-6 bento-card">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">

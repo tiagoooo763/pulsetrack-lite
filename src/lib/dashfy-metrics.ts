@@ -102,7 +102,10 @@ export interface OperationSummaryMetrics {
   pendingCount: number;
   pendingAmount: number;
   approvedCount: number;
+  averageTicket: number;
   totalOrdersCount: number;
+  refundedCount: number;
+  refundedAmount: number;
   refundedOrCanceledCount: number;
   approvalRate: number;
   receivedAmount: number;
@@ -142,6 +145,9 @@ export function computeOmegaPaySummary(
 ): OperationSummaryMetrics {
   const approved = transactions.filter((t) => t.status === "COMPLETED");
   const pending = transactions.filter((t) => t.status === "PENDING");
+  const refunded = transactions.filter(
+    (t) => t.status === "REFUNDED" || t.status === "CHARGED_BACK"
+  );
   const refundedOrCanceled = transactions.filter(
     (t) =>
       t.status === "REFUNDED" ||
@@ -150,6 +156,8 @@ export function computeOmegaPaySummary(
   );
 
   const grossRevenue = approved.reduce((acc, t) => acc + t.grossAmount, 0);
+  const averageTicket = approved.length > 0 ? grossRevenue / approved.length : 0;
+  const refundedAmount = refunded.reduce((acc, t) => acc + t.grossAmount, 0);
   const checkoutFees = approved.reduce((acc, t) => acc + t.feeAmount, 0);
   const rawNetRevenue = approved.reduce((acc, t) => acc + t.netAmount, 0);
   const customFeesTotal = calculateCustomFeesTotal(customFees, grossRevenue);
@@ -256,7 +264,10 @@ export function computeOmegaPaySummary(
     pendingCount: pending.length,
     pendingAmount,
     approvedCount: approved.length,
+    averageTicket,
     totalOrdersCount: transactions.length,
+    refundedCount: refunded.length,
+    refundedAmount,
     refundedOrCanceledCount: refundedOrCanceled.length,
     approvalRate,
     receivedAmount,
@@ -388,7 +399,10 @@ export function computeTikTokSummary(
     pendingCount: 0,
     pendingAmount: 0,
     approvedCount: conversions,
+    averageTicket: conversions > 0 ? attributedRevenue / conversions : 0,
     totalOrdersCount: conversions,
+    refundedCount: 0,
+    refundedAmount: 0,
     refundedOrCanceledCount: 0,
     approvalRate: clicks > 0 ? Math.min(100, (conversions / clicks) * 100) : 0,
     receivedAmount: 0,

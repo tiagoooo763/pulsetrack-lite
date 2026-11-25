@@ -62,7 +62,7 @@ export function OmegaPaySalesView({ transactions }: OmegaPaySalesViewProps) {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold text-white">
-            Vendas &amp; Transações — Operação OmegaPay
+            Vendas &amp; Transações — Gateways de Pagamento
           </h3>
           <p className="text-xs text-zinc-400 font-mono">
             {filtered.length} transações encontradas
@@ -132,10 +132,25 @@ export function OmegaPaySalesView({ transactions }: OmegaPaySalesViewProps) {
                     <td className="py-2.5 px-3 text-zinc-400 font-mono whitespace-nowrap">
                       {formatDateTimeBR(tx.paidAt || tx.createdAt)}
                     </td>
-                    <td className="py-2.5 px-3 text-white font-medium max-w-[200px] truncate">
-                      {tx.productName}
+                    <td className="py-2.5 px-3 text-white font-medium max-w-[220px]">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="truncate">{tx.productName}</span>
+                        <span
+                          className={`px-1.5 py-0.5 rounded text-[9px] font-mono border shrink-0 ${
+                            tx.gateway === "ELEVYPAY"
+                              ? "border-violet-500/35 bg-violet-500/15 text-violet-200"
+                              : tx.gateway === "NEXUS"
+                                ? "border-sky-500/35 bg-sky-500/15 text-sky-200"
+                                : "border-white/10 bg-white/[0.05] text-zinc-300"
+                          }`}
+                        >
+                          {tx.gateway}
+                        </span>
+                      </div>
                     </td>
-                    <td className="py-2.5 px-3 text-zinc-400 font-mono">{tx.id}</td>
+                    <td className="py-2.5 px-3 text-zinc-400 font-mono">
+                      {tx.orderId || tx.id}
+                    </td>
                     <td className="py-2.5 px-3 text-zinc-300">
                       {getPaymentMethodLabel(tx.paymentMethod)}
                       {tx.installments > 1 ? ` (${tx.installments}x)` : ""}

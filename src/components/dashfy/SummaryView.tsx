@@ -145,14 +145,16 @@ export function SummaryView({
               {formatBRL(metrics.grossRevenue)}
             </div>
           </div>
-          <div className="text-[11px] text-zinc-400 pt-2 border-t border-white/[0.06] flex items-center justify-between">
+          <div className="text-[11px] text-zinc-400 pt-2 border-t border-white/[0.06] flex items-center justify-between gap-2">
             <span>
               {isTikTok
                 ? `${metrics.approvedCount} conversões atribuídas`
                 : `${metrics.approvedCount} vendas aprovadas`}
             </span>
             <span className="text-zinc-300 font-mono">
-              {isTikTok ? "TikTok Ads" : "OmegaPay"}
+              {isTikTok
+                ? "TikTok Ads"
+                : `Ticket: ${formatBRL(metrics.averageTicket)}`}
             </span>
           </div>
         </SpotlightCard>
@@ -366,10 +368,19 @@ export function SummaryView({
           <div className="my-2.5 text-2xl font-semibold text-white font-mono tabular-nums">
             {metrics.approvalRate.toFixed(1)}%
           </div>
-          <div className="text-[11px] text-zinc-400 pt-2 border-t border-white/[0.06]">
-            {isTikTok
-              ? `CTR: ${metrics.ctr.toFixed(2)}%`
-              : `${metrics.approvedCount} de ${metrics.totalOrdersCount} vendas`}
+          <div className="text-[11px] text-zinc-400 pt-2 border-t border-white/[0.06] flex items-center justify-between gap-2">
+            {isTikTok ? (
+              <span>CTR: {metrics.ctr.toFixed(2)}%</span>
+            ) : (
+              <>
+                <span>
+                  {metrics.approvedCount} de {metrics.totalOrdersCount} vendas
+                </span>
+                <span className="font-mono text-rose-300/90">
+                  Reemb.: {metrics.refundedCount}
+                </span>
+              </>
+            )}
           </div>
         </SpotlightCard>
       </section>

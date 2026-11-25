@@ -578,7 +578,8 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
   const omegaTransactions = useMemo(() => {
     if (!data) return [];
     return data.transactions.filter((tx) => {
-      if ((tx.gateway || "OMEGAPAY") !== "OMEGAPAY") return false;
+      const gw = tx.gateway || "OMEGAPAY";
+      if (filters.platform !== "ALL" && gw !== filters.platform) return false;
       if (!isDateInRange(tx.paidAt || tx.createdAt, startDate, endDate)) return false;
       if (filters.product !== "ALL" && tx.productName !== filters.product) return false;
       if (filters.status !== "ALL" && tx.status !== filters.status) return false;
@@ -587,15 +588,16 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
       }
       return true;
     });
-  }, [data, startDate, endDate, filters.product, filters.status, filters.paymentMethod]);
+  }, [data, startDate, endDate, filters.platform, filters.product, filters.status, filters.paymentMethod]);
 
   const omegaTransfers = useMemo(() => {
     if (!data) return [];
     return data.transfers.filter((tf) => {
-      if ((tf.gateway || "OMEGAPAY") !== "OMEGAPAY") return false;
+      const gw = tf.gateway || "OMEGAPAY";
+      if (filters.platform !== "ALL" && gw !== filters.platform) return false;
       return isDateInRange(tf.updatedAt || tf.createdAt, startDate, endDate);
     });
-  }, [data, startDate, endDate]);
+  }, [data, startDate, endDate, filters.platform]);
 
   const activeExpenses = useMemo(() => {
     if (!data) return [];
@@ -685,15 +687,11 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
         customFees: [],
       });
     }
-    const periodOmegaTx = data.transactions.filter(
-      (tx) =>
-        (tx.gateway || "OMEGAPAY") === "OMEGAPAY" &&
-        isDateInRange(tx.paidAt || tx.createdAt, startDate, endDate)
+    const periodOmegaTx = data.transactions.filter((tx) =>
+      isDateInRange(tx.paidAt || tx.createdAt, startDate, endDate)
     );
-    const periodOmegaTf = data.transfers.filter(
-      (tf) =>
-        (tf.gateway || "OMEGAPAY") === "OMEGAPAY" &&
-        isDateInRange(tf.updatedAt || tf.createdAt, startDate, endDate)
+    const periodOmegaTf = data.transfers.filter((tf) =>
+      isDateInRange(tf.updatedAt || tf.createdAt, startDate, endDate)
     );
     const periodTikTok = (data.tiktokCampaigns || []).filter((c) =>
       isDateInRange(c.statDate, startDate, endDate)
@@ -737,9 +735,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
         platforms: ["TikTok Ads Manager"],
       };
     }
-    const omegaTx = data.transactions.filter(
-      (t) => (t.gateway || "OMEGAPAY") === "OMEGAPAY"
-    );
+    const gatewayTx = data.transactions;
     return {
       adAccounts: ["Conta Principal"],
       campaigns: Array.from(
@@ -750,8 +746,8 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
         )
       ),
       trafficSources: ["Direto / Checkout", "Meta Ads", "TikTok Ads"],
-      products: Array.from(new Set(omegaTx.map((t) => t.productName).filter(Boolean))),
-      platforms: ["OmegaPay v1"],
+      products: Array.from(new Set(gatewayTx.map((t) => t.productName).filter(Boolean))),
+      platforms: ["OMEGAPAY", "ELEVYPAY", "NEXUS"],
     };
   }, [data, activeMode, activeDashboard.id]);
 
@@ -1224,6 +1220,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
               dashboardName={activeDashboard.name}
               dashboardMode={activeMode}
               integrationStatus={data.integrationStatus}
+              recentWebhooks={data.recentWebhooks}
               onRefresh={() => fetchDashboard(false)}
               onNavigateTab={(tabId) =>
                 setLocation({

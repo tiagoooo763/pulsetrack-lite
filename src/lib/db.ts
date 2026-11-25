@@ -47,9 +47,49 @@ export type {
   OmegaPayTransferStatus,
 };
 
-export type GatewayId = "OMEGAPAY" | "NEXUS";
+export type GatewayId = "OMEGAPAY" | "NEXUS" | "ELEVYPAY";
+export type GatewayIntegrationStatus = "DISCONNECTED" | "CONNECTED" | "ERROR";
+export type GatewayWebhookAuthMode =
+  | "DASHFY_TOKEN"
+  | "GATEWAY_TOKEN"
+  | "HMAC_SHA256";
 export type DashboardOperationMode = "tiktok" | "omegapay";
 export type DashboardOperationId = string;
+
+export function normalizeGatewayId(raw: unknown): GatewayId {
+  const upper = String(raw || "OMEGAPAY").trim().toUpperCase();
+  if (upper === "NEXUS") return "NEXUS";
+  if (upper === "ELEVYPAY") return "ELEVYPAY";
+  return "OMEGAPAY";
+}
+
+export interface GatewayIntegrationRecord {
+  id: string;
+  userId: string;
+  gateway: GatewayId;
+  status: GatewayIntegrationStatus;
+  authMode: GatewayWebhookAuthMode;
+  webhookUrlSlug: string;
+  webhookSecretEnc: string | null;
+  externalTokenEnc: string | null;
+  lastEventAt: string | null;
+  lastEventType: string | null;
+  lastError: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TransactionStatusHistoryRecord {
+  id: string;
+  userId: string;
+  transactionId: string;
+  gateway: GatewayId;
+  previousStatus: string | null;
+  newStatus: string;
+  eventType: string;
+  source: string;
+  createdAt: string;
+}
 
 export const LEGACY_ADMIN_USER_ID = "legacy:mendoncat831@gmail.com";
 
@@ -318,7 +358,9 @@ export async function getDb(): Promise<DbExecutor> {
               to_regclass('public.user_settings') AS settings_tbl,
               to_regclass('public.tiktok_connections') AS tiktok_tbl,
               to_regclass('public.user_notification_sound_preferences') AS sound_tbl,
-              to_regclass('public.sale_notifications') AS sales_tbl`
+              to_regclass('public.sale_notifications') AS sales_tbl,
+              to_regclass('public.gateway_integrations') AS gw_int_tbl,
+              to_regclass('public.transaction_status_history') AS tx_hist_tbl`
           );
           const row = check[0];
           if (
@@ -327,7 +369,9 @@ export async function getDb(): Promise<DbExecutor> {
             row.settings_tbl &&
             row.tiktok_tbl &&
             row.sound_tbl &&
-            row.sales_tbl
+            row.sales_tbl &&
+            row.gw_int_tbl &&
+            row.tx_hist_tbl
           ) {
             return db;
           }
@@ -559,6 +603,39 @@ export async function getDb(): Promise<DbExecutor> {
         )
       `);
 
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS gateway_integrations (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL,
+          gateway TEXT NOT NULL,
+          status TEXT NOT NULL DEFAULT 'DISCONNECTED',
+          auth_mode TEXT NOT NULL DEFAULT 'DASHFY_TOKEN',
+          webhook_url_slug TEXT NOT NULL UNIQUE,
+          webhook_secret_enc TEXT,
+          external_token_enc TEXT,
+          last_event_at TEXT,
+          last_event_type TEXT,
+          last_error TEXT,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          UNIQUE (user_id, gateway)
+        )
+      `);
+
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS transaction_status_history (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL,
+          transaction_id TEXT NOT NULL,
+          gateway TEXT NOT NULL,
+          previous_status TEXT,
+          new_status TEXT NOT NULL,
+          event_type TEXT NOT NULL,
+          source TEXT NOT NULL DEFAULT 'webhook',
+          created_at TEXT NOT NULL
+        )
+      `);
+
       // Migração segura não-destrutiva para bancos existentes (SQLite e PostgreSQL)
       try {
         await db.execute(`ALTER TABLE transactions ADD COLUMN gateway TEXT NOT NULL DEFAULT 'OMEGAPAY'`);
@@ -671,11 +748,20 @@ export function resolveTransactionStatus(
     }
   }
 
-  // Impede que um evento de criação atrasado sobrescreva um status já confirmado ou estornado
+  // Impede que um evento atrasado regrida uma transação já finalizada
   if (
     existingStatus &&
     TERMINAL_OR_CONFIRMED_STATUSES.has(existingStatus) &&
     incomingStatus === "PENDING"
+  ) {
+    return existingStatus;
+  }
+
+  // Impede que um evento COMPLETED atrasado sobrescreva um reembolso ou chargeback já registrado
+  if (
+    existingStatus &&
+    (existingStatus === "REFUNDED" || existingStatus === "CHARGED_BACK") &&
+    (incomingStatus === "COMPLETED" || incomingStatus === "FAILED")
   ) {
     return existingStatus;
   }
@@ -883,7 +969,12 @@ export async function upsertTransaction(input: {
       input.clientIdentifier ?? null,
       input.orderId ?? null,
       input.productId ?? null,
-      input.productName || (gateway === "NEXUS" ? "Produto Nexus Pay" : "Produto OmegaPay"),
+      input.productName ||
+        (gateway === "NEXUS"
+          ? "Produto Nexus Pay"
+          : gateway === "ELEVYPAY"
+            ? "Produto ElevyPay"
+            : "Produto OmegaPay"),
       input.offerCode ?? null,
       input.paymentMethod || "PIX",
       input.currency || "BRL",
@@ -1118,7 +1209,7 @@ export async function listRecentWebhookEvents(
   );
   return rows.map((row) => ({
     id: String(row.id),
-    gateway: (String(row.gateway || "OMEGAPAY").toUpperCase() === "NEXUS" ? "NEXUS" : "OMEGAPAY") as GatewayId,
+    gateway: normalizeGatewayId(row.gateway),
     dedupeKey: String(row.dedupe_key),
     eventType: String(row.event_type),
     entityId: String(row.entity_id),
@@ -1136,8 +1227,7 @@ export async function saveBalanceSnapshot(
   const db = await getDb();
   const now = new Date().toISOString();
   const gateway: GatewayId =
-    explicitGateway ||
-    (balance.gateway && String(balance.gateway).toUpperCase() === "NEXUS" ? "NEXUS" : "OMEGAPAY");
+    explicitGateway || normalizeGatewayId(balance.gateway);
 
   const existing = await db.query(
     `SELECT user_id FROM user_balance_snapshots WHERE user_id = ? AND gateway = ? LIMIT 1`,
@@ -1195,7 +1285,7 @@ export async function getLatestBalanceSnapshot(
   if (rows.length > 0) {
     const r = rows[0];
     return {
-      gateway: (String(r.gateway || gateway).toUpperCase() === "NEXUS" ? "NEXUS" : "OMEGAPAY") as GatewayId,
+      gateway: normalizeGatewayId(r.gateway || gateway),
       available: Number(r.available || 0),
       pending: Number(r.pending || 0),
       fundLock: Number(r.fund_lock || 0),
@@ -1204,7 +1294,7 @@ export async function getLatestBalanceSnapshot(
   }
 
   // Fallback não-destrutivo somente para a conta legada ler snapshots antigos de balance_snapshots
-  if (userId === LEGACY_ADMIN_USER_ID) {
+  if (userId === LEGACY_ADMIN_USER_ID && gateway !== "ELEVYPAY") {
     const id = gateway === "OMEGAPAY" ? 1 : 2;
     const legacyRows = await db.query(
       `SELECT * FROM balance_snapshots WHERE (gateway = ? OR (gateway IS NULL AND id = ?)) AND user_id = ? ORDER BY id ASC LIMIT 1`,
@@ -1213,7 +1303,7 @@ export async function getLatestBalanceSnapshot(
     if (legacyRows.length > 0) {
       const r = legacyRows[0];
       return {
-        gateway: (String(r.gateway || gateway).toUpperCase() === "NEXUS" ? "NEXUS" : "OMEGAPAY") as GatewayId,
+        gateway: normalizeGatewayId(r.gateway || gateway),
         available: Number(r.available || 0),
         pending: Number(r.pending || 0),
         fundLock: Number(r.fund_lock || 0),
@@ -1234,13 +1324,15 @@ export async function getLatestBalanceSnapshot(
 export async function getAllBalanceSnapshots(
   userId: string = LEGACY_ADMIN_USER_ID
 ): Promise<Record<GatewayId, BalanceSnapshotRecord>> {
-  const [omega, nexus] = await Promise.all([
+  const [omega, nexus, elevy] = await Promise.all([
     getLatestBalanceSnapshot("OMEGAPAY", userId),
     getLatestBalanceSnapshot("NEXUS", userId),
+    getLatestBalanceSnapshot("ELEVYPAY", userId),
   ]);
   return {
     OMEGAPAY: omega,
     NEXUS: nexus,
+    ELEVYPAY: elevy,
   };
 }
 
@@ -1280,7 +1372,7 @@ export async function setServerSetting(
 function mapTransactionRow(row: Record<string, unknown>): TransactionRecord {
   return {
     id: String(row.id),
-    gateway: (String(row.gateway || "OMEGAPAY").toUpperCase() === "NEXUS" ? "NEXUS" : "OMEGAPAY") as GatewayId,
+    gateway: normalizeGatewayId(row.gateway),
     clientIdentifier: row.client_identifier ? String(row.client_identifier) : null,
     orderId: row.order_id ? String(row.order_id) : null,
     productId: row.product_id ? String(row.product_id) : null,
@@ -1303,7 +1395,7 @@ function mapTransactionRow(row: Record<string, unknown>): TransactionRecord {
 function mapTransferRow(row: Record<string, unknown>): TransferRecord {
   return {
     id: String(row.id),
-    gateway: (String(row.gateway || "OMEGAPAY").toUpperCase() === "NEXUS" ? "NEXUS" : "OMEGAPAY") as GatewayId,
+    gateway: normalizeGatewayId(row.gateway),
     clientIdentifier: row.client_identifier ? String(row.client_identifier) : null,
     amount: Number(row.amount || 0),
     receivedAmount: Number(row.received_amount || 0),
@@ -1339,7 +1431,13 @@ function mapExpenseRow(row: Record<string, unknown>): ManualExpenseRecord {
 
   const rawGw = String(row.gateway || "ALL").toUpperCase();
   const gateway: "ALL" | GatewayId =
-    rawGw === "NEXUS" ? "NEXUS" : rawGw === "OMEGAPAY" ? "OMEGAPAY" : "ALL";
+    rawGw === "NEXUS"
+      ? "NEXUS"
+      : rawGw === "ELEVYPAY"
+        ? "ELEVYPAY"
+        : rawGw === "OMEGAPAY"
+          ? "OMEGAPAY"
+          : "ALL";
 
   const rawDash = String(row.dashboard_id || "").trim();
   const dashboardId: DashboardOperationId = rawDash || "omegapay";
@@ -2509,4 +2607,293 @@ export async function listSaleNotificationsSince(
     [userId, safeLimit]
   );
   return rows.map(mapSaleNotificationRow);
+}
+
+// ============================================================
+// GATEWAY INTEGRATIONS & TRANSACTION STATUS HISTORY (ElevyPay / Multi-Gateway)
+// ============================================================
+
+function mapGatewayIntegrationRow(
+  row: Record<string, unknown>
+): GatewayIntegrationRecord {
+  const rawStatus = String(row.status || "DISCONNECTED").toUpperCase();
+  const status: GatewayIntegrationStatus =
+    rawStatus === "CONNECTED" || rawStatus === "ERROR"
+      ? rawStatus
+      : "DISCONNECTED";
+
+  const rawMode = String(row.auth_mode || "DASHFY_TOKEN").toUpperCase();
+  const authMode: GatewayWebhookAuthMode =
+    rawMode === "GATEWAY_TOKEN" || rawMode === "HMAC_SHA256"
+      ? rawMode
+      : "DASHFY_TOKEN";
+
+  return {
+    id: String(row.id),
+    userId: String(row.user_id),
+    gateway: normalizeGatewayId(row.gateway),
+    status,
+    authMode,
+    webhookUrlSlug: String(row.webhook_url_slug),
+    webhookSecretEnc: row.webhook_secret_enc ? String(row.webhook_secret_enc) : null,
+    externalTokenEnc: row.external_token_enc ? String(row.external_token_enc) : null,
+    lastEventAt: toNullableIsoTimestamp(row.last_event_at),
+    lastEventType: row.last_event_type ? String(row.last_event_type) : null,
+    lastError: row.last_error ? String(row.last_error) : null,
+    createdAt: toIsoTimestamp(row.created_at),
+    updatedAt: toIsoTimestamp(row.updated_at),
+  };
+}
+
+export async function getGatewayIntegration(
+  userId: string,
+  gateway: GatewayId
+): Promise<GatewayIntegrationRecord | null> {
+  const db = await getDb();
+  const rows = await db.query(
+    `SELECT * FROM gateway_integrations WHERE user_id = ? AND gateway = ? LIMIT 1`,
+    [userId, gateway]
+  );
+  if (rows.length === 0) return null;
+  return mapGatewayIntegrationRow(rows[0]);
+}
+
+export async function getGatewayIntegrationBySlug(
+  slug: string,
+  gateway?: GatewayId
+): Promise<GatewayIntegrationRecord | null> {
+  const clean = slug.trim();
+  if (!clean) return null;
+  const db = await getDb();
+  const rows = gateway
+    ? await db.query(
+        `SELECT * FROM gateway_integrations WHERE webhook_url_slug = ? AND gateway = ? LIMIT 1`,
+        [clean, gateway]
+      )
+    : await db.query(
+        `SELECT * FROM gateway_integrations WHERE webhook_url_slug = ? LIMIT 1`,
+        [clean]
+      );
+  if (rows.length === 0) return null;
+  return mapGatewayIntegrationRow(rows[0]);
+}
+
+export async function upsertGatewayIntegration(input: {
+  userId: string;
+  gateway: GatewayId;
+  status?: GatewayIntegrationStatus;
+  authMode?: GatewayWebhookAuthMode;
+  webhookUrlSlug?: string;
+  webhookSecretEnc?: string | null;
+  externalTokenEnc?: string | null;
+  lastError?: string | null;
+}): Promise<GatewayIntegrationRecord> {
+  const db = await getDb();
+  const now = new Date().toISOString();
+  const existing = await getGatewayIntegration(input.userId, input.gateway);
+
+  if (existing) {
+    const nextStatus = input.status ?? existing.status;
+    const nextAuthMode = input.authMode ?? existing.authMode;
+    const nextSlug = input.webhookUrlSlug ?? existing.webhookUrlSlug;
+    const nextSecretEnc =
+      input.webhookSecretEnc !== undefined
+        ? input.webhookSecretEnc
+        : existing.webhookSecretEnc;
+    const nextExternalEnc =
+      input.externalTokenEnc !== undefined
+        ? input.externalTokenEnc
+        : existing.externalTokenEnc;
+    const nextLastError =
+      input.lastError !== undefined ? input.lastError : existing.lastError;
+
+    await db.execute(
+      `UPDATE gateway_integrations
+       SET status = ?,
+           auth_mode = ?,
+           webhook_url_slug = ?,
+           webhook_secret_enc = ?,
+           external_token_enc = ?,
+           last_error = ?,
+           updated_at = ?
+       WHERE user_id = ? AND gateway = ?`,
+      [
+        nextStatus,
+        nextAuthMode,
+        nextSlug,
+        nextSecretEnc,
+        nextExternalEnc,
+        nextLastError,
+        now,
+        input.userId,
+        input.gateway,
+      ]
+    );
+    return (await getGatewayIntegration(input.userId, input.gateway))!;
+  }
+
+  const id = crypto.randomUUID();
+  const slug =
+    input.webhookUrlSlug || crypto.randomBytes(18).toString("base64url");
+  const status: GatewayIntegrationStatus = input.status ?? "CONNECTED";
+  const authMode: GatewayWebhookAuthMode = input.authMode ?? "DASHFY_TOKEN";
+
+  await db.execute(
+    `INSERT INTO gateway_integrations (
+      id, user_id, gateway, status, auth_mode, webhook_url_slug,
+      webhook_secret_enc, external_token_enc, last_event_at, last_event_type,
+      last_error, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, ?, ?, ?)`,
+    [
+      id,
+      input.userId,
+      input.gateway,
+      status,
+      authMode,
+      slug,
+      input.webhookSecretEnc ?? null,
+      input.externalTokenEnc ?? null,
+      input.lastError ?? null,
+      now,
+      now,
+    ]
+  );
+
+  return (await getGatewayIntegration(input.userId, input.gateway))!;
+}
+
+export async function touchGatewayIntegrationEvent(input: {
+  userId: string;
+  gateway: GatewayId;
+  eventType: string;
+  error?: string | null;
+}): Promise<void> {
+  const db = await getDb();
+  const now = new Date().toISOString();
+  await db.execute(
+    `UPDATE gateway_integrations
+     SET last_event_at = ?,
+         last_event_type = ?,
+         last_error = ?,
+         updated_at = ?
+     WHERE user_id = ? AND gateway = ?`,
+    [
+      now,
+      input.eventType.slice(0, 100),
+      input.error ?? null,
+      now,
+      input.userId,
+      input.gateway,
+    ]
+  );
+}
+
+export async function getTransactionById(
+  userId: string,
+  id: string
+): Promise<TransactionRecord | null> {
+  const db = await getDb();
+  const rows = await db.query(
+    `SELECT * FROM transactions WHERE id = ? AND user_id = ? LIMIT 1`,
+    [id, userId]
+  );
+  if (rows.length === 0) return null;
+  return mapTransactionRow(rows[0]);
+}
+
+export async function insertTransactionStatusHistory(input: {
+  userId: string;
+  transactionId: string;
+  gateway: GatewayId;
+  previousStatus: string | null;
+  newStatus: string;
+  eventType: string;
+  source?: string;
+}): Promise<TransactionStatusHistoryRecord> {
+  const db = await getDb();
+  const id = crypto.randomUUID();
+  const now = new Date().toISOString();
+  const source = input.source || "webhook";
+
+  await db.execute(
+    `INSERT INTO transaction_status_history (
+      id, user_id, transaction_id, gateway, previous_status, new_status, event_type, source, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      id,
+      input.userId,
+      input.transactionId,
+      input.gateway,
+      input.previousStatus,
+      input.newStatus,
+      input.eventType,
+      source,
+      now,
+    ]
+  );
+
+  return {
+    id,
+    userId: input.userId,
+    transactionId: input.transactionId,
+    gateway: input.gateway,
+    previousStatus: input.previousStatus,
+    newStatus: input.newStatus,
+    eventType: input.eventType,
+    source,
+    createdAt: now,
+  };
+}
+
+export async function listTransactionStatusHistory(
+  userId: string,
+  transactionId: string,
+  limit = 30
+): Promise<TransactionStatusHistoryRecord[]> {
+  const db = await getDb();
+  const safeLimit = Math.max(1, Math.min(100, Math.round(limit)));
+  const rows = await db.query(
+    `SELECT * FROM transaction_status_history
+     WHERE user_id = ? AND transaction_id = ?
+     ORDER BY created_at DESC
+     LIMIT ?`,
+    [userId, transactionId, safeLimit]
+  );
+  return rows.map((r) => ({
+    id: String(r.id),
+    userId: String(r.user_id),
+    transactionId: String(r.transaction_id),
+    gateway: normalizeGatewayId(r.gateway),
+    previousStatus: r.previous_status ? String(r.previous_status) : null,
+    newStatus: String(r.new_status),
+    eventType: String(r.event_type),
+    source: String(r.source || "webhook"),
+    createdAt: toIsoTimestamp(r.created_at),
+  }));
+}
+
+export async function listRecentWebhookEventsByGateway(
+  userId: string,
+  gateway: GatewayId,
+  limit = 25
+): Promise<WebhookEventRecord[]> {
+  const db = await getDb();
+  const safeLimit = Math.max(1, Math.min(100, Math.round(limit)));
+  const rows = await db.query(
+    `SELECT * FROM webhook_events
+     WHERE user_id = ? AND gateway = ?
+     ORDER BY received_at DESC
+     LIMIT ?`,
+    [userId, gateway, safeLimit]
+  );
+  return rows.map((row) => ({
+    id: String(row.id),
+    gateway: normalizeGatewayId(row.gateway),
+    dedupeKey: String(row.dedupe_key),
+    eventType: String(row.event_type),
+    entityId: String(row.entity_id),
+    statusAfter: row.status_after ? String(row.status_after) : null,
+    sanitizedPayload: String(row.sanitized_payload),
+    receivedAt: toIsoTimestamp(row.received_at),
+  }));
 }
