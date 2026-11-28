@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { getAuthenticatedUser } from "@/lib/auth";
 import {
   getAllBalanceSnapshots,
-  getGatewayIntegration,
   getUserSettingsBatch,
   getUserSoundPreferences,
   listAutomationRules,
@@ -13,7 +12,6 @@ import {
   listTransactions,
   listTransfers,
 } from "@/lib/db";
-import { buildElevyPayWebhookUrl } from "@/lib/elevypay-processor";
 import { getOmegaPayServerCredentials } from "@/lib/omegapay-client";
 import {
   DEFAULT_DASHBOARDS,
@@ -48,7 +46,6 @@ export async function GET() {
     customFees,
     automationRules,
     soundPreferences,
-    elevyIntegration,
   ] = await Promise.all([
     listTransactions(userId, 500),
     listTransfers(userId, 200),
@@ -60,7 +57,6 @@ export async function GET() {
     listCustomFees(userId),
     listAutomationRules(userId),
     getUserSoundPreferences(userId),
-    getGatewayIntegration(userId, "ELEVYPAY"),
   ]);
 
   const creds = await getOmegaPayServerCredentials(
@@ -167,33 +163,6 @@ export async function GET() {
           hasWebhookToken: Boolean(nexusWebhookToken),
           apiBaseUrl: "https://api.nexuspay.com.br",
         },
-        elevypay: elevyIntegration
-          ? {
-              connected: elevyIntegration.status === "CONNECTED",
-              status: elevyIntegration.status,
-              authMode: elevyIntegration.authMode,
-              webhookUrl: buildElevyPayWebhookUrl(elevyIntegration.webhookUrlSlug),
-              hasDashfySecret: Boolean(elevyIntegration.webhookSecretEnc),
-              hasExternalToken: Boolean(elevyIntegration.externalTokenEnc),
-              lastEventAt: elevyIntegration.lastEventAt,
-              lastEventType: elevyIntegration.lastEventType,
-              lastError: elevyIntegration.lastError,
-              realCommunicationValidated: Boolean(elevyIntegration.lastEventAt),
-              updatedAt: elevyIntegration.updatedAt,
-            }
-          : {
-              connected: false,
-              status: "DISCONNECTED",
-              authMode: "DASHFY_TOKEN",
-              webhookUrl: null,
-              hasDashfySecret: false,
-              hasExternalToken: false,
-              lastEventAt: null,
-              lastEventType: null,
-              lastError: null,
-              realCommunicationValidated: false,
-              updatedAt: null,
-            },
       },
     },
     { headers: NO_STORE_HEADERS }

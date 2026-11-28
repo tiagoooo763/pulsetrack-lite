@@ -47,7 +47,7 @@ export type {
   OmegaPayTransferStatus,
 };
 
-export type GatewayId = "OMEGAPAY" | "NEXUS" | "ELEVYPAY";
+export type GatewayId = "OMEGAPAY" | "NEXUS";
 export type GatewayIntegrationStatus = "DISCONNECTED" | "CONNECTED" | "ERROR";
 export type GatewayWebhookAuthMode =
   | "DASHFY_TOKEN"
@@ -59,7 +59,6 @@ export type DashboardOperationId = string;
 export function normalizeGatewayId(raw: unknown): GatewayId {
   const upper = String(raw || "OMEGAPAY").trim().toUpperCase();
   if (upper === "NEXUS") return "NEXUS";
-  if (upper === "ELEVYPAY") return "ELEVYPAY";
   return "OMEGAPAY";
 }
 
@@ -1028,11 +1027,7 @@ export async function upsertTransaction(input: {
       input.orderId ?? null,
       input.productId ?? null,
       input.productName ||
-        (gateway === "NEXUS"
-          ? "Produto Nexus Pay"
-          : gateway === "ELEVYPAY"
-            ? "Produto ElevyPay"
-            : "Produto OmegaPay"),
+        (gateway === "NEXUS" ? "Produto Nexus Pay" : "Produto OmegaPay"),
       input.offerCode ?? null,
       input.paymentMethod || "PIX",
       input.currency || "BRL",
@@ -1352,7 +1347,7 @@ export async function getLatestBalanceSnapshot(
   }
 
   // Fallback não-destrutivo somente para a conta legada ler snapshots antigos de balance_snapshots
-  if (userId === LEGACY_ADMIN_USER_ID && gateway !== "ELEVYPAY") {
+  if (userId === LEGACY_ADMIN_USER_ID) {
     const id = gateway === "OMEGAPAY" ? 1 : 2;
     const legacyRows = await db.query(
       `SELECT * FROM balance_snapshots WHERE (gateway = ? OR (gateway IS NULL AND id = ?)) AND user_id = ? ORDER BY id ASC LIMIT 1`,
@@ -1382,15 +1377,13 @@ export async function getLatestBalanceSnapshot(
 export async function getAllBalanceSnapshots(
   userId: string = LEGACY_ADMIN_USER_ID
 ): Promise<Record<GatewayId, BalanceSnapshotRecord>> {
-  const [omega, nexus, elevy] = await Promise.all([
+  const [omega, nexus] = await Promise.all([
     getLatestBalanceSnapshot("OMEGAPAY", userId),
     getLatestBalanceSnapshot("NEXUS", userId),
-    getLatestBalanceSnapshot("ELEVYPAY", userId),
   ]);
   return {
     OMEGAPAY: omega,
     NEXUS: nexus,
-    ELEVYPAY: elevy,
   };
 }
 
@@ -1491,11 +1484,9 @@ function mapExpenseRow(row: Record<string, unknown>): ManualExpenseRecord {
   const gateway: "ALL" | GatewayId =
     rawGw === "NEXUS"
       ? "NEXUS"
-      : rawGw === "ELEVYPAY"
-        ? "ELEVYPAY"
-        : rawGw === "OMEGAPAY"
-          ? "OMEGAPAY"
-          : "ALL";
+      : rawGw === "OMEGAPAY"
+        ? "OMEGAPAY"
+        : "ALL";
 
   const rawDash = String(row.dashboard_id || "").trim();
   const dashboardId: DashboardOperationId = rawDash || "omegapay";
@@ -2668,7 +2659,7 @@ export async function listSaleNotificationsSince(
 }
 
 // ============================================================
-// GATEWAY INTEGRATIONS & TRANSACTION STATUS HISTORY (ElevyPay / Multi-Gateway)
+// GATEWAY INTEGRATIONS & TRANSACTION STATUS HISTORY (Multi-Gateway)
 // ============================================================
 
 function mapGatewayIntegrationRow(

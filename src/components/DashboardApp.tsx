@@ -751,7 +751,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
       ),
       trafficSources: ["Direto / Checkout", "Meta Ads", "TikTok Ads"],
       products: Array.from(new Set(gatewayTx.map((t) => t.productName).filter(Boolean))),
-      platforms: ["OMEGAPAY", "ELEVYPAY", "NEXUS"],
+      platforms: ["OMEGAPAY", "NEXUS"],
     };
   }, [data, activeMode, activeDashboard.id]);
 
@@ -1239,7 +1239,6 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
               dashboardName={activeDashboard.name}
               dashboardMode={activeMode}
               integrationStatus={data.integrationStatus}
-              recentWebhooks={data.recentWebhooks}
               onRefresh={() => fetchDashboard(false)}
               onNavigateTab={(tabId) =>
                 setLocation({

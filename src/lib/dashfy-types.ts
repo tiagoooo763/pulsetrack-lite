@@ -82,20 +82,6 @@ export interface NotificationPrefs {
   alertOnSyncError: boolean;
 }
 
-export interface ElevyPayIntegrationStatusPayload {
-  connected: boolean;
-  status: "DISCONNECTED" | "CONNECTED" | "ERROR";
-  authMode: "DASHFY_TOKEN" | "GATEWAY_TOKEN" | "HMAC_SHA256";
-  webhookUrl: string | null;
-  hasDashfySecret: boolean;
-  hasExternalToken: boolean;
-  lastEventAt: string | null;
-  lastEventType: string | null;
-  lastError: string | null;
-  realCommunicationValidated: boolean;
-  updatedAt: string | null;
-}
-
 export interface IntegrationStatusPayload {
   hasApiCredentials: boolean;
   hasWebhookToken: boolean;
@@ -110,7 +96,6 @@ export interface IntegrationStatusPayload {
     hasWebhookToken: boolean;
     apiBaseUrl: string;
   };
-  elevypay?: ElevyPayIntegrationStatusPayload;
 }
 
 export interface DashfyDashboardPayload {
@@ -122,7 +107,6 @@ export interface DashfyDashboardPayload {
   balances?: {
     OMEGAPAY: BalanceSnapshotRecord | null;
     NEXUS: BalanceSnapshotRecord | null;
-    ELEVYPAY?: BalanceSnapshotRecord | null;
   };
   recentWebhooks: WebhookEventRecord[];
   quickExpensePreset?: QuickExpensePreset;

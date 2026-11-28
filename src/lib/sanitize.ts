@@ -49,8 +49,6 @@ const SENSITIVE_KEYS = new Set([
   "webhooksecretenc",
   "externaltokenenc",
   "apikey",
-  "xelevypaytoken",
-  "xelevypaysignature",
   "xwebhooktoken",
   "accesstoken",
   "access-token",

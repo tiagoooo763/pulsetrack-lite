@@ -137,11 +137,9 @@ export function OmegaPaySalesView({ transactions }: OmegaPaySalesViewProps) {
                         <span className="truncate">{tx.productName}</span>
                         <span
                           className={`px-1.5 py-0.5 rounded text-[9px] font-mono border shrink-0 ${
-                            tx.gateway === "ELEVYPAY"
-                              ? "border-violet-500/35 bg-violet-500/15 text-violet-200"
-                              : tx.gateway === "NEXUS"
-                                ? "border-sky-500/35 bg-sky-500/15 text-sky-200"
-                                : "border-white/10 bg-white/[0.05] text-zinc-300"
+                            tx.gateway === "NEXUS"
+                              ? "border-sky-500/35 bg-sky-500/15 text-sky-200"
+                              : "border-white/10 bg-white/[0.05] text-zinc-300"
                           }`}
                         >
                           {tx.gateway}
