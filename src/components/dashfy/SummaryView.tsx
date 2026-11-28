@@ -108,22 +108,22 @@ export function SummaryView({
       />
 
       {isTikTok && tiktokCampaigns.length === 0 && (
-        <div className="rounded-xl border border-white/10 bg-[#0c0c0e] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h3 className="text-sm font-semibold text-white">
+        <div className="rounded-2xl border border-[#3b8bff]/30 bg-gradient-to-r from-[#1d74ff]/12 via-[#0a1529] to-[#0a1529] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <h3 className="font-display text-sm sm:text-base font-semibold text-white">
               {dashboardName} pronta para receber dados
             </h3>
-            <p className="text-xs text-zinc-400 mt-0.5">
-              Importe seu relatório CSV do TikTok Ads Manager ou cadastre campanhas manualmente. Estes dados ficam 100% separados da OmegaPay.
+            <p className="text-xs text-slate-300 leading-relaxed max-w-2xl">
+              Conecte sua conta TikTok Ads via OAuth, importe seu relatório CSV ou cadastre campanhas manualmente. Estes dados ficam 100% separados da OmegaPay.
             </p>
           </div>
           <button
             type="button"
             onClick={() => onNavigateTab("tiktok_ads")}
-            className="btn-pressable inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white hover:bg-zinc-100 text-black text-xs font-semibold shrink-0 shadow-sm"
+            className="btn-pressable dashfy-btn-primary h-10 px-4 text-xs shrink-0"
           >
             <Upload className="w-3.5 h-3.5" />
-            <span>Importar CSV / Cadastrar</span>
+            <span>Importar CSV / Conectar TikTok</span>
           </button>
         </div>
       )}
@@ -131,27 +131,27 @@ export function SummaryView({
       {/* LINHA 1 — 4 CARDS MESTRES */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* 1. Faturamento Bruto / Receita Atribuída */}
-        <SpotlightCard className="p-5 flex flex-col justify-between bento-card">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium uppercase tracking-wider text-zinc-400">
+        <SpotlightCard className="p-5 sm:p-6 flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.07em] text-slate-400">
               {isTikTok ? "Receita Atribuída" : "Faturamento Bruto"}
             </span>
-            <div className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
-              <DollarSign className="w-3.5 h-3.5 text-white" />
+            <div className="w-8 h-8 rounded-xl bg-[#1d74ff]/12 border border-[#3b8bff]/25 flex items-center justify-center shrink-0">
+              <DollarSign className="w-4 h-4 text-[#5ea1ff]" />
             </div>
           </div>
-          <div className="my-3">
-            <div className="text-2xl sm:text-3xl font-semibold text-white font-mono tabular-nums tracking-tight">
+          <div className="my-3.5">
+            <div className="dashfy-kpi-value text-2xl sm:text-[28px] font-bold text-white leading-tight">
               {formatBRL(metrics.grossRevenue)}
             </div>
           </div>
-          <div className="text-[11px] text-zinc-400 pt-2 border-t border-white/[0.06] flex items-center justify-between gap-2">
+          <div className="text-xs text-slate-400 pt-3 border-t border-blue-200/10 flex items-center justify-between gap-2">
             <span>
               {isTikTok
                 ? `${metrics.approvedCount} conversões atribuídas`
                 : `${metrics.approvedCount} vendas aprovadas`}
             </span>
-            <span className="text-zinc-300 font-mono">
+            <span className="text-slate-200 tabular-nums font-medium">
               {isTikTok
                 ? "TikTok Ads"
                 : `Ticket: ${formatBRL(metrics.averageTicket)}`}
@@ -160,75 +160,85 @@ export function SummaryView({
         </SpotlightCard>
 
         {/* 2. Receita Líquida */}
-        <SpotlightCard className="p-5 flex flex-col justify-between bento-card">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium uppercase tracking-wider text-zinc-400">
+        <SpotlightCard className="p-5 sm:p-6 flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.07em] text-slate-400">
               Receita Líquida
             </span>
-            <div className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
-              <Banknote className="w-3.5 h-3.5 text-white" />
+            <div className="w-8 h-8 rounded-xl bg-[#1d74ff]/12 border border-[#3b8bff]/25 flex items-center justify-center shrink-0">
+              <Banknote className="w-4 h-4 text-[#5ea1ff]" />
             </div>
           </div>
-          <div className="my-3">
-            <div className="text-2xl sm:text-3xl font-semibold text-white font-mono tabular-nums tracking-tight">
+          <div className="my-3.5">
+            <div className="dashfy-kpi-value text-2xl sm:text-[28px] font-bold text-white leading-tight">
               {formatBRL(metrics.netRevenue)}
             </div>
           </div>
-          <div className="text-[11px] text-zinc-400 pt-2 border-t border-white/[0.06] flex items-center justify-between">
-            <span>Taxas: {formatBRL(metrics.checkoutOrPlatformFees + metrics.customFeesTotal)}</span>
-            <span className="text-zinc-300">Base do Lucro</span>
+          <div className="text-xs text-slate-400 pt-3 border-t border-blue-200/10 flex items-center justify-between gap-2">
+            <span className="tabular-nums">
+              Taxas: {formatBRL(metrics.checkoutOrPlatformFees + metrics.customFeesTotal)}
+            </span>
+            <span className="font-medium text-slate-300">Base do Lucro</span>
           </div>
         </SpotlightCard>
 
         {/* 3. Gastos com Anúncios */}
-        <SpotlightCard className="p-5 flex flex-col justify-between bento-card">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium uppercase tracking-wider text-zinc-400">
+        <SpotlightCard className="p-5 sm:p-6 flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.07em] text-slate-400">
               Gastos com Anúncios
             </span>
-            <div className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
-              <Megaphone className="w-3.5 h-3.5 text-white" />
+            <div className="w-8 h-8 rounded-xl bg-[#1d74ff]/12 border border-[#3b8bff]/25 flex items-center justify-center shrink-0">
+              <Megaphone className="w-4 h-4 text-[#5ea1ff]" />
             </div>
           </div>
-          <div className="my-3">
-            <div className="text-2xl sm:text-3xl font-semibold text-white font-mono tabular-nums tracking-tight">
+          <div className="my-3.5">
+            <div className="dashfy-kpi-value text-2xl sm:text-[28px] font-bold text-white leading-tight">
               {formatBRL(metrics.adExpenses)}
             </div>
           </div>
-          <div className="text-[11px] text-zinc-400 pt-2 border-t border-white/[0.06] flex items-center justify-between">
-            <span>Outros: {formatBRL(metrics.otherExpenses)}</span>
-            <span className="font-mono text-zinc-300">
+          <div className="text-xs text-slate-400 pt-3 border-t border-blue-200/10 flex items-center justify-between gap-2">
+            <span className="tabular-nums">Outros: {formatBRL(metrics.otherExpenses)}</span>
+            <span className="tabular-nums font-medium text-slate-200">
               {isTikTok ? `CPA: ${formatBRL(metrics.cpa)}` : "Ads + Tráfego"}
             </span>
           </div>
         </SpotlightCard>
 
-        {/* 4. Lucro Estimado (VERDE SE LUCRO, VERMELHO SE PREJUÍZO — SOMENTE NO NÚMERO) */}
-        <SpotlightCard className="p-5 flex flex-col justify-between bento-card">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium uppercase tracking-wider text-zinc-400">
-              {isTikTok ? "Lucro Estimado" : "Lucro Estimado"}
+        {/* 4. Lucro Estimado */}
+        <SpotlightCard className="p-5 sm:p-6 flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.07em] text-slate-400">
+              Lucro Estimado
             </span>
-            <div className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
-              <TrendingUp className="w-3.5 h-3.5 text-zinc-300" />
+            <div
+              className={`w-8 h-8 rounded-xl border flex items-center justify-center shrink-0 ${
+                metrics.profit > 0
+                  ? "bg-emerald-500/12 border-emerald-400/25 text-emerald-400"
+                  : metrics.profit < 0
+                    ? "bg-rose-500/12 border-rose-400/25 text-rose-400"
+                    : "bg-[#1d74ff]/12 border-[#3b8bff]/25 text-[#5ea1ff]"
+              }`}
+            >
+              <TrendingUp className="w-4 h-4" />
             </div>
           </div>
-          <div className="my-3">
+          <div className="my-3.5">
             <div
-              className={`text-2xl sm:text-3xl font-semibold font-mono tabular-nums tracking-tight ${
+              className={`dashfy-kpi-value text-2xl sm:text-[28px] font-bold leading-tight ${
                 metrics.profit > 0
                   ? "text-emerald-400"
                   : metrics.profit < 0
                     ? "text-rose-400"
-                    : "text-zinc-300"
+                    : "text-slate-200"
               }`}
             >
               {formatBRL(metrics.profit)}
             </div>
           </div>
-          <div className="text-[11px] text-zinc-400 pt-2 border-t border-white/[0.06] flex items-center justify-between">
+          <div className="text-xs text-slate-400 pt-3 border-t border-blue-200/10 flex items-center justify-between gap-2">
             <span>Líquido - Despesas</span>
-            <span className="font-mono text-zinc-300">
+            <span className="tabular-nums font-semibold text-slate-200">
               Margem: {metrics.marginPct.toFixed(1)}%
             </span>
           </div>
@@ -238,49 +248,49 @@ export function SummaryView({
       {/* LINHA 2 — 5 CARDS SECUNDÁRIOS */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* ROAS */}
-        <SpotlightCard className="p-5 flex flex-col justify-between bento-card">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium uppercase tracking-wider text-zinc-400">
+        <SpotlightCard className="p-5 flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.07em] text-slate-400">
               ROAS
             </span>
-            <div className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
-              <Target className="w-3.5 h-3.5 text-white" />
+            <div className="w-8 h-8 rounded-xl bg-[#1d74ff]/10 border border-blue-200/15 flex items-center justify-center shrink-0">
+              <Target className="w-4 h-4 text-[#5ea1ff]" />
             </div>
           </div>
           <div
-            className={`my-2.5 text-2xl font-semibold font-mono tabular-nums ${
+            className={`dashfy-kpi-value my-3 text-2xl font-bold ${
               metrics.roas !== null
                 ? metrics.roas >= 1
                   ? "text-emerald-400"
                   : "text-rose-400"
-                : "text-zinc-400"
+                : "text-slate-400"
             }`}
           >
             {metrics.roas !== null ? `${metrics.roas.toFixed(2)}x` : "—"}
           </div>
-          <div className="text-[11px] text-zinc-400 pt-2 border-t border-white/[0.06]">
+          <div className="text-xs text-slate-400 pt-2.5 border-t border-blue-200/10">
             Retorno sobre anúncios
           </div>
         </SpotlightCard>
 
         {/* ROI */}
-        <SpotlightCard className="p-5 flex flex-col justify-between bento-card">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium uppercase tracking-wider text-zinc-400">
+        <SpotlightCard className="p-5 flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.07em] text-slate-400">
               ROI
             </span>
-            <div className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
-              <TrendingUp className="w-3.5 h-3.5 text-white" />
+            <div className="w-8 h-8 rounded-xl bg-[#1d74ff]/10 border border-blue-200/15 flex items-center justify-center shrink-0">
+              <TrendingUp className="w-4 h-4 text-[#5ea1ff]" />
             </div>
           </div>
-          <div className="my-2.5 flex items-baseline gap-2">
+          <div className="my-3 flex items-baseline gap-2">
             <span
-              className={`text-2xl font-semibold font-mono tabular-nums ${
+              className={`dashfy-kpi-value text-2xl font-bold ${
                 metrics.roiPct !== null
                   ? metrics.roiPct >= 0
                     ? "text-emerald-400"
                     : "text-rose-400"
-                  : "text-zinc-400"
+                  : "text-slate-400"
               }`}
             >
               {metrics.roiPct !== null
@@ -288,67 +298,67 @@ export function SummaryView({
                 : "—"}
             </span>
             {metrics.roiMultiplier !== null && (
-              <span className="text-xs font-mono text-zinc-400">
+              <span className="text-xs tabular-nums text-slate-400 font-medium">
                 ({metrics.roiMultiplier.toFixed(2)}x)
               </span>
             )}
           </div>
-          <div className="text-[11px] text-zinc-400 pt-2 border-t border-white/[0.06]">
+          <div className="text-xs text-slate-400 pt-2.5 border-t border-blue-200/10">
             Retorno líquido total
           </div>
         </SpotlightCard>
 
         {/* Margem */}
-        <SpotlightCard className="p-5 flex flex-col justify-between bento-card">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium uppercase tracking-wider text-zinc-400">
+        <SpotlightCard className="p-5 flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.07em] text-slate-400">
               Margem
             </span>
-            <div className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
-              <Percent className="w-3.5 h-3.5 text-white" />
+            <div className="w-8 h-8 rounded-xl bg-[#1d74ff]/10 border border-blue-200/15 flex items-center justify-center shrink-0">
+              <Percent className="w-4 h-4 text-[#5ea1ff]" />
             </div>
           </div>
           <div
-            className={`my-2.5 text-2xl font-semibold font-mono tabular-nums ${
+            className={`dashfy-kpi-value my-3 text-2xl font-bold ${
               metrics.marginPct > 0
                 ? "text-emerald-400"
                 : metrics.marginPct < 0
                   ? "text-rose-400"
-                  : "text-zinc-300"
+                  : "text-slate-300"
             }`}
           >
             {metrics.marginPct.toFixed(1)}%
           </div>
-          <div className="text-[11px] text-zinc-400 pt-2 border-t border-white/[0.06]">
+          <div className="text-xs text-slate-400 pt-2.5 border-t border-blue-200/10">
             Lucro / Faturamento
           </div>
         </SpotlightCard>
 
         {/* Pendentes / CPC */}
-        <SpotlightCard className="p-5 flex flex-col justify-between bento-card">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium uppercase tracking-wider text-zinc-400">
+        <SpotlightCard className="p-5 flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.07em] text-slate-400">
               {isTikTok ? "CPC / CPM" : "Vendas Pendentes"}
             </span>
-            <div className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
-              <Clock className="w-3.5 h-3.5 text-white" />
+            <div className="w-8 h-8 rounded-xl bg-[#1d74ff]/10 border border-blue-200/15 flex items-center justify-center shrink-0">
+              <Clock className="w-4 h-4 text-[#5ea1ff]" />
             </div>
           </div>
           {isTikTok ? (
             <>
-              <div className="my-2.5 text-2xl font-semibold text-white font-mono tabular-nums">
+              <div className="dashfy-kpi-value my-3 text-2xl font-bold text-white">
                 {formatBRL(metrics.cpc)}
               </div>
-              <div className="text-[11px] text-zinc-400 pt-2 border-t border-white/[0.06] font-mono">
+              <div className="text-xs text-slate-400 pt-2.5 border-t border-blue-200/10 tabular-nums">
                 CPM: {formatBRL(metrics.cpm)}
               </div>
             </>
           ) : (
             <>
-              <div className="my-2.5 text-2xl font-semibold text-white font-mono tabular-nums">
+              <div className="dashfy-kpi-value my-3 text-2xl font-bold text-white">
                 {formatBRL(metrics.pendingAmount)}
               </div>
-              <div className="text-[11px] text-zinc-400 pt-2 border-t border-white/[0.06]">
+              <div className="text-xs text-slate-400 pt-2.5 border-t border-blue-200/10">
                 {metrics.pendingCount} pedidos pendentes
               </div>
             </>
@@ -356,27 +366,27 @@ export function SummaryView({
         </SpotlightCard>
 
         {/* Taxa de Aprovação */}
-        <SpotlightCard className="p-5 flex flex-col justify-between bento-card">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium uppercase tracking-wider text-zinc-400">
+        <SpotlightCard className="p-5 flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.07em] text-slate-400">
               {isTikTok ? "Taxa de Conv." : "Aprovação"}
             </span>
-            <div className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
-              <CheckCircle2 className="w-3.5 h-3.5 text-white" />
+            <div className="w-8 h-8 rounded-xl bg-[#1d74ff]/10 border border-blue-200/15 flex items-center justify-center shrink-0">
+              <CheckCircle2 className="w-4 h-4 text-[#5ea1ff]" />
             </div>
           </div>
-          <div className="my-2.5 text-2xl font-semibold text-white font-mono tabular-nums">
+          <div className="dashfy-kpi-value my-3 text-2xl font-bold text-white">
             {metrics.approvalRate.toFixed(1)}%
           </div>
-          <div className="text-[11px] text-zinc-400 pt-2 border-t border-white/[0.06] flex items-center justify-between gap-2">
+          <div className="text-xs text-slate-400 pt-2.5 border-t border-blue-200/10 flex items-center justify-between gap-2">
             {isTikTok ? (
-              <span>CTR: {metrics.ctr.toFixed(2)}%</span>
+              <span className="tabular-nums">CTR: {metrics.ctr.toFixed(2)}%</span>
             ) : (
               <>
                 <span>
                   {metrics.approvedCount} de {metrics.totalOrdersCount} vendas
                 </span>
-                <span className="font-mono text-rose-300/90">
+                <span className="tabular-nums text-rose-300/90 font-medium">
                   Reemb.: {metrics.refundedCount}
                 </span>
               </>
@@ -385,9 +395,9 @@ export function SummaryView({
         </SpotlightCard>
       </section>
 
-      {/* GRÁFICO DE DESEMPENHO (CURVA/BARRAS) + COMPOSIÇÃO FINANCEIRA + VENDAS POR PRODUTO */}
+      {/* GRÁFICO DE DESEMPENHO (CURVA/BARRAS) + COMPOSIÇÃO FINANCEIRA */}
       <section className="grid grid-cols-1 xl:grid-cols-12 gap-5">
-        <SpotlightCard className="xl:col-span-8 p-5 sm:p-6 bento-card">
+        <SpotlightCard className="xl:col-span-8 p-5 sm:p-6">
           <RevenueTrendChart
             series={metrics.dailySeries}
             title={`Desempenho Diário — ${dashboardName}`}
@@ -396,7 +406,7 @@ export function SummaryView({
           />
         </SpotlightCard>
 
-        <SpotlightCard className="xl:col-span-4 p-5 sm:p-6 bento-card flex flex-col justify-between space-y-5">
+        <SpotlightCard className="xl:col-span-4 p-5 sm:p-6 flex flex-col justify-between space-y-5">
           <FinancialBreakdownDonut
             profit={metrics.profit}
             adExpenses={metrics.adExpenses}
@@ -409,41 +419,43 @@ export function SummaryView({
 
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Vendas por Produto */}
-        <SpotlightCard className="lg:col-span-3 p-5 sm:p-6 bento-card flex flex-col justify-between space-y-4">
+        <SpotlightCard className="lg:col-span-3 p-5 sm:p-6 flex flex-col justify-between space-y-4">
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-white tracking-tight flex items-center gap-2">
-                <Package className="w-4 h-4 text-zinc-300" />
+              <h3 className="font-display text-sm sm:text-base font-semibold text-white tracking-tight flex items-center gap-2.5">
+                <span className="w-8 h-8 rounded-xl bg-[#1d74ff]/15 border border-[#3b8bff]/30 flex items-center justify-center">
+                  <Package className="w-4 h-4 text-[#5ea1ff]" />
+                </span>
                 <span>Vendas por Produto</span>
               </h3>
-              <span className="text-[11px] font-mono text-zinc-500">
+              <span className="text-xs tabular-nums font-medium text-slate-400">
                 {metrics.productBreakdown.length} itens
               </span>
             </div>
 
             {metrics.productBreakdown.length === 0 ? (
-              <div className="py-10 text-center rounded-xl border border-dashed border-white/10 text-xs text-zinc-500 bg-white/[0.01]">
+              <div className="py-10 text-center rounded-xl border border-dashed border-blue-200/15 text-xs text-slate-400 bg-[#050b18]/60">
                 Nenhum produto com vendas no período.
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-3.5">
                 {metrics.productBreakdown.slice(0, 5).map((prod) => (
                   <div key={prod.productName} className="space-y-1.5">
                     <div className="flex items-center justify-between text-xs gap-2">
-                      <span className="font-medium text-zinc-200 truncate">
+                      <span className="font-medium text-slate-100 truncate">
                         {prod.productName}
                       </span>
-                      <span className="font-mono font-semibold text-white shrink-0">
+                      <span className="tabular-nums font-semibold text-white shrink-0">
                         {formatBRL(prod.grossRevenue)}
                       </span>
                     </div>
-                    <div className="w-full h-1.5 rounded-full bg-white/10 overflow-hidden">
+                    <div className="w-full h-2 rounded-full bg-[#050b18] border border-blue-200/10 overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-white"
+                        className="h-full rounded-full bg-gradient-to-r from-[#1d74ff] to-[#5ea1ff]"
                         style={{ width: `${Math.max(4, prod.sharePct)}%` }}
                       />
                     </div>
-                    <div className="flex items-center justify-between text-[10px] text-zinc-400 font-mono">
+                    <div className="flex items-center justify-between text-[11px] text-slate-400 tabular-nums">
                       <span>{prod.count} unid.</span>
                       <span>{prod.sharePct.toFixed(1)}%</span>
                     </div>
@@ -454,26 +466,26 @@ export function SummaryView({
           </div>
 
           {!isTikTok && (
-            <div className="pt-4 border-t border-white/[0.08] space-y-2">
+            <div className="pt-4 border-t border-blue-200/10 space-y-2.5">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-zinc-400">Saldo Disponível OmegaPay</span>
-                <span className="font-mono font-semibold text-white">
+                <span className="text-slate-400">Saldo Disponível OmegaPay</span>
+                <span className="tabular-nums font-semibold text-white">
                   {formatBRL(omegaBalance?.available ?? 0)}
                 </span>
               </div>
               <div className="flex items-center justify-between text-xs">
-                <span className="text-zinc-400">Saldo Pendente</span>
-                <span className="font-mono text-zinc-300">
+                <span className="text-slate-400">Saldo Pendente</span>
+                <span className="tabular-nums text-slate-300">
                   {formatBRL(omegaBalance?.pending ?? 0)}
                 </span>
               </div>
               <button
                 type="button"
                 onClick={() => onNavigateTab("saldo")}
-                className="btn-pressable w-full mt-1 py-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-xs font-medium text-white flex items-center justify-center gap-1.5"
+                className="btn-pressable dashfy-btn-secondary w-full mt-1 h-9 text-xs"
               >
                 <span>Ver detalhes do Saldo</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+                <ArrowRight className="w-3.5 h-3.5 text-[#5ea1ff]" />
               </button>
             </div>
           )}
@@ -481,15 +493,15 @@ export function SummaryView({
       </section>
 
       {/* TABELA RESUMIDA INFERIOR */}
-      <SpotlightCard className="p-5 sm:p-6 bento-card space-y-4">
-        <div className="flex items-center justify-between">
+      <SpotlightCard className="p-5 sm:p-6 space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h3 className="text-sm font-semibold text-white tracking-tight">
+            <h3 className="font-display text-sm sm:text-base font-semibold text-white tracking-tight">
               {isTikTok
                 ? `Resumo de Campanhas — ${dashboardName}`
                 : `Últimas Transações — ${dashboardName}`}
             </h3>
-            <p className="text-xs text-zinc-400">
+            <p className="text-xs text-slate-400 mt-0.5">
               {isTikTok
                 ? "Principais campanhas por receita atribuída e lucro estimado"
                 : "Vendas registradas em tempo real via webhook"}
@@ -498,58 +510,59 @@ export function SummaryView({
           <button
             type="button"
             onClick={() => onNavigateTab(isTikTok ? "tiktok_ads" : "vendas")}
-            className="btn-pressable text-xs text-white hover:underline font-medium"
+            className="btn-pressable inline-flex items-center gap-1.5 text-xs text-[#5ea1ff] hover:text-sky-300 font-semibold transition"
           >
-            {isTikTok ? "Abrir TikTok Ads" : "Ver todas"} &rarr;
+            <span>{isTikTok ? "Abrir TikTok Ads" : "Ver todas"}</span>
+            <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
 
         {isTikTok ? (
           topCampaigns.length === 0 ? (
-            <div className="py-8 text-center rounded-xl border border-dashed border-white/10 text-xs text-zinc-500 bg-white/[0.01]">
+            <div className="py-10 text-center rounded-xl border border-dashed border-blue-200/15 text-xs text-slate-400 bg-[#050b18]/60">
               Nenhuma campanha TikTok encontrada para os filtros aplicados.
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
+            <div className="overflow-x-auto rounded-xl border border-blue-200/10">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="border-b border-white/10 bg-[#08080a] text-zinc-400 uppercase tracking-wider text-[10px]">
-                    <th className="py-2.5 px-3 font-medium">Campanha</th>
-                    <th className="py-2.5 px-3 font-medium text-right">Investimento</th>
-                    <th className="py-2.5 px-3 font-medium text-right">Conversões</th>
-                    <th className="py-2.5 px-3 font-medium text-right">Receita Atribuída</th>
-                    <th className="py-2.5 px-3 font-medium text-right">ROAS</th>
-                    <th className="py-2.5 px-3 font-medium text-right">Lucro Estimado</th>
+                  <tr className="border-b border-blue-200/10 bg-[#050b18] text-slate-400 uppercase tracking-[0.06em] text-[10px]">
+                    <th className="py-3 px-4 font-semibold">Campanha</th>
+                    <th className="py-3 px-4 font-semibold text-right">Investimento</th>
+                    <th className="py-3 px-4 font-semibold text-right">Conversões</th>
+                    <th className="py-3 px-4 font-semibold text-right">Receita Atribuída</th>
+                    <th className="py-3 px-4 font-semibold text-right">ROAS</th>
+                    <th className="py-3 px-4 font-semibold text-right">Lucro Estimado</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/[0.04] bg-[#0c0c0e]">
+                <tbody className="divide-y divide-blue-200/[0.06] bg-[#0a1529]">
                   {topCampaigns.map((c) => {
                     const roas = c.spend > 0 ? c.revenue / c.spend : 0;
                     const profit = c.revenue - c.spend;
                     return (
-                      <tr key={c.name} className="hover:bg-white/[0.03] transition-colors">
-                        <td className="py-2.5 px-3 text-white font-medium max-w-[240px] truncate">
+                      <tr key={c.name} className="hover:bg-[#1d74ff]/[0.06] transition-colors">
+                        <td className="py-3 px-4 text-white font-medium max-w-[240px] truncate">
                           {c.name}
                         </td>
-                        <td className="py-2.5 px-3 text-right font-mono text-zinc-300">
+                        <td className="py-3 px-4 text-right tabular-nums text-slate-300">
                           {formatBRL(c.spend)}
                         </td>
-                        <td className="py-2.5 px-3 text-right font-mono text-zinc-300">
+                        <td className="py-3 px-4 text-right tabular-nums text-slate-300">
                           {c.conversions}
                         </td>
-                        <td className="py-2.5 px-3 text-right font-mono text-white font-medium">
+                        <td className="py-3 px-4 text-right tabular-nums text-white font-semibold">
                           {formatBRL(c.revenue)}
                         </td>
-                        <td className="py-2.5 px-3 text-right font-mono text-zinc-300">
+                        <td className="py-3 px-4 text-right tabular-nums text-slate-200 font-medium">
                           {c.spend > 0 ? `${roas.toFixed(2)}x` : "—"}
                         </td>
                         <td
-                          className={`py-2.5 px-3 text-right font-mono font-medium ${
+                          className={`py-3 px-4 text-right tabular-nums font-semibold ${
                             profit > 0
                               ? "text-emerald-400"
                               : profit < 0
                                 ? "text-rose-400"
-                                : "text-zinc-400"
+                                : "text-slate-400"
                           }`}
                         >
                           {formatBRL(profit)}
@@ -562,43 +575,43 @@ export function SummaryView({
             </div>
           )
         ) : recentTransactions.length === 0 ? (
-          <div className="py-8 text-center rounded-xl border border-dashed border-white/10 text-xs text-zinc-500 bg-white/[0.01]">
+          <div className="py-10 text-center rounded-xl border border-dashed border-blue-200/15 text-xs text-slate-400 bg-[#050b18]/60">
             Nenhuma transação no período selecionado.
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
+          <div className="overflow-x-auto rounded-xl border border-blue-200/10">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-white/10 bg-[#08080a] text-zinc-400 uppercase tracking-wider text-[10px]">
-                  <th className="py-2.5 px-3 font-medium">Data</th>
-                  <th className="py-2.5 px-3 font-medium">Produto</th>
-                  <th className="py-2.5 px-3 font-medium">ID Transação</th>
-                  <th className="py-2.5 px-3 font-medium text-right">Bruto</th>
-                  <th className="py-2.5 px-3 font-medium text-right">Líquido</th>
-                  <th className="py-2.5 px-3 font-medium text-center">Status</th>
+                <tr className="border-b border-blue-200/10 bg-[#050b18] text-slate-400 uppercase tracking-[0.06em] text-[10px]">
+                  <th className="py-3 px-4 font-semibold">Data</th>
+                  <th className="py-3 px-4 font-semibold">Produto</th>
+                  <th className="py-3 px-4 font-semibold">ID Transação</th>
+                  <th className="py-3 px-4 font-semibold text-right">Bruto</th>
+                  <th className="py-3 px-4 font-semibold text-right">Líquido</th>
+                  <th className="py-3 px-4 font-semibold text-center">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/[0.04] bg-[#0c0c0e]">
+              <tbody className="divide-y divide-blue-200/[0.06] bg-[#0a1529]">
                 {recentTransactions.slice(0, 6).map((tx) => {
                   const meta = getTransactionStatusMeta(tx.status);
                   return (
-                    <tr key={tx.id} className="hover:bg-white/[0.03] transition-colors">
-                      <td className="py-2.5 px-3 text-zinc-400 font-mono whitespace-nowrap">
+                    <tr key={tx.id} className="hover:bg-[#1d74ff]/[0.06] transition-colors">
+                      <td className="py-3 px-4 text-slate-400 tabular-nums whitespace-nowrap">
                         {formatDateBR(tx.paidAt || tx.createdAt)}
                       </td>
-                      <td className="py-2.5 px-3 text-white font-medium max-w-[200px] truncate">
+                      <td className="py-3 px-4 text-white font-medium max-w-[200px] truncate">
                         {tx.productName}
                       </td>
-                      <td className="py-2.5 px-3 text-zinc-400 font-mono">{tx.id}</td>
-                      <td className="py-2.5 px-3 text-right font-mono text-zinc-300">
+                      <td className="py-3 px-4 text-slate-400 font-mono text-[11px]">{tx.id}</td>
+                      <td className="py-3 px-4 text-right tabular-nums text-slate-300">
                         {formatBRL(tx.grossAmount)}
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono text-white font-medium">
+                      <td className="py-3 px-4 text-right tabular-nums text-white font-semibold">
                         {formatBRL(tx.netAmount)}
                       </td>
-                      <td className="py-2.5 px-3 text-center whitespace-nowrap">
+                      <td className="py-3 px-4 text-center whitespace-nowrap">
                         <span
-                          className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium border ${meta.badgeClass}`}
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${meta.badgeClass}`}
                         >
                           <span className={`w-1.5 h-1.5 rounded-full ${meta.dotClass}`} />
                           {meta.label}

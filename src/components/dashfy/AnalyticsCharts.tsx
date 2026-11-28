@@ -98,17 +98,17 @@ export function RevenueTrendChart({
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 className="text-sm font-semibold text-white tracking-tight flex items-center gap-2">
+          <h3 className="font-display text-sm sm:text-base font-semibold text-white tracking-tight flex items-center gap-2">
             <Activity className="w-4 h-4 text-[#5ea1ff]" />
             <span>{title}</span>
           </h3>
-          <p className="text-xs text-zinc-400 mt-0.5">{subtitle}</p>
+          <p className="text-xs text-slate-400 mt-0.5">{subtitle}</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-3 text-[11px] text-zinc-400">
+          <div className="flex items-center gap-3 text-[11px] text-slate-300">
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#3b8bff]" />
+              <span className="w-2.5 h-2.5 rounded-full bg-[#1d74ff] ring-2 ring-[#3b8bff]/30" />
               {revenueLabel}
             </span>
             <span className="flex items-center gap-1.5">
@@ -116,19 +116,19 @@ export function RevenueTrendChart({
               Lucro
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-zinc-500" />
+              <span className="w-2.5 h-2.5 rounded-full bg-slate-500" />
               Despesas
             </span>
           </div>
 
-          <div className="inline-flex items-center rounded-lg border border-white/10 bg-[#050507] p-0.5 text-[11px]">
+          <div className="inline-flex items-center rounded-xl border border-blue-200/12 bg-[#050b18] p-1 text-[11px]">
             <button
               type="button"
               onClick={() => setChartType("area")}
-              className={`px-2.5 py-1 rounded-md font-medium transition ${
+              className={`px-2.5 py-1 rounded-lg font-medium transition ${
                 chartType === "area"
-                  ? "bg-white text-black"
-                  : "text-zinc-400 hover:text-white"
+                  ? "bg-[#1d74ff] text-white font-semibold shadow-sm"
+                  : "text-slate-400 hover:text-white"
               }`}
             >
               Curva
@@ -136,10 +136,10 @@ export function RevenueTrendChart({
             <button
               type="button"
               onClick={() => setChartType("bars")}
-              className={`px-2.5 py-1 rounded-md font-medium transition ${
+              className={`px-2.5 py-1 rounded-lg font-medium transition ${
                 chartType === "bars"
-                  ? "bg-white text-black"
-                  : "text-zinc-400 hover:text-white"
+                  ? "bg-[#1d74ff] text-white font-semibold shadow-sm"
+                  : "text-slate-400 hover:text-white"
               }`}
             >
               Barras
@@ -149,22 +149,22 @@ export function RevenueTrendChart({
       </div>
 
       {series.length === 0 ? (
-        <div className="h-56 flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 bg-white/[0.01] text-xs text-zinc-500">
-          <BarChart3 className="w-6 h-6 text-zinc-600 mb-2" />
+        <div className="h-56 flex flex-col items-center justify-center rounded-2xl border border-dashed border-blue-200/15 bg-[#050b18]/60 text-xs text-slate-400">
+          <BarChart3 className="w-6 h-6 text-[#5ea1ff]/50 mb-2" />
           <span>Sem movimentações registradas no período selecionado.</span>
         </div>
       ) : chartType === "area" ? (
-        <div className="relative rounded-2xl bg-[#070a12] border border-white/[0.07] p-3 sm:p-4">
+        <div className="relative rounded-2xl bg-[#050b18] border border-blue-200/10 p-3.5 sm:p-4">
           {activePoint && (
-            <div className="mb-2 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 bg-[#0c1220] px-3 py-2 text-[11px]">
-              <span className="font-mono font-semibold text-white">
+            <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#3b8bff]/25 bg-[#0a1529] px-3.5 py-2 text-[11px]">
+              <span className="tabular-nums font-semibold text-white">
                 {formatDateBR(activePoint.day.date)}
               </span>
-              <div className="flex flex-wrap items-center gap-3 font-mono">
-                <span className="text-sky-300">
+              <div className="flex flex-wrap items-center gap-3 tabular-nums">
+                <span className="text-sky-300 font-medium">
                   Rec: {formatBRL(activePoint.day.grossRevenue)}
                 </span>
-                <span className="text-zinc-400">
+                <span className="text-slate-400">
                   Desp: {formatBRL(activePoint.day.expenses)}
                 </span>
                 <span
@@ -318,7 +318,7 @@ export function RevenueTrendChart({
           </svg>
         </div>
       ) : (
-        <div className="relative h-60 w-full flex items-end gap-2 pt-8 pb-6 px-3 rounded-2xl bg-[#070a12] border border-white/[0.07]">
+        <div className="relative h-60 w-full flex items-end gap-2 pt-8 pb-6 px-3.5 rounded-2xl bg-[#050b18] border border-blue-200/10">
           {series.map((day, idx) => {
             const revH = Math.max(4, (day.grossRevenue / maxVal) * 100);
             const profH = Math.max(
@@ -338,22 +338,22 @@ export function RevenueTrendChart({
                 className="flex-1 h-full flex flex-col justify-end items-center relative group cursor-pointer"
               >
                 {isHovered && (
-                  <div className="absolute -top-2 z-20 -translate-y-full w-44 rounded-xl border border-white/15 bg-[#0c1220] p-2.5 shadow-xl text-[11px] pointer-events-none">
-                    <div className="font-mono font-semibold text-white mb-1">
+                  <div className="absolute -top-2 z-20 -translate-y-full w-44 rounded-xl border border-[#3b8bff]/30 bg-[#0a1529] p-2.5 shadow-xl text-[11px] pointer-events-none">
+                    <div className="tabular-nums font-semibold text-white mb-1">
                       {formatDateBR(day.date)}
                     </div>
                     <div className="flex justify-between text-sky-300">
                       <span>{revenueLabel}:</span>
-                      <span className="font-mono">{formatBRL(day.grossRevenue)}</span>
+                      <span className="tabular-nums">{formatBRL(day.grossRevenue)}</span>
                     </div>
-                    <div className="flex justify-between text-zinc-400">
+                    <div className="flex justify-between text-slate-400">
                       <span>Despesas:</span>
-                      <span className="font-mono">{formatBRL(day.expenses)}</span>
+                      <span className="tabular-nums">{formatBRL(day.expenses)}</span>
                     </div>
-                    <div className="flex justify-between font-semibold pt-1 mt-1 border-t border-white/10">
-                      <span className="text-zinc-200">Lucro:</span>
+                    <div className="flex justify-between font-semibold pt-1 mt-1 border-t border-blue-200/10">
+                      <span className="text-slate-200">Lucro:</span>
                       <span
-                        className={`font-mono ${
+                        className={`tabular-nums ${
                           day.profit >= 0 ? "text-emerald-400" : "text-rose-400"
                         }`}
                       >
@@ -365,7 +365,7 @@ export function RevenueTrendChart({
 
                 <div className="w-full h-full flex items-end justify-center gap-1 px-0.5">
                   <div
-                    className="w-1/3 max-w-[14px] rounded-t-md bg-gradient-to-t from-[#1d74ff]/80 to-[#60a5fa] transition-all duration-300"
+                    className="w-1/3 max-w-[14px] rounded-t-md bg-gradient-to-t from-[#1d74ff]/85 to-[#5ea1ff] transition-all duration-300"
                     style={{ height: `${revH}%` }}
                   />
                   {day.profit > 0 && (
@@ -376,13 +376,13 @@ export function RevenueTrendChart({
                   )}
                   {day.expenses > 0 && (
                     <div
-                      className="w-1/3 max-w-[10px] rounded-t-md bg-zinc-600/90 transition-all duration-300"
+                      className="w-1/3 max-w-[10px] rounded-t-md bg-slate-600/90 transition-all duration-300"
                       style={{ height: `${expH}%` }}
                     />
                   )}
                 </div>
 
-                <span className="absolute -bottom-5 text-[10px] font-mono text-zinc-500 group-hover:text-zinc-200 whitespace-nowrap">
+                <span className="absolute -bottom-5 text-[10px] tabular-nums text-slate-500 group-hover:text-slate-200 whitespace-nowrap">
                   {day.date.slice(8, 10)}/{day.date.slice(5, 7)}
                 </span>
               </div>
@@ -428,11 +428,11 @@ export function FinancialBreakdownDonut({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-semibold text-white tracking-tight flex items-center gap-2">
-            <PieChart className="w-4 h-4 text-emerald-400" />
+          <h3 className="font-display text-sm sm:text-base font-semibold text-white tracking-tight flex items-center gap-2">
+            <PieChart className="w-4 h-4 text-[#5ea1ff]" />
             <span>Composição Financeira</span>
           </h3>
-          <p className="text-xs text-zinc-400 mt-0.5">
+          <p className="text-xs text-slate-400 mt-0.5">
             Distribuição de lucro, mídia paga, taxas e custos
           </p>
         </div>
@@ -446,7 +446,7 @@ export function FinancialBreakdownDonut({
               cy="70"
               r={radius}
               fill="none"
-              stroke="rgba(255,255,255,0.07)"
+              stroke="rgba(147, 197, 253, 0.1)"
               strokeWidth="14"
             />
             {segments.total > 0 &&
@@ -473,16 +473,16 @@ export function FinancialBreakdownDonut({
               })}
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-            <span className="text-[10px] uppercase tracking-wider text-zinc-400">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
               Margem
             </span>
             <span
-              className={`text-lg font-bold font-mono tabular-nums ${
+              className={`dashfy-kpi-value text-lg font-bold ${
                 marginPct > 0
                   ? "text-emerald-400"
                   : marginPct < 0
                     ? "text-rose-400"
-                    : "text-zinc-300"
+                    : "text-slate-200"
               }`}
             >
               {marginPct.toFixed(1)}%
@@ -496,21 +496,21 @@ export function FinancialBreakdownDonut({
             return (
               <div key={seg.label} className="space-y-1">
                 <div className="flex items-center justify-between text-xs gap-2">
-                  <span className="flex items-center gap-2 text-zinc-300 truncate">
+                  <span className="flex items-center gap-2 text-slate-300 truncate">
                     <span
                       className="w-2.5 h-2.5 rounded-full shrink-0"
                       style={{ backgroundColor: seg.color }}
                     />
                     <span className="truncate">{seg.label}</span>
                   </span>
-                  <span className="font-mono font-medium text-white shrink-0">
+                  <span className="tabular-nums font-semibold text-white shrink-0">
                     {formatBRL(seg.value)}{" "}
-                    <span className="text-[10px] text-zinc-500">
+                    <span className="text-[10px] text-slate-400 font-normal">
                       ({pct.toFixed(0)}%)
                     </span>
                   </span>
                 </div>
-                <div className="w-full h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+                <div className="w-full h-1.5 rounded-full bg-[#050b18] border border-blue-200/10 overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all duration-300"
                     style={{

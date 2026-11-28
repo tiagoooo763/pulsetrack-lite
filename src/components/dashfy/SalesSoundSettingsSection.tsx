@@ -509,20 +509,20 @@ export function SalesSoundSettingsSection({
   return (
     <SpotlightCard className="p-5 sm:p-6 bento-card space-y-6">
       {/* Cabeçalho: Configurações -> Notificações -> Sons de vendas */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/10">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-blue-200/12">
         <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-white/5 border border-blue-200/12 flex items-center justify-center shrink-0">
             <Volume2 className="w-5 h-5 text-white" />
           </div>
           <div>
-            <div className="text-[11px] font-medium text-zinc-400">
+            <div className="text-[11px] font-medium text-slate-400">
               Configurações &rarr; Notificações &rarr;{" "}
               <span className="text-white">Sons de vendas</span>
             </div>
             <h3 className="text-base font-semibold text-white mt-0.5">
               Sons de Notificações de Vendas
             </h3>
-            <p className="text-xs text-zinc-400 mt-0.5">
+            <p className="text-xs text-slate-400 mt-0.5">
               Personalize o alerta sonoro tocado na sua conta quando uma venda é
               efetivamente aprovada nos gateways integrados.
             </p>
@@ -530,8 +530,8 @@ export function SalesSoundSettingsSection({
         </div>
 
         {/* Ativar / Desativar sons */}
-        <label className="inline-flex items-center gap-3 px-3.5 py-2.5 rounded-xl border border-white/10 bg-[#08080a] cursor-pointer shrink-0 select-none">
-          <span className="text-xs font-medium text-zinc-200">
+        <label className="inline-flex items-center gap-3 px-3.5 py-2.5 rounded-xl border border-blue-200/12 bg-[#050b18] cursor-pointer shrink-0 select-none">
+          <span className="text-xs font-medium text-slate-200">
             {soundEnabled ? "Sons ativados" : "Sons desativados"}
           </span>
           <button
@@ -573,7 +573,7 @@ export function SalesSoundSettingsSection({
       )}
 
       {/* CARD: NOTIFICAÇÃO NO TELEFONE & NAVEGADOR COM SÍMBOLO DA DASHFY */}
-      <div className="rounded-2xl border border-[#1d74ff]/25 bg-gradient-to-br from-[#0b152a] via-[#090d18] to-[#08080a] p-4 sm:p-5 space-y-4">
+      <div className="rounded-2xl border border-[#1d74ff]/25 bg-gradient-to-br from-[#0b152a] via-[#091224] to-[#050b18] p-4 sm:p-5 space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 rounded-xl bg-[#1d74ff]/15 border border-[#1d74ff]/35 flex items-center justify-center shrink-0">
@@ -604,7 +604,7 @@ export function SalesSoundSettingsSection({
                           : "Aguardando ativação"}
                 </span>
               </div>
-              <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+              <p className="text-xs text-slate-400 mt-1 leading-relaxed">
                 Quando ativado, cada venda aprovada exibe o alerta nativo na barra do celular/computador com o símbolo da Dashfy e o valor recebido.
               </p>
             </div>
@@ -617,7 +617,7 @@ export function SalesSoundSettingsSection({
               disabled={requestingDevicePerm}
               className={`btn-pressable inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition ${
                 deviceStatus === "granted" && deviceEnabled
-                  ? "border border-white/15 bg-white/5 hover:bg-white/10 text-zinc-200"
+                  ? "border border-blue-200/15 bg-white/5 hover:bg-white/10 text-slate-200"
                   : "bg-[#1d74ff] hover:bg-[#2b7fff] text-white shadow-[0_8px_20px_-6px_rgba(29,116,255,0.65)]"
               }`}
             >
@@ -646,7 +646,7 @@ export function SalesSoundSettingsSection({
         </div>
 
         {/* Prévia visual realista de como cai no celular */}
-        <div className="rounded-xl border border-white/10 bg-[#050811]/90 p-3 flex items-center gap-3 max-w-md shadow-lg">
+        <div className="rounded-xl border border-blue-200/12 bg-[#050811]/90 p-3 flex items-center gap-3 max-w-md shadow-lg">
           <div className="w-10 h-10 rounded-xl bg-[#0a1428] border border-blue-400/25 flex items-center justify-center shrink-0 overflow-hidden">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -660,29 +660,29 @@ export function SalesSoundSettingsSection({
               <span className="text-xs font-semibold text-white truncate">
                 Venda feita! &bull; Dashfy
               </span>
-              <span className="text-[10px] text-zinc-500 shrink-0">agora</span>
+              <span className="text-[10px] text-slate-400 shrink-0">agora</span>
             </div>
-            <p className="text-[11px] text-zinc-300 truncate mt-0.5">
+            <p className="text-[11px] text-slate-300 truncate mt-0.5">
               Você recebeu <strong className="text-emerald-300 font-mono">R$ 197,00</strong> — Produto Digital (PIX)
             </p>
           </div>
         </div>
 
-        <p className="text-[11px] text-zinc-500">
+        <p className="text-[11px] text-slate-400">
           Dica para iPhone (iOS): toque no botão <strong>Compartilhar</strong> do Safari e selecione{" "}
           <strong>Adicionar à Tela de Início</strong> para receber notificações nativas da Dashfy como aplicativo.
         </p>
       </div>
 
       {/* Controle deslizante de volume (0% a 100%, padrão 70%) */}
-      <div className="rounded-xl border border-white/10 bg-[#08080a] p-4 space-y-2.5">
+      <div className="rounded-xl border border-blue-200/12 bg-[#050b18] p-4 space-y-2.5">
         <div className="flex items-center justify-between gap-2">
           <label
             htmlFor="sales-sound-volume"
-            className="text-xs font-medium text-zinc-200 flex items-center gap-2"
+            className="text-xs font-medium text-slate-200 flex items-center gap-2"
           >
             {soundVolume === 0 || !soundEnabled || selectedSound === "silent" ? (
-              <VolumeX className="w-4 h-4 text-zinc-400" />
+              <VolumeX className="w-4 h-4 text-slate-400" />
             ) : (
               <Volume2 className="w-4 h-4 text-white" />
             )}
@@ -702,7 +702,7 @@ export function SalesSoundSettingsSection({
           onChange={(e) => setSoundVolume(Number(e.target.value))}
           className="w-full accent-white cursor-pointer"
         />
-        <div className="flex items-center justify-between text-[10px] text-zinc-500 font-mono">
+        <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono">
           <span>0% (Mudo)</span>
           <span>70% (Padrão)</span>
           <span>100%</span>
@@ -712,11 +712,11 @@ export function SalesSoundSettingsSection({
       {/* Biblioteca de Sons (Cartões responsivos com prévia individual) */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
             Biblioteca de Sons
           </h4>
           {loadingPrefs && (
-            <span className="text-[11px] text-zinc-500">Carregando...</span>
+            <span className="text-[11px] text-slate-400">Carregando...</span>
           )}
         </div>
 
@@ -743,7 +743,7 @@ export function SalesSoundSettingsSection({
                 className={`rounded-xl border p-4 transition-all cursor-pointer flex flex-col justify-between gap-3 ${
                   isSelected
                     ? "border-white/50 bg-white/[0.08] shadow-sm"
-                    : "border-white/10 bg-[#08080a] hover:border-white/25 hover:bg-white/[0.03]"
+                    : "border-blue-200/12 bg-[#050b18] hover:border-[#3b8bff]/40 hover:bg-[#1d74ff]/[0.06]"
                 }`}
               >
                 <div className="flex items-start justify-between gap-2">
@@ -751,8 +751,8 @@ export function SalesSoundSettingsSection({
                     <div
                       className={`w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 ${
                         isSelected
-                          ? "bg-white text-black border-white"
-                          : "bg-white/5 text-zinc-200 border-white/10"
+                          ? "bg-[#1d74ff] text-white shadow-[0_6px_16px_-5px_rgba(29,116,255,0.65)] border-white"
+                          : "bg-white/5 text-slate-200 border-blue-200/12"
                       }`}
                     >
                       <Icon className="w-4 h-4" />
@@ -763,12 +763,12 @@ export function SalesSoundSettingsSection({
                           {opt.label}
                         </span>
                         {opt.isDefault && (
-                          <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold border border-white/15 bg-white/5 text-zinc-300">
+                          <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold border border-blue-200/15 bg-white/5 text-slate-300">
                             Padrão
                           </span>
                         )}
                       </div>
-                      <p className="text-[11px] text-zinc-400 mt-0.5 leading-snug">
+                      <p className="text-[11px] text-slate-400 mt-0.5 leading-snug">
                         {opt.id === "custom" && savedPrefs.customSoundName
                           ? `Arquivo: ${savedPrefs.customSoundName}`
                           : opt.description}
@@ -780,7 +780,7 @@ export function SalesSoundSettingsSection({
                   <span
                     className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 ${
                       isSelected
-                        ? "border-white bg-white text-black"
+                        ? "border-white bg-[#1d74ff] text-white shadow-[0_6px_16px_-5px_rgba(29,116,255,0.65)]"
                         : "border-white/20 bg-transparent"
                     }`}
                     aria-hidden="true"
@@ -797,8 +797,8 @@ export function SalesSoundSettingsSection({
                     onClick={(e) => handlePreview(opt.id, e)}
                     className={`btn-pressable w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border text-[11px] font-semibold transition disabled:opacity-40 disabled:cursor-not-allowed ${
                       isPlaying
-                        ? "border-white bg-white text-black"
-                        : "border-white/15 bg-white/[0.04] hover:bg-white/[0.1] text-white"
+                        ? "border-white bg-[#1d74ff] text-white shadow-[0_6px_16px_-5px_rgba(29,116,255,0.65)]"
+                        : "border-blue-200/15 bg-white/[0.04] hover:bg-white/[0.1] text-white"
                     }`}
                   >
                     {isPlaying ? (
@@ -814,7 +814,7 @@ export function SalesSoundSettingsSection({
                     )}
                   </button>
                 ) : (
-                  <div className="py-2 px-3 rounded-lg border border-white/[0.06] bg-white/[0.02] text-center text-[11px] text-zinc-500">
+                  <div className="py-2 px-3 rounded-lg border border-blue-200/10 bg-white/[0.02] text-center text-[11px] text-slate-400">
                     Sem reprodução de áudio
                   </div>
                 )}
@@ -825,14 +825,14 @@ export function SalesSoundSettingsSection({
       </div>
 
       {/* Área de Upload de Som Personalizado (Bucket Privado) */}
-      <div className="rounded-xl border border-white/10 bg-[#08080a] p-4 sm:p-5 space-y-3">
+      <div className="rounded-xl border border-blue-200/12 bg-[#050b18] p-4 sm:p-5 space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h4 className="text-xs font-semibold text-white flex items-center gap-2">
-              <Music className="w-4 h-4 text-zinc-300" />
+              <Music className="w-4 h-4 text-slate-300" />
               <span>Áudio Personalizado (Privado na sua conta)</span>
             </h4>
-            <p className="text-[11px] text-zinc-400 mt-0.5">
+            <p className="text-[11px] text-slate-400 mt-0.5">
               Formatos aceitos: MP3, WAV ou OGG (até 2 MB). Armazenado em bucket
               privado acessível somente pela sua conta via URL temporária.
             </p>
@@ -851,7 +851,7 @@ export function SalesSoundSettingsSection({
               type="button"
               disabled={uploading}
               onClick={() => fileInputRef.current?.click()}
-              className="btn-pressable inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 text-xs font-semibold text-white disabled:opacity-50"
+              className="btn-pressable inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-blue-200/15 bg-white/5 hover:bg-white/10 text-xs font-semibold text-white disabled:opacity-50"
             >
               <Upload className="w-3.5 h-3.5" />
               <span>
@@ -868,7 +868,7 @@ export function SalesSoundSettingsSection({
                 <button
                   type="button"
                   onClick={() => handlePreview("custom")}
-                  className="btn-pressable inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 text-xs font-medium text-white"
+                  className="btn-pressable inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-blue-200/15 bg-white/5 hover:bg-white/10 text-xs font-medium text-white"
                 >
                   {playingPreviewId === "custom" ? (
                     <>
@@ -887,7 +887,7 @@ export function SalesSoundSettingsSection({
                   type="button"
                   disabled={deletingCustom}
                   onClick={handleDeleteCustomSound}
-                  className="btn-pressable inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-white/10 bg-white/[0.02] hover:border-rose-500/40 hover:text-rose-300 text-xs font-medium text-zinc-400 disabled:opacity-50"
+                  className="btn-pressable inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-blue-200/12 bg-white/[0.02] hover:border-rose-500/40 hover:text-rose-300 text-xs font-medium text-slate-400 disabled:opacity-50"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                   <span>{deletingCustom ? "Excluindo..." : "Excluir"}</span>
@@ -898,8 +898,8 @@ export function SalesSoundSettingsSection({
         </div>
 
         {savedPrefs.customSoundName && (
-          <div className="rounded-lg border border-white/10 bg-[#050507] px-3 py-2 flex items-center justify-between gap-2 text-xs">
-            <span className="text-zinc-300 truncate">
+          <div className="rounded-lg border border-blue-200/12 bg-[#050b18] px-3 py-2 flex items-center justify-between gap-2 text-xs">
+            <span className="text-slate-300 truncate">
               Arquivo atual:{" "}
               <strong className="text-white font-mono">
                 {savedPrefs.customSoundName}
@@ -913,12 +913,12 @@ export function SalesSoundSettingsSection({
       </div>
 
       {/* Ações finais: Restaurar padrão & Salvar alterações */}
-      <div className="pt-2 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="pt-2 border-t border-blue-200/12 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <button
           type="button"
           onClick={handleResetDefaults}
           disabled={resetting || saving}
-          className="btn-pressable inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-white/15 bg-[#08080a] hover:bg-white/5 text-xs font-semibold text-zinc-300 hover:text-white disabled:opacity-50"
+          className="btn-pressable inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-blue-200/15 bg-[#050b18] hover:bg-white/5 text-xs font-semibold text-slate-300 hover:text-white disabled:opacity-50"
         >
           <RotateCcw className="w-3.5 h-3.5" />
           <span>{resetting ? "Restaurando..." : "Restaurar padrão"}</span>
@@ -934,7 +934,7 @@ export function SalesSoundSettingsSection({
             type="button"
             onClick={handleSavePreferences}
             disabled={saving || resetting}
-            className="btn-pressable flex-1 sm:flex-initial px-6 py-2.5 rounded-xl bg-white hover:bg-zinc-100 text-black text-xs font-semibold disabled:opacity-50"
+            className="btn-pressable flex-1 sm:flex-initial px-6 py-2.5 rounded-xl bg-[#1d74ff] hover:bg-[#2a80ff] text-white shadow-[0_8px_22px_-6px_rgba(29,116,255,0.52)] text-xs font-semibold disabled:opacity-50"
           >
             {saving ? "Salvando..." : "Salvar alterações"}
           </button>

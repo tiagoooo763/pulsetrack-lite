@@ -2,49 +2,184 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================================
+ * DASHFY DESIGN SYSTEM — Three-Layer Token Architecture
+ * Primitive -> Semantic -> Component
+ * Official Brand Blue extracted from Dashfy Landing Page: #1d74ff
+ * ============================================================================ */
+
 :root {
   color-scheme: dark;
-  --bg-deep: #050507;
-  --surface-card: #0c0c0e;
-  --surface-elevated: #141418;
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-hover: rgba(255, 255, 255, 0.18);
+
+  /* 1. Primitive Tokens */
+  --dashfy-blue-600: #155ed4;
+  --dashfy-blue-500: #1d74ff;
+  --dashfy-blue-400: #2a80ff;
+  --dashfy-blue-350: #3b8bff;
+  --dashfy-blue-300: #5ea1ff;
+  --dashfy-sky-300: #93c5fd;
+
+  --dashfy-navy-950: #040914;
+  --dashfy-navy-925: #050b18;
+  --dashfy-navy-900: #071022;
+  --dashfy-navy-850: #0a1529;
+  --dashfy-navy-800: #0f1e38;
+  --dashfy-navy-750: #142748;
+
+  /* 2. Semantic Tokens */
+  --bg-deep: var(--dashfy-navy-950);
+  --bg-sidebar: var(--dashfy-navy-900);
+  --bg-header: rgba(6, 14, 31, 0.88);
+  --surface-card: var(--dashfy-navy-850);
+  --surface-elevated: var(--dashfy-navy-800);
+  --surface-inset: var(--dashfy-navy-925);
+
+  --border-subtle: rgba(147, 197, 253, 0.11);
+  --border-hover: rgba(59, 139, 255, 0.34);
+  --border-active: rgba(29, 116, 255, 0.6);
+
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+
+  --accent-primary: var(--dashfy-blue-500);
+  --accent-hover: var(--dashfy-blue-400);
+  --accent-soft: rgba(29, 116, 255, 0.14);
+
+  /* Spacing & Radius Scale */
+  --radius-sm: 8px;
+  --radius-md: 12px;
   --radius-card: 16px;
+  --radius-pill: 9999px;
+
+  /* Motion */
   --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-snappy: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-body {
-  background-color: var(--bg-deep);
-  color: #ededed;
-  font-feature-settings: "cv02", "cv03", "cv04", "cv11", "tnum";
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
+@layer base {
+  html {
+    background-color: var(--bg-deep);
+  }
+
+  body {
+    background-color: var(--bg-deep);
+    color: var(--text-primary);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
+    letter-spacing: -0.02em;
+  }
 }
 
-/* Tabular figures for aligned financial numbers */
+/* Tabular figures for crisp aligned financial & metric numbers */
 .tabular-nums {
   font-variant-numeric: tabular-nums lining-nums;
 }
 
-/* Premium Card with Dynamic Spotlight */
+@layer components {
+  .dashfy-kpi-value {
+    font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
+    font-variant-numeric: tabular-nums lining-nums;
+    letter-spacing: -0.025em;
+  }
+
+  .dashfy-surface {
+    background-color: var(--surface-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-card);
+    box-shadow: 0 12px 32px -16px rgba(2, 6, 18, 0.78), inset 0 1px 0 rgba(147, 197, 253, 0.06);
+  }
+
+  .dashfy-inset {
+    background-color: var(--surface-inset);
+    border: 1px solid rgba(147, 197, 253, 0.09);
+    border-radius: var(--radius-md);
+  }
+
+  .dashfy-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 0.75rem;
+    background-color: var(--accent-primary);
+    color: #ffffff;
+    font-weight: 600;
+    box-shadow: 0 8px 22px -6px rgba(29, 116, 255, 0.52);
+    transition: transform 0.15s var(--ease-snappy), background-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .dashfy-btn-primary:hover {
+    background-color: var(--accent-hover);
+    box-shadow: 0 12px 28px -6px rgba(29, 116, 255, 0.62);
+  }
+
+  .dashfy-btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 0.75rem;
+    background-color: rgba(15, 30, 56, 0.72);
+    border: 1px solid rgba(147, 197, 253, 0.14);
+    color: #e2e8f0;
+    font-weight: 500;
+    transition: transform 0.15s var(--ease-snappy), background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  }
+
+  .dashfy-btn-secondary:hover {
+    background-color: rgba(23, 42, 74, 0.9);
+    border-color: rgba(59, 139, 255, 0.36);
+    color: #ffffff;
+  }
+
+  .dashfy-input {
+    border-radius: 0.75rem;
+    background-color: var(--surface-inset);
+    border: 1px solid rgba(147, 197, 253, 0.14);
+    color: #f8fafc;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+  }
+
+  .dashfy-input::placeholder {
+    color: #64748b;
+  }
+
+  .dashfy-input:focus {
+    outline: none;
+    border-color: #3b8bff;
+    box-shadow: 0 0 0 3px rgba(29, 116, 255, 0.18);
+  }
+}
+
+/* Premium Card with Dynamic Blue Spotlight */
 .card-spotlight {
   position: relative;
   border-radius: var(--radius-card);
   background-color: var(--surface-card);
   border: 1px solid var(--border-subtle);
-  transition: border-color 0.25s var(--ease-spring), transform 0.25s var(--ease-spring), box-shadow 0.25s var(--ease-spring);
+  box-shadow: 0 12px 32px -16px rgba(2, 6, 18, 0.78), inset 0 1px 0 rgba(147, 197, 253, 0.06);
+  transition: border-color 0.25s var(--ease-spring), transform 0.25s var(--ease-spring), box-shadow 0.25s var(--ease-spring), background-color 0.25s var(--ease-spring);
   overflow: hidden;
 }
 
 .card-spotlight:hover {
   border-color: var(--border-hover);
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.8), 0 0 20px -5px rgba(255, 255, 255, 0.03);
+  box-shadow: 0 16px 36px -14px rgba(2, 8, 23, 0.85), 0 0 24px -8px rgba(29, 116, 255, 0.16), inset 0 1px 0 rgba(147, 197, 253, 0.1);
 }
 
 /* Microinteraction tactile button */
 .btn-pressable {
-  transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1), background-color 0.2s ease, border-color 0.2s ease;
+  transition: transform 0.15s var(--ease-snappy), background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
 }
 
 .btn-pressable:hover {
@@ -52,7 +187,7 @@ body {
 }
 
 .btn-pressable:active {
-  transform: translateY(1px) scale(0.985);
+  transform: translateY(0.5px) scale(0.985);
 }
 
 /* Smooth fade-in-up animation */
@@ -71,28 +206,28 @@ body {
   animation: fadeInUp 0.25s var(--ease-spring) forwards;
 }
 
-/* Custom subtle scrollbar */
+/* Custom subtle navy scrollbar */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #050507;
+  background: #040914;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #222226;
+  background: #1a2d4f;
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #3a3a42;
+  background: #2b4a80;
 }
 
-/* Accessible focus ring replacement */
+/* Accessible Dashfy Blue focus ring */
 :focus-visible {
-  outline: 2px solid rgba(255, 255, 255, 0.4);
+  outline: 2px solid rgba(59, 139, 255, 0.85);
   outline-offset: 2px;
 }
 

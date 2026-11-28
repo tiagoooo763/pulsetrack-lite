@@ -41,16 +41,16 @@ import { SummaryView } from "./dashfy/SummaryView";
 function TabPanelSkeleton() {
   return (
     <div className="space-y-5 animate-pulse" aria-label="Carregando seção">
-      <div className="h-14 rounded-2xl bg-[#0c0c0e] border border-white/[0.08]" />
+      <div className="h-14 rounded-2xl bg-[#0a1529] border border-blue-200/10" />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <div
             key={i}
-            className="h-28 rounded-2xl bg-[#0c0c0e] border border-white/[0.08]"
+            className="h-28 rounded-2xl bg-[#0a1529] border border-blue-200/10"
           />
         ))}
       </div>
-      <div className="h-64 rounded-2xl bg-[#0c0c0e] border border-white/[0.08]" />
+      <div className="h-64 rounded-2xl bg-[#0a1529] border border-blue-200/10" />
     </div>
   );
 }
@@ -140,29 +140,29 @@ function createDefaultFilters(): SummaryFilterState {
 
 function DashboardSkeleton() {
   return (
-    <div className="min-h-screen bg-[#050507] flex">
-      <div className="hidden lg:block w-64 border-r border-white/10 bg-[#08080a] p-4 space-y-4">
-        <div className="h-8 w-36 rounded-lg bg-white/10 animate-pulse" />
+    <div className="min-h-screen bg-[#040914] flex">
+      <div className="hidden lg:block w-64 border-r border-blue-200/10 bg-[#071022] p-4 space-y-4">
+        <div className="h-8 w-36 rounded-lg bg-[#1d74ff]/15 animate-pulse" />
         <div className="space-y-2 pt-4">
           {Array.from({ length: 8 }).map((_, i) => (
             <div
               key={i}
-              className="h-8 rounded-lg bg-white/[0.04] animate-pulse"
+              className="h-8 rounded-lg bg-blue-200/[0.06] animate-pulse"
             />
           ))}
         </div>
       </div>
       <div className="flex-1 p-6 space-y-5">
-        <div className="h-12 rounded-2xl bg-[#0c0c0e] border border-white/[0.08] animate-pulse" />
+        <div className="h-12 rounded-2xl bg-[#0a1529] border border-blue-200/10 animate-pulse" />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <div
               key={i}
-              className="h-32 rounded-2xl bg-[#0c0c0e] border border-white/[0.08] animate-pulse"
+              className="h-32 rounded-2xl bg-[#0a1529] border border-blue-200/10 animate-pulse"
             />
           ))}
         </div>
-        <div className="h-64 rounded-2xl bg-[#0c0c0e] border border-white/[0.08] animate-pulse" />
+        <div className="h-64 rounded-2xl bg-[#0a1529] border border-blue-200/10 animate-pulse" />
       </div>
     </div>
   );
@@ -877,7 +877,15 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[#050507] text-zinc-100 flex">
+    <div className="min-h-screen bg-[#040914] text-slate-100 flex relative">
+      {/* Glow ambiental sutil conectado à identidade da Landing Page Dashfy */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
+      >
+        <div className="absolute -top-40 left-1/3 h-[420px] w-[620px] rounded-full bg-[#1d74ff]/[0.07] blur-[140px]" />
+      </div>
+
       {/* SIDEBAR ESQUERDA FIXA E RECOLHÍVEL */}
       <Sidebar
         dashboards={dashboards}
@@ -910,46 +918,46 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
 
       {/* ÁREA DE CONTEÚDO PRINCIPAL */}
       <div
-        className={`flex-1 flex flex-col min-h-screen min-w-0 transition-all duration-300 ${
+        className={`relative z-10 flex-1 flex flex-col min-h-screen min-w-0 transition-all duration-300 ${
           sidebarCollapsed ? "lg:pl-[72px]" : "lg:pl-64"
         }`}
       >
         {/* TOP HEADER */}
-        <header className="sticky top-0 z-30 border-b border-white/[0.08] bg-[#050507]/90 backdrop-blur-md px-4 sm:px-6 py-3.5 flex items-center justify-between gap-3">
+        <header className="sticky top-0 z-30 h-16 border-b border-blue-200/10 bg-[#060e1f]/90 backdrop-blur-xl px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <button
               type="button"
               onClick={() => setMobileMenuOpen(true)}
-              className="p-2 -ml-2 rounded-lg text-zinc-400 hover:text-white lg:hidden"
+              className="p-2 -ml-2 rounded-xl text-slate-400 hover:text-white hover:bg-[#1d74ff]/15 transition lg:hidden"
               aria-label="Abrir menu lateral"
             >
               <Menu className="w-5 h-5" />
             </button>
 
             <div className="min-w-0">
-              <div className="flex items-center gap-2 text-xs">
-                <span className="w-1.5 h-1.5 rounded-full bg-white shrink-0" />
+              <div className="flex items-center gap-2.5 text-xs">
+                <span className="w-2 h-2 rounded-full bg-[#1d74ff] shadow-[0_0_10px_rgba(29,116,255,0.85)] shrink-0" />
                 {location.kind === "dashboard" ? (
                   <>
-                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium border border-white/10 bg-[#0c0c0e] text-zinc-300">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border border-[#3b8bff]/30 bg-[#1d74ff]/15 text-sky-200">
                       {activeDashboard.name}
                     </span>
-                    <span className="text-zinc-600">/</span>
+                    <span className="text-slate-600">/</span>
                   </>
                 ) : (
                   <>
-                    <span className="text-zinc-400 font-medium">Dashfy</span>
-                    <span className="text-zinc-600">/</span>
+                    <span className="text-slate-400 font-medium">Dashfy</span>
+                    <span className="text-slate-600">/</span>
                   </>
                 )}
-                <h1 className="text-sm sm:text-base font-semibold text-white tracking-tight truncate">
+                <h1 className="font-display text-sm sm:text-base font-semibold text-white tracking-tight truncate">
                   {pageTitle}
                 </h1>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2.5 shrink-0">
             {autoplayBlocked && (
               <button
                 type="button"
@@ -964,11 +972,11 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                     );
                   }
                 }}
-                className="btn-pressable inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-500/35 bg-emerald-500/15 hover:bg-emerald-500/25 text-xs font-semibold text-emerald-300"
+                className="btn-pressable h-9 inline-flex items-center gap-1.5 px-3 rounded-xl border border-emerald-400/35 bg-emerald-500/15 hover:bg-emerald-500/25 text-xs font-semibold text-emerald-200"
                 title="Seu navegador exige um clique inicial para reproduzir sons de vendas"
               >
                 <Volume2 className="w-3.5 h-3.5" />
-                <span>Ativar sons de notificações</span>
+                <span>Ativar sons</span>
               </button>
             )}
 
@@ -978,10 +986,10 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                 onClick={handleQuickAddExpense}
                 disabled={quickAdding}
                 title={`Lançar + ${formatBRL(quickPreset.amount)} (${quickPreset.title}) em ${activeDashboard.name}`}
-                className="btn-pressable hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/15 text-xs font-semibold text-amber-300 disabled:opacity-50"
+                className="btn-pressable h-9 hidden sm:inline-flex items-center gap-1.5 px-3.5 rounded-xl border border-amber-400/30 bg-amber-500/10 hover:bg-amber-500/20 text-xs font-semibold text-amber-200 disabled:opacity-50"
               >
                 <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-                <span>
+                <span className="tabular-nums">
                   {quickAdding
                     ? "Lançando..."
                     : `+ ${formatBRL(quickPreset.amount)} ${quickPreset.title}`}
@@ -993,11 +1001,11 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
               type="button"
               onClick={() => fetchDashboard(true)}
               disabled={refreshing}
-              className="btn-pressable inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-xs font-medium text-white disabled:opacity-50"
+              className="btn-pressable dashfy-btn-secondary h-9 px-3.5 text-xs disabled:opacity-50"
               title="Atualizar dados do painel"
             >
               <RefreshCw
-                className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`}
+                className={`w-3.5 h-3.5 text-[#5ea1ff] ${refreshing ? "animate-spin" : ""}`}
               />
               <span className="hidden sm:inline">Atualizar</span>
             </button>
@@ -1006,10 +1014,10 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
 
         {/* NOTIFICAÇÃO DE VENDA APROVADA EM TEMPO REAL */}
         {saleAlertToast && (
-          <div className="px-4 sm:px-6 pt-4">
+          <div className="px-4 sm:px-6 lg:px-8 pt-4 max-w-[1600px] w-full mx-auto">
             <div
               role="status"
-              className="rounded-xl border border-emerald-500/35 bg-emerald-500/10 p-3.5 text-xs flex flex-wrap items-center justify-between gap-3 animate-fade-in-up"
+              className="rounded-2xl border border-emerald-400/35 bg-[#0a1b24]/95 backdrop-blur-md p-4 text-xs flex flex-wrap items-center justify-between gap-3 animate-fade-in-up shadow-lg"
             >
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-10 h-10 rounded-xl bg-[#071426] border border-emerald-400/35 flex items-center justify-center shrink-0 overflow-hidden shadow-md">
@@ -1024,16 +1032,16 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-semibold text-white">
                       Venda feita! Você recebeu{" "}
-                      <span className="font-mono font-bold text-emerald-300">
+                      <span className="dashfy-kpi-value font-bold text-emerald-300">
                         {formatBRL(saleAlertToast.grossAmount)}
                       </span>
                     </span>
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono border border-white/15 bg-white/5 text-zinc-200">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-medium border border-blue-200/15 bg-[#0a1529] text-sky-200">
                       {saleAlertToast.gateway}
                     </span>
                     {saleAlertToast.utmSource &&
                       saleAlertToast.utmSource.toLowerCase().includes("tiktok") && (
-                        <span className="px-1.5 py-0.5 rounded text-[10px] border border-white/15 bg-white/5 text-zinc-300">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] border border-[#3b8bff]/30 bg-[#1d74ff]/15 text-sky-200">
                           Atribuída: TikTok Ads
                           {saleAlertToast.utmCampaign
                             ? ` • ${saleAlertToast.utmCampaign}`
@@ -1050,7 +1058,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
               <button
                 type="button"
                 onClick={() => setSaleAlertToast(null)}
-                className="text-emerald-200/70 hover:text-white px-1"
+                className="text-emerald-200/70 hover:text-white px-1.5 py-1 rounded-lg hover:bg-white/5 transition"
                 aria-label="Fechar notificação de venda"
               >
                 ✕
@@ -1061,22 +1069,22 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
 
         {/* TOAST FEEDBACK */}
         {toast && (
-          <div className="px-4 sm:px-6 pt-4">
+          <div className="px-4 sm:px-6 lg:px-8 pt-4 max-w-[1600px] w-full mx-auto">
             <div
-              className={`rounded-xl border p-3.5 text-xs flex items-center justify-between animate-fade-in-up ${
+              className={`rounded-2xl border p-3.5 text-xs flex items-center justify-between animate-fade-in-up ${
                 toast.type === "success"
-                  ? "border-white/20 bg-white/5 text-zinc-200"
-                  : "border-rose-500/30 bg-rose-500/10 text-rose-300"
+                  ? "border-[#3b8bff]/35 bg-[#1d74ff]/15 text-sky-100"
+                  : "border-rose-500/35 bg-rose-500/10 text-rose-200"
               }`}
             >
-              <span className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <span className="flex items-center gap-2 font-medium">
+                <CheckCircle2 className="w-4 h-4 shrink-0 text-[#5ea1ff]" />
                 {toast.message}
               </span>
               <button
                 type="button"
                 onClick={() => setToast(null)}
-                className="ml-3 text-zinc-400 hover:text-white"
+                className="ml-3 text-slate-400 hover:text-white px-1"
               >
                 ✕
               </button>
@@ -1085,7 +1093,10 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
         )}
 
         {/* CONTEÚDO DA PÁGINA ATIVA */}
-        <main ref={contentRef} className="flex-1 p-4 sm:p-6">
+        <main
+          ref={contentRef}
+          className="flex-1 px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-7 max-w-[1600px] w-full mx-auto"
+        >
           {location.kind === "general" && (
             <GeneralOverviewView
               summary={generalOverview}

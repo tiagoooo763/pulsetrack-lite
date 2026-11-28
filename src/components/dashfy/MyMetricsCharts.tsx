@@ -41,7 +41,7 @@ export function MiniMetricSparkline({
 
   if (valid.length < 2) {
     return (
-      <div className="h-10 flex items-center justify-center rounded-lg border border-white/[0.05] bg-black/20 text-[10px] text-zinc-500">
+      <div className="h-10 flex items-center justify-center rounded-lg border border-blue-200/10 bg-[#050b18]/80 text-[10px] text-slate-400">
         Histórico diário insuficiente
       </div>
     );
@@ -147,7 +147,7 @@ export function DetailedMetricChart({
 
   if (valid.length === 0) {
     return (
-      <div className="h-44 flex items-center justify-center rounded-xl border border-dashed border-white/10 bg-[#07070a] text-xs text-zinc-500">
+      <div className="h-44 flex items-center justify-center rounded-xl border border-dashed border-blue-200/15 bg-[#050b18] text-xs text-slate-400">
         Nenhum ponto diário disponível para este indicador no período.
       </div>
     );
@@ -203,13 +203,13 @@ export function DetailedMetricChart({
   const active = hoveredIdx !== null ? pts[hoveredIdx] : pts[pts.length - 1];
 
   return (
-    <div className="rounded-xl border border-white/10 bg-[#07080d] p-3.5 space-y-2.5">
+    <div className="rounded-xl border border-blue-200/12 bg-[#050b18] p-4 space-y-2.5">
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-        <span className="text-zinc-400">
+        <span className="text-slate-400">
           Evolução diária — <strong className="text-white">{label}</strong>
         </span>
         {active && (
-          <span className="font-mono text-zinc-200">
+          <span className="tabular-nums text-slate-200">
             {formatDateBR(active.day.date)}:{" "}
             <strong style={{ color: stroke }}>
               {formatMetricValue(active.day.value, unit)}

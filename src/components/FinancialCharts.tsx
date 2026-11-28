@@ -140,25 +140,25 @@ export function FinancialCharts({
       <SpotlightCard className="lg:col-span-2 p-5 sm:p-6 flex flex-col justify-between bento-card">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-blue-200/12 flex items-center justify-center">
               <BarChart3 className="w-4 h-4 text-white" />
             </div>
             <div>
               <h3 className="text-sm font-semibold text-white tracking-tight">
                 Evolução Diária de Vendas e Despesas
               </h3>
-              <p className="text-xs text-zinc-400">
+              <p className="text-xs text-slate-400">
                 Receita líquida vs. custos operacionais
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-4 text-xs font-mono">
-            <span className="flex items-center gap-1.5 text-zinc-300">
+            <span className="flex items-center gap-1.5 text-slate-300">
               <span className="w-2.5 h-2.5 rounded-sm bg-white inline-block shadow-sm" />
               Receita Líquida
             </span>
-            <span className="flex items-center gap-1.5 text-zinc-400">
+            <span className="flex items-center gap-1.5 text-slate-400">
               <span className="w-2.5 h-2.5 rounded-sm bg-zinc-600 inline-block" />
               Despesas
             </span>
@@ -166,23 +166,23 @@ export function FinancialCharts({
         </div>
 
         {dailySeries.length === 0 ? (
-          <div className="h-48 flex flex-col items-center justify-center border border-dashed border-white/10 rounded-xl text-center px-4 bg-white/[0.01]">
-            <p className="text-xs text-zinc-400">
+          <div className="h-48 flex flex-col items-center justify-center border border-dashed border-blue-200/12 rounded-xl text-center px-4 bg-white/[0.01]">
+            <p className="text-xs text-slate-400">
               Nenhuma movimentação registrada no período selecionado.
             </p>
           </div>
         ) : (
           <div className="relative pt-2">
             {hoveredDayIndex !== null && dailySeries[hoveredDayIndex] && (
-              <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-[#08080a] border border-white/15 px-3.5 py-2 text-xs shadow-lg">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-[#050b18] border border-blue-200/15 px-3.5 py-2 text-xs shadow-lg">
                 <span className="font-medium text-white">
                   {formatDateBR(dailySeries[hoveredDayIndex].date)}
                 </span>
                 <div className="flex flex-wrap items-center gap-3 tabular-nums font-mono">
-                  <span className="text-zinc-200">
+                  <span className="text-slate-200">
                     Líquido: {formatBRL(dailySeries[hoveredDayIndex].netRevenue)}
                   </span>
-                  <span className="text-zinc-400">
+                  <span className="text-slate-400">
                     Despesas: {formatBRL(dailySeries[hoveredDayIndex].expenses)}
                   </span>
                   <span>
@@ -193,7 +193,7 @@ export function FinancialCharts({
                           ? "text-emerald-400 font-semibold"
                           : dailySeries[hoveredDayIndex].profit < 0
                           ? "text-rose-400 font-semibold"
-                          : "text-zinc-300 font-semibold"
+                          : "text-slate-300 font-semibold"
                       }
                     >
                       {formatBRL(dailySeries[hoveredDayIndex].profit)}
@@ -203,7 +203,7 @@ export function FinancialCharts({
               </div>
             )}
 
-            <div className="h-48 flex items-end gap-2 sm:gap-3 pt-3 pb-6 px-1 border-b border-white/[0.08]">
+            <div className="h-48 flex items-end gap-2 sm:gap-3 pt-3 pb-6 px-1 border-b border-blue-200/10">
               {dailySeries.map((day, idx) => {
                 const netHeightPct = Math.max(
                   day.netRevenue > 0 ? 5 : 0,
@@ -234,7 +234,7 @@ export function FinancialCharts({
                         title={`Despesas: ${formatBRL(day.expenses)}`}
                       />
                     </div>
-                    <span className="absolute -bottom-5 text-[10px] text-zinc-500 font-mono tabular-nums group-hover:text-zinc-300 transition-colors">
+                    <span className="absolute -bottom-5 text-[10px] text-slate-400 font-mono tabular-nums group-hover:text-slate-300 transition-colors">
                       {shortDate}
                     </span>
                   </div>
@@ -249,16 +249,16 @@ export function FinancialCharts({
       <SpotlightCard className="p-5 sm:p-6 flex flex-col justify-between space-y-4 bento-card">
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <div className="w-7 h-7 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center">
-              <PieChart className="w-3.5 h-3.5 text-zinc-300" />
+            <div className="w-7 h-7 rounded-lg bg-white/[0.04] border border-blue-200/12 flex items-center justify-center">
+              <PieChart className="w-3.5 h-3.5 text-slate-300" />
             </div>
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-300">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-300">
               Formas de Pagamento
             </h3>
           </div>
 
           {paymentMethodBreakdown.length === 0 ? (
-            <p className="text-xs text-zinc-500 py-4 text-center">
+            <p className="text-xs text-slate-400 py-4 text-center">
               Nenhuma venda aprovada.
             </p>
           ) : (
@@ -266,15 +266,15 @@ export function FinancialCharts({
               {paymentMethodBreakdown.map((item) => (
                 <div key={item.method} className="space-y-1">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-zinc-300">{item.label}</span>
+                    <span className="text-slate-300">{item.label}</span>
                     <span className="text-white font-mono tabular-nums">
                       {formatBRL(item.net)}{" "}
-                      <span className="text-zinc-500 text-[11px]">
+                      <span className="text-slate-400 text-[11px]">
                         ({item.percent.toFixed(0)}%)
                       </span>
                     </span>
                   </div>
-                  <div className="w-full h-1.5 rounded-full bg-zinc-800/80 overflow-hidden">
+                  <div className="w-full h-1.5 rounded-full bg-[#0f1e38]/80 overflow-hidden">
                     <div
                       className="h-full rounded-full bg-white transition-all duration-500"
                       style={{ width: `${item.percent}%` }}
@@ -286,8 +286,8 @@ export function FinancialCharts({
           )}
         </div>
 
-        <div className="pt-4 border-t border-white/[0.08]">
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-2.5">
+        <div className="pt-4 border-t border-blue-200/10">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2.5">
             Distribuição de Despesas
           </h4>
           <div className="space-y-2">
@@ -298,14 +298,14 @@ export function FinancialCharts({
                   key={item.category}
                   className="flex items-center justify-between text-xs"
                 >
-                  <span className="text-zinc-400">{item.label}</span>
-                  <span className="text-zinc-200 font-mono tabular-nums">
+                  <span className="text-slate-400">{item.label}</span>
+                  <span className="text-slate-200 font-mono tabular-nums">
                     {formatBRL(item.amount)}
                   </span>
                 </div>
               ))}
             {expenseBreakdown.every((e) => e.amount === 0) && (
-              <p className="text-xs text-zinc-500 text-center py-2">
+              <p className="text-xs text-slate-400 text-center py-2">
                 Nenhum gasto cadastrado.
               </p>
             )}

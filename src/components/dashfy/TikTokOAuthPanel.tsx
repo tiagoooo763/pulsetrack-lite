@@ -51,7 +51,7 @@ function getOptimizationBadgeClass(status: TikTokOptimizationSignalStatus): stri
     case "LEARNING":
       return "border-sky-500/35 bg-sky-500/15 text-sky-300";
     default:
-      return "border-white/15 bg-white/[0.05] text-zinc-300";
+      return "border-blue-200/15 bg-white/[0.05] text-slate-300";
   }
 }
 
@@ -306,7 +306,7 @@ export function TikTokOAuthPanel({ dashboardId, onSynced }: TikTokOAuthPanelProp
       <SpotlightCard className="p-5 sm:p-6 bento-card space-y-5">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-white/5 border border-blue-200/12 flex items-center justify-center shrink-0">
               <Megaphone className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -319,7 +319,7 @@ export function TikTokOAuthPanel({ dashboardId, onSynced }: TikTokOAuthPanelProp
                     activeCount > 0
                       ? "border-emerald-500/35 bg-emerald-500/10 text-emerald-300"
                       : configured
-                        ? "border-white/15 bg-white/[0.05] text-zinc-200"
+                        ? "border-blue-200/15 bg-white/[0.05] text-slate-200"
                         : "border-amber-500/35 bg-amber-500/10 text-amber-300"
                   }`}
                 >
@@ -330,10 +330,10 @@ export function TikTokOAuthPanel({ dashboardId, onSynced }: TikTokOAuthPanelProp
                       : "Aguardando credenciais no servidor"}
                 </span>
               </div>
-              <p className="text-xs text-zinc-400 mt-1">
+              <p className="text-xs text-slate-400 mt-1">
                 Conecte um ou mais Business Centers e contas de anúncios
                 autorizadas para consultar gastos e relatórios em modo{" "}
-                <strong className="text-zinc-200">somente-leitura</strong>.
+                <strong className="text-slate-200">somente-leitura</strong>.
                 Nenhum anúncio ou campanha é criado, editado ou excluído.
               </p>
             </div>
@@ -346,12 +346,12 @@ export function TikTokOAuthPanel({ dashboardId, onSynced }: TikTokOAuthPanelProp
               onChange={(e) => setConnectionLabel(e.target.value)}
               maxLength={60}
               placeholder="Rótulo opcional (ex: BC Principal)"
-              className="rounded-xl border border-white/10 bg-[#08080a] px-3 py-2 text-xs text-white placeholder-zinc-500 focus:border-white focus:outline-none sm:w-52"
+              className="rounded-xl border border-blue-200/12 bg-[#050b18] px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-[#3b8bff] focus:ring-2 focus:ring-[#1d74ff]/20 focus:outline-none sm:w-52"
             />
             <button
               type="button"
               onClick={handleConnectClick}
-              className="btn-pressable inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-zinc-100 text-black text-xs font-semibold shrink-0"
+              className="btn-pressable inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#1d74ff] hover:bg-[#2a80ff] text-white shadow-[0_8px_22px_-6px_rgba(29,116,255,0.52)] text-xs font-semibold shrink-0"
             >
               <ExternalLink className="w-3.5 h-3.5" />
               <span>Conectar TikTok Business</span>
@@ -360,12 +360,12 @@ export function TikTokOAuthPanel({ dashboardId, onSynced }: TikTokOAuthPanelProp
         </div>
 
         {/* Callback URL registrada para o Portal TikTok */}
-        <div className="rounded-xl border border-white/10 bg-[#050507] p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="rounded-xl border border-blue-200/12 bg-[#050b18] p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div className="min-w-0">
-            <span className="text-[10px] uppercase tracking-wider text-zinc-500 block">
+            <span className="text-[10px] uppercase tracking-wider text-slate-400 block">
               Advertiser Redirect URL (Callback OAuth oficial)
             </span>
-            <code className="text-[11px] font-mono text-zinc-200 break-all">
+            <code className="text-[11px] font-mono text-slate-200 break-all">
               {callbackUrl}
             </code>
           </div>
@@ -376,7 +376,7 @@ export function TikTokOAuthPanel({ dashboardId, onSynced }: TikTokOAuthPanelProp
               setCopiedCallback(true);
               setTimeout(() => setCopiedCallback(false), 2200);
             }}
-            className="btn-pressable inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/15 bg-white/5 hover:bg-white/10 text-white text-xs font-medium shrink-0"
+            className="btn-pressable inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-blue-200/15 bg-white/5 hover:bg-white/10 text-white text-xs font-medium shrink-0"
           >
             {copiedCallback ? (
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
@@ -424,16 +424,16 @@ export function TikTokOAuthPanel({ dashboardId, onSynced }: TikTokOAuthPanelProp
 
         {/* Lista de Conexões / BCs / Contas Autorizadas */}
         {loading ? (
-          <div className="text-xs text-zinc-500 py-3">
+          <div className="text-xs text-slate-400 py-3">
             Carregando conexões TikTok Business...
           </div>
         ) : connections.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-white/10 bg-[#08080a]/60 p-4 text-xs text-zinc-400 flex items-center justify-between gap-3">
+          <div className="rounded-xl border border-dashed border-blue-200/12 bg-[#050b18]/60 p-4 text-xs text-slate-400 flex items-center justify-between gap-3">
             <span>
               Nenhuma conta TikTok Business conectada ainda. Você pode conectar
               múltiplos Business Centers e contas de anúncios nesta operação.
             </span>
-            <ShieldCheck className="w-4 h-4 text-zinc-500 shrink-0" />
+            <ShieldCheck className="w-4 h-4 text-slate-400 shrink-0" />
           </div>
         ) : (
           <div className="space-y-3">
@@ -442,7 +442,7 @@ export function TikTokOAuthPanel({ dashboardId, onSynced }: TikTokOAuthPanelProp
               return (
                 <div
                   key={conn.id}
-                  className="rounded-xl border border-white/10 bg-[#08080a] p-4 space-y-3"
+                  className="rounded-xl border border-blue-200/12 bg-[#050b18] p-4 space-y-3"
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
@@ -465,12 +465,12 @@ export function TikTokOAuthPanel({ dashboardId, onSynced }: TikTokOAuthPanelProp
                               ? "Token expirado / revogado"
                               : "Atenção"}
                         </span>
-                        <span className="text-[11px] text-zinc-500 font-mono">
+                        <span className="text-[11px] text-slate-400 font-mono">
                           {conn.advertisers.length} conta(s) &bull;{" "}
                           {conn.businessCenters.length} BC(s)
                         </span>
                       </div>
-                      <p className="text-[11px] text-zinc-500 mt-0.5">
+                      <p className="text-[11px] text-slate-400 mt-0.5">
                         Última verificação:{" "}
                         {conn.lastSyncAt
                           ? formatDateTimeBR(conn.lastSyncAt)
@@ -483,7 +483,7 @@ export function TikTokOAuthPanel({ dashboardId, onSynced }: TikTokOAuthPanelProp
                         type="button"
                         onClick={() => handleRefreshConnection(conn.id)}
                         disabled={isBusy}
-                        className="btn-pressable inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] text-[11px] font-medium text-white disabled:opacity-50"
+                        className="btn-pressable inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-blue-200/12 bg-white/[0.04] hover:bg-white/[0.08] text-[11px] font-medium text-white disabled:opacity-50"
                       >
                         <RefreshCw
                           className={`w-3 h-3 ${isBusy ? "animate-spin" : ""}`}
@@ -494,7 +494,7 @@ export function TikTokOAuthPanel({ dashboardId, onSynced }: TikTokOAuthPanelProp
                         type="button"
                         onClick={() => handleDisconnect(conn.id)}
                         disabled={isBusy}
-                        className="btn-pressable inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/[0.02] hover:border-rose-500/40 hover:text-rose-300 text-[11px] font-medium text-zinc-400 disabled:opacity-50"
+                        className="btn-pressable inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-blue-200/12 bg-white/[0.02] hover:border-rose-500/40 hover:text-rose-300 text-[11px] font-medium text-slate-400 disabled:opacity-50"
                       >
                         <Trash2 className="w-3 h-3" />
                         <span>Desconectar</span>
@@ -511,7 +511,7 @@ export function TikTokOAuthPanel({ dashboardId, onSynced }: TikTokOAuthPanelProp
                   {/* Business Centers autorizados */}
                   {conn.businessCenters.length > 0 && (
                     <div className="space-y-1.5">
-                      <div className="text-[10px] uppercase tracking-wider text-zinc-500 flex items-center gap-1.5">
+                      <div className="text-[10px] uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
                         <Building2 className="w-3 h-3" />
                         <span>Business Centers autorizados</span>
                       </div>
@@ -519,12 +519,12 @@ export function TikTokOAuthPanel({ dashboardId, onSynced }: TikTokOAuthPanelProp
                         {conn.businessCenters.map((bc) => (
                           <span
                             key={bc.bcId}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-white/10 bg-[#050507] text-[11px] text-zinc-200"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-blue-200/12 bg-[#050b18] text-[11px] text-slate-200"
                           >
                             <span className="font-medium text-white">
                               {bc.name}
                             </span>
-                            <span className="font-mono text-[10px] text-zinc-500">
+                            <span className="font-mono text-[10px] text-slate-400">
                               ID {bc.bcId}
                             </span>
                           </span>
@@ -536,19 +536,19 @@ export function TikTokOAuthPanel({ dashboardId, onSynced }: TikTokOAuthPanelProp
                   {/* Contas de anúncios autorizadas */}
                   {conn.advertisers.length > 0 && (
                     <div className="space-y-1.5">
-                      <div className="text-[10px] uppercase tracking-wider text-zinc-500">
+                      <div className="text-[10px] uppercase tracking-wider text-slate-400">
                         Contas de anúncios autorizadas
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                         {conn.advertisers.map((adv) => (
                           <div
                             key={adv.advertiserId}
-                            className="rounded-lg border border-white/10 bg-[#050507] px-3 py-2 flex flex-col"
+                            className="rounded-lg border border-blue-200/12 bg-[#050b18] px-3 py-2 flex flex-col"
                           >
                             <span className="text-xs font-medium text-white truncate">
                               {adv.advertiserName}
                             </span>
-                            <span className="text-[10px] font-mono text-zinc-500">
+                            <span className="text-[10px] font-mono text-slate-400">
                               Advertiser ID: {adv.advertiserId}
                             </span>
                           </div>
@@ -568,14 +568,14 @@ export function TikTokOAuthPanel({ dashboardId, onSynced }: TikTokOAuthPanelProp
         <SpotlightCard className="p-5 sm:p-6 bento-card space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-start gap-3">
-              <div className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
+              <div className="w-9 h-9 rounded-xl bg-white/5 border border-blue-200/12 flex items-center justify-center shrink-0">
                 <BarChart3 className="w-4 h-4 text-white" />
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-white">
                   Relatórios, Compras, CPA, Lucro &amp; Otimização (TikTok API)
                 </h3>
-                <p className="text-xs text-zinc-400 mt-0.5">
+                <p className="text-xs text-slate-400 mt-0.5">
                   Puxa gasto, compras, CPA, ROAS, lucro estimado, CTR, checkout (IC), frequência e retenção de vídeo (Hook 2s / Hold 6s) em modo somente-leitura, cruzando com o valor líquido real do seu gateway.
                 </p>
               </div>
@@ -599,13 +599,13 @@ export function TikTokOAuthPanel({ dashboardId, onSynced }: TikTokOAuthPanelProp
             className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end"
           >
             <div className="sm:col-span-4">
-              <label className="block text-[11px] text-zinc-400 mb-1">
+              <label className="block text-[11px] text-slate-400 mb-1">
                 Conta de Anúncios Autorizada
               </label>
               <select
                 value={selectedTarget}
                 onChange={(e) => setSelectedTarget(e.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-[#08080a] px-3 py-2 text-xs text-white focus:border-white focus:outline-none"
+                className="w-full rounded-xl border border-blue-200/12 bg-[#050b18] px-3 py-2 text-xs text-white focus:border-[#3b8bff] focus:ring-2 focus:ring-[#1d74ff]/20 focus:outline-none"
               >
                 {authorizedAccountOptions.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -617,7 +617,7 @@ export function TikTokOAuthPanel({ dashboardId, onSynced }: TikTokOAuthPanelProp
             </div>
 
             <div className="sm:col-span-2">
-              <label className="block text-[11px] text-zinc-400 mb-1">
+              <label className="block text-[11px] text-slate-400 mb-1">
                 Nível de Otimização
               </label>
               <select
@@ -625,7 +625,7 @@ export function TikTokOAuthPanel({ dashboardId, onSynced }: TikTokOAuthPanelProp
                 onChange={(e) =>
                   setDataLevel(e.target.value as TikTokReportDataLevel)
                 }
-                className="w-full rounded-xl border border-white/10 bg-[#08080a] px-2.5 py-2 text-xs text-white focus:border-white focus:outline-none"
+                className="w-full rounded-xl border border-blue-200/12 bg-[#050b18] px-2.5 py-2 text-xs text-white focus:border-[#3b8bff] focus:ring-2 focus:ring-[#1d74ff]/20 focus:outline-none"
               >
                 <option value="AUCTION_CAMPAIGN">Campanhas</option>
                 <option value="AUCTION_ADGROUP">Conjuntos</option>
@@ -634,26 +634,26 @@ export function TikTokOAuthPanel({ dashboardId, onSynced }: TikTokOAuthPanelProp
             </div>
 
             <div className="sm:col-span-2">
-              <label className="block text-[11px] text-zinc-400 mb-1">
+              <label className="block text-[11px] text-slate-400 mb-1">
                 Início
               </label>
               <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-[#08080a] px-2.5 py-2 text-xs text-white font-mono focus:border-white focus:outline-none"
+                className="w-full rounded-xl border border-blue-200/12 bg-[#050b18] px-2.5 py-2 text-xs text-white font-mono focus:border-[#3b8bff] focus:ring-2 focus:ring-[#1d74ff]/20 focus:outline-none"
               />
             </div>
 
             <div className="sm:col-span-2">
-              <label className="block text-[11px] text-zinc-400 mb-1">
+              <label className="block text-[11px] text-slate-400 mb-1">
                 Fim
               </label>
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-[#08080a] px-2.5 py-2 text-xs text-white font-mono focus:border-white focus:outline-none"
+                className="w-full rounded-xl border border-blue-200/12 bg-[#050b18] px-2.5 py-2 text-xs text-white font-mono focus:border-[#3b8bff] focus:ring-2 focus:ring-[#1d74ff]/20 focus:outline-none"
               />
             </div>
 
@@ -661,7 +661,7 @@ export function TikTokOAuthPanel({ dashboardId, onSynced }: TikTokOAuthPanelProp
               <button
                 type="submit"
                 disabled={loadingReport || syncingReport}
-                className="btn-pressable w-full py-2.5 px-3 rounded-xl bg-white hover:bg-zinc-100 text-black text-xs font-semibold disabled:opacity-50"
+                className="btn-pressable w-full py-2.5 px-3 rounded-xl bg-[#1d74ff] hover:bg-[#2a80ff] text-white shadow-[0_8px_22px_-6px_rgba(29,116,255,0.52)] text-xs font-semibold disabled:opacity-50"
               >
                 {loadingReport ? "Consultando..." : "Consultar"}
               </button>
@@ -686,42 +686,42 @@ export function TikTokOAuthPanel({ dashboardId, onSynced }: TikTokOAuthPanelProp
             <div className="space-y-4 pt-2">
               {/* CRUZAMENTO REAL: QUANTO CAIU NO GATEWAY vs QUANTO GASTOU NO TIKTOK */}
               {crossCheck && (
-                <div className="rounded-xl border border-emerald-500/25 bg-gradient-to-r from-[#071510] via-[#080b10] to-[#08080a] p-4 space-y-2.5">
+                <div className="rounded-xl border border-emerald-500/25 bg-gradient-to-r from-[#071a18] via-[#081322] to-[#050b18] p-4 space-y-2.5">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-300">
                       Cruzamento Real: Gateway (Quanto Caiu) vs TikTok Ads (Quanto Gastou)
                     </span>
-                    <span className="text-[10px] font-mono text-zinc-400">
+                    <span className="text-[10px] font-mono text-slate-400">
                       {startDate} até {endDate}
                     </span>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
-                    <div className="rounded-lg border border-white/10 bg-black/30 p-2.5">
-                      <span className="text-[10px] text-zinc-400 block">
+                    <div className="rounded-lg border border-blue-200/12 bg-black/30 p-2.5">
+                      <span className="text-[10px] text-slate-400 block">
                         Caiu Líquido (Gateway)
                       </span>
                       <span className="text-sm font-mono font-semibold text-white">
                         {formatBRL(crossCheck.gatewayNetRevenue)}
                       </span>
                     </div>
-                    <div className="rounded-lg border border-white/10 bg-black/30 p-2.5">
-                      <span className="text-[10px] text-zinc-400 block">
+                    <div className="rounded-lg border border-blue-200/12 bg-black/30 p-2.5">
+                      <span className="text-[10px] text-slate-400 block">
                         Vendas Aprovadas (GW)
                       </span>
                       <span className="text-sm font-mono font-semibold text-white">
                         {crossCheck.gatewayApprovedSales}
                       </span>
                     </div>
-                    <div className="rounded-lg border border-white/10 bg-black/30 p-2.5">
-                      <span className="text-[10px] text-zinc-400 block">
+                    <div className="rounded-lg border border-blue-200/12 bg-black/30 p-2.5">
+                      <span className="text-[10px] text-slate-400 block">
                         Gasto TikTok Ads
                       </span>
                       <span className="text-sm font-mono font-semibold text-amber-200">
                         {formatBRL(crossCheck.tiktokSpend)}
                       </span>
                     </div>
-                    <div className="rounded-lg border border-white/10 bg-black/30 p-2.5">
-                      <span className="text-[10px] text-zinc-400 block">
+                    <div className="rounded-lg border border-blue-200/12 bg-black/30 p-2.5">
+                      <span className="text-[10px] text-slate-400 block">
                         Lucro Real (GW − Ads)
                       </span>
                       <span
@@ -734,8 +734,8 @@ export function TikTokOAuthPanel({ dashboardId, onSynced }: TikTokOAuthPanelProp
                         {formatBRL(crossCheck.realProfit)}
                       </span>
                     </div>
-                    <div className="rounded-lg border border-white/10 bg-black/30 p-2.5">
-                      <span className="text-[10px] text-zinc-400 block">
+                    <div className="rounded-lg border border-blue-200/12 bg-black/30 p-2.5">
+                      <span className="text-[10px] text-slate-400 block">
                         CPA Real (GW)
                       </span>
                       <span className="text-sm font-mono font-semibold text-white">
@@ -744,8 +744,8 @@ export function TikTokOAuthPanel({ dashboardId, onSynced }: TikTokOAuthPanelProp
                           : "—"}
                       </span>
                     </div>
-                    <div className="rounded-lg border border-white/10 bg-black/30 p-2.5">
-                      <span className="text-[10px] text-zinc-400 block">
+                    <div className="rounded-lg border border-blue-200/12 bg-black/30 p-2.5">
+                      <span className="text-[10px] text-slate-400 block">
                         ROAS Real (GW)
                       </span>
                       <span className="text-sm font-mono font-semibold text-white">
@@ -825,9 +825,9 @@ export function TikTokOAuthPanel({ dashboardId, onSynced }: TikTokOAuthPanelProp
                 ].map((kpi) => (
                   <div
                     key={kpi.label}
-                    className="rounded-xl border border-white/10 bg-[#050507] p-3"
+                    className="rounded-xl border border-blue-200/12 bg-[#050b18] p-3"
                   >
-                    <span className="text-[10px] text-zinc-500 block">
+                    <span className="text-[10px] text-slate-400 block">
                       {kpi.label}
                     </span>
                     <span
@@ -842,14 +842,14 @@ export function TikTokOAuthPanel({ dashboardId, onSynced }: TikTokOAuthPanelProp
               </div>
 
               {reportData.rows.length === 0 ? (
-                <p className="text-xs text-zinc-400">
+                <p className="text-xs text-slate-400">
                   Nenhum registro de gasto encontrado no período selecionado
                   para esta conta autorizada.
                 </p>
               ) : (
-                <div className="overflow-x-auto rounded-xl border border-white/10">
+                <div className="overflow-x-auto rounded-xl border border-blue-200/12">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-white/[0.03] text-[10px] uppercase tracking-wider text-zinc-400">
+                    <thead className="bg-white/[0.03] text-[10px] uppercase tracking-wider text-slate-400">
                       <tr>
                         <th className="px-3 py-2.5">Data</th>
                         <th className="px-3 py-2.5">Campanha / Item</th>
@@ -864,13 +864,13 @@ export function TikTokOAuthPanel({ dashboardId, onSynced }: TikTokOAuthPanelProp
                         <th className="px-3 py-2.5 text-right">Freq.</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-white/[0.06]">
+                    <tbody className="divide-y divide-blue-200/[0.08]">
                       {reportData.rows.slice(0, 40).map((row, idx) => (
                         <tr
                           key={`${row.campaignId}-${row.statDate}-${idx}`}
                           className="hover:bg-white/[0.02]"
                         >
-                          <td className="px-3 py-2 font-mono text-zinc-400 whitespace-nowrap">
+                          <td className="px-3 py-2 font-mono text-slate-400 whitespace-nowrap">
                             {row.statDate}
                           </td>
                           <td className="px-3 py-2 max-w-[210px]">
@@ -878,7 +878,7 @@ export function TikTokOAuthPanel({ dashboardId, onSynced }: TikTokOAuthPanelProp
                               {row.adName || row.adgroupName || row.campaignName}
                             </div>
                             {(row.adName || row.adgroupName) && (
-                              <div className="text-[10px] text-zinc-500 truncate">
+                              <div className="text-[10px] text-slate-400 truncate">
                                 {row.campaignName}
                               </div>
                             )}
@@ -892,20 +892,20 @@ export function TikTokOAuthPanel({ dashboardId, onSynced }: TikTokOAuthPanelProp
                             >
                               {row.optimization.label}
                             </span>
-                            <div className="text-[10px] text-zinc-400 mt-0.5 line-clamp-1">
+                            <div className="text-[10px] text-slate-400 mt-0.5 line-clamp-1">
                               {row.optimization.action}
                             </div>
                           </td>
                           <td className="px-3 py-2 text-right font-mono tabular-nums text-white whitespace-nowrap">
                             {formatBRL(row.spend)}
                           </td>
-                          <td className="px-3 py-2 text-right font-mono tabular-nums text-zinc-200">
+                          <td className="px-3 py-2 text-right font-mono tabular-nums text-slate-200">
                             {row.purchases}
                           </td>
-                          <td className="px-3 py-2 text-right font-mono tabular-nums text-zinc-200 whitespace-nowrap">
+                          <td className="px-3 py-2 text-right font-mono tabular-nums text-slate-200 whitespace-nowrap">
                             {row.cpa > 0 ? formatBRL(row.cpa) : "—"}
                           </td>
-                          <td className="px-3 py-2 text-right font-mono tabular-nums text-zinc-200 whitespace-nowrap">
+                          <td className="px-3 py-2 text-right font-mono tabular-nums text-slate-200 whitespace-nowrap">
                             {row.roas > 0 ? `${row.roas.toFixed(2)}x` : "—"}
                           </td>
                           <td
@@ -917,15 +917,15 @@ export function TikTokOAuthPanel({ dashboardId, onSynced }: TikTokOAuthPanelProp
                           >
                             {formatBRL(row.estimatedProfit)}
                           </td>
-                          <td className="px-3 py-2 text-right font-mono tabular-nums text-zinc-300">
+                          <td className="px-3 py-2 text-right font-mono tabular-nums text-slate-300">
                             {row.ctr.toFixed(2)}%
                           </td>
-                          <td className="px-3 py-2 text-right font-mono tabular-nums text-zinc-300">
+                          <td className="px-3 py-2 text-right font-mono tabular-nums text-slate-300">
                             {row.hookRate2s > 0
                               ? `${row.hookRate2s.toFixed(1)}%`
                               : "—"}
                           </td>
-                          <td className="px-3 py-2 text-right font-mono tabular-nums text-zinc-300">
+                          <td className="px-3 py-2 text-right font-mono tabular-nums text-slate-300">
                             {row.frequency > 0
                               ? row.frequency.toFixed(2)
                               : "—"}

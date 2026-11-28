@@ -101,7 +101,7 @@ function getStatusBadgeStyles(status: MetricEvalStatus) {
       };
     default:
       return {
-        pill: "border-zinc-700 bg-white/[0.04] text-zinc-400",
+        pill: "border-blue-200/15 bg-white/[0.04] text-slate-400",
         bar: "bg-zinc-600",
         Icon: HelpCircle,
       };
@@ -751,7 +751,7 @@ export function MyMetricsView({
                 <h3 className="text-base font-semibold text-white tracking-tight">
                   Minhas Métricas &amp; Metas
                 </h3>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold border border-white/10 bg-white/[0.04] text-zinc-300">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold border border-blue-200/12 bg-white/[0.04] text-slate-300">
                   {OBJECTIVE_LABELS[objective]}
                 </span>
                 {hasUnsavedChanges && (
@@ -760,7 +760,7 @@ export function MyMetricsView({
                   </span>
                 )}
               </div>
-              <p className="text-xs text-zinc-400 mt-0.5">
+              <p className="text-xs text-slate-400 mt-0.5">
                 Personalize indicadores, metas, visualizações e alertas por campanha no TikTok Ads ({periodLabel}).
               </p>
             </div>
@@ -770,7 +770,7 @@ export function MyMetricsView({
             <button
               type="button"
               onClick={() => setTemplatesOpen(true)}
-              className="btn-pressable inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-white/15 bg-[#08080a] hover:bg-white/[0.06] text-xs font-medium text-zinc-200"
+              className="btn-pressable inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-blue-200/15 bg-[#050b18] hover:bg-[#1d74ff]/12 text-xs font-medium text-slate-200"
             >
               <Layers className="w-3.5 h-3.5 text-[#5ea1ff]" />
               <span>Modelos</span>
@@ -782,7 +782,7 @@ export function MyMetricsView({
               className={`btn-pressable inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-medium ${
                 calcOpen
                   ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-200"
-                  : "border-white/15 bg-[#08080a] hover:bg-white/[0.06] text-zinc-200"
+                  : "border-blue-200/15 bg-[#050b18] hover:bg-[#1d74ff]/12 text-slate-200"
               }`}
             >
               <Calculator className="w-3.5 h-3.5" />
@@ -792,7 +792,7 @@ export function MyMetricsView({
             <button
               type="button"
               onClick={() => setAlertsModalOpen(true)}
-              className="btn-pressable inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-white/15 bg-[#08080a] hover:bg-white/[0.06] text-xs font-medium text-zinc-200"
+              className="btn-pressable inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-blue-200/15 bg-[#050b18] hover:bg-[#1d74ff]/12 text-xs font-medium text-slate-200"
             >
               <Bell className="w-3.5 h-3.5 text-amber-300" />
               <span>Alertas ({liveAlerts.length})</span>
@@ -802,7 +802,7 @@ export function MyMetricsView({
               type="button"
               onClick={handleResetDefaults}
               disabled={saving}
-              className="btn-pressable inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-white/10 bg-[#08080a] hover:border-white/25 text-xs font-medium text-zinc-300 disabled:opacity-50"
+              className="btn-pressable inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-blue-200/12 bg-[#050b18] hover:border-[#3b8bff]/40 text-xs font-medium text-slate-300 disabled:opacity-50"
               title="Restaurar métricas e metas padrão"
             >
               <RotateCcw className="w-3.5 h-3.5" />
@@ -813,7 +813,7 @@ export function MyMetricsView({
               type="button"
               onClick={() => handleSavePreferences()}
               disabled={saving}
-              className="btn-pressable inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white hover:bg-zinc-100 text-black text-xs font-semibold disabled:opacity-50"
+              className="btn-pressable inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#1d74ff] hover:bg-[#2a80ff] text-white shadow-[0_8px_22px_-6px_rgba(29,116,255,0.52)] text-xs font-semibold disabled:opacity-50"
             >
               <Save className="w-3.5 h-3.5" />
               <span>{saving ? "Salvando..." : "Salvar preferências"}</span>
@@ -822,15 +822,15 @@ export function MyMetricsView({
         </div>
 
         {/* SELETORES DE CAMPANHA, OBJETIVO, PERÍODO E VISUALIZAÇÕES SALVAS */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 pt-3 border-t border-white/10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 pt-3 border-t border-blue-200/12">
           <div>
-            <label className="block text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-1">
+            <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">
               Campanha analisada
             </label>
             <select
               value={selectedCampaignKey}
               onChange={(e) => setSelectedCampaignKey(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-[#08080a] px-3 py-2 text-xs text-white focus:border-white focus:outline-none"
+              className="w-full rounded-xl border border-blue-200/12 bg-[#050b18] px-3 py-2 text-xs text-white focus:border-[#3b8bff] focus:ring-2 focus:ring-[#1d74ff]/20 focus:outline-none"
             >
               <option value={OPERATION_DEFAULT_KEY}>
                 ★ Padrão da Operação ({dashboardName})
@@ -844,7 +844,7 @@ export function MyMetricsView({
           </div>
 
           <div>
-            <label className="block text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-1">
+            <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">
               Período de análise
             </label>
             <select
@@ -853,7 +853,7 @@ export function MyMetricsView({
                 setPeriod(e.target.value as PeriodPreset);
                 setHasUnsavedChanges(true);
               }}
-              className="w-full rounded-xl border border-white/10 bg-[#08080a] px-3 py-2 text-xs text-white focus:border-white focus:outline-none"
+              className="w-full rounded-xl border border-blue-200/12 bg-[#050b18] px-3 py-2 text-xs text-white focus:border-[#3b8bff] focus:ring-2 focus:ring-[#1d74ff]/20 focus:outline-none"
             >
               <option value="today">Hoje</option>
               <option value="7d">Últimos 7 dias</option>
@@ -864,7 +864,7 @@ export function MyMetricsView({
           </div>
 
           <div>
-            <label className="block text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-1">
+            <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">
               Objetivo da campanha
             </label>
             <select
@@ -873,7 +873,7 @@ export function MyMetricsView({
                 setObjective(e.target.value as CampaignObjective);
                 setHasUnsavedChanges(true);
               }}
-              className="w-full rounded-xl border border-white/10 bg-[#08080a] px-3 py-2 text-xs text-white focus:border-white focus:outline-none"
+              className="w-full rounded-xl border border-blue-200/12 bg-[#050b18] px-3 py-2 text-xs text-white focus:border-[#3b8bff] focus:ring-2 focus:ring-[#1d74ff]/20 focus:outline-none"
             >
               {(Object.keys(OBJECTIVE_LABELS) as CampaignObjective[]).map((obj) => (
                 <option key={obj} value={obj}>
@@ -884,7 +884,7 @@ export function MyMetricsView({
           </div>
 
           <div>
-            <label className="block text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-1">
+            <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">
               Visualização salva
             </label>
             <div className="flex items-center gap-1.5">
@@ -895,7 +895,7 @@ export function MyMetricsView({
                   if (chosen) applyConfigToEditor(chosen);
                   else setViewName(e.target.value);
                 }}
-                className="flex-1 min-w-0 rounded-xl border border-white/10 bg-[#08080a] px-3 py-2 text-xs text-white focus:border-white focus:outline-none"
+                className="flex-1 min-w-0 rounded-xl border border-blue-200/12 bg-[#050b18] px-3 py-2 text-xs text-white focus:border-[#3b8bff] focus:ring-2 focus:ring-[#1d74ff]/20 focus:outline-none"
               >
                 {campaignViews.length === 0 && <option value="Padrão">Padrão</option>}
                 {campaignViews.map((v) => (
@@ -910,7 +910,7 @@ export function MyMetricsView({
                   setNewViewInput("");
                   setNewViewModalOpen(true);
                 }}
-                className="p-2 rounded-xl border border-white/10 bg-[#08080a] hover:bg-white/10 text-zinc-300 hover:text-white shrink-0"
+                className="p-2 rounded-xl border border-blue-200/12 bg-[#050b18] hover:bg-white/10 text-slate-300 hover:text-white shrink-0"
                 title="Criar nova visualização para esta campanha"
               >
                 <Plus className="w-3.5 h-3.5" />
@@ -922,7 +922,7 @@ export function MyMetricsView({
                     const cur = campaignViews.find((v) => v.viewName === viewName);
                     if (cur) void handleDeleteView(cur.id);
                   }}
-                  className="p-2 rounded-xl border border-white/10 bg-[#08080a] hover:border-rose-500/40 text-zinc-400 hover:text-rose-300 shrink-0"
+                  className="p-2 rounded-xl border border-blue-200/12 bg-[#050b18] hover:border-rose-500/40 text-slate-400 hover:text-rose-300 shrink-0"
                   title="Excluir visualização atual"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -968,7 +968,7 @@ export function MyMetricsView({
             <button
               type="button"
               onClick={() => setCalcOpen(false)}
-              className="text-zinc-400 hover:text-white"
+              className="text-slate-400 hover:text-white"
             >
               <X className="w-4 h-4" />
             </button>
@@ -976,61 +976,61 @@ export function MyMetricsView({
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             <div>
-              <label className="block text-[11px] text-zinc-400 mb-1">
+              <label className="block text-[11px] text-slate-400 mb-1">
                 Ticket médio (R$)
               </label>
               <input
                 type="text"
                 value={calcTicket}
                 onChange={(e) => setCalcTicket(e.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-[#08080a] px-3 py-2 text-xs font-mono text-white"
+                className="w-full rounded-xl border border-blue-200/12 bg-[#050b18] px-3 py-2 text-xs font-mono text-white"
               />
             </div>
             <div>
-              <label className="block text-[11px] text-zinc-400 mb-1">
+              <label className="block text-[11px] text-slate-400 mb-1">
                 Custo do produto (R$)
               </label>
               <input
                 type="text"
                 value={calcCost}
                 onChange={(e) => setCalcCost(e.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-[#08080a] px-3 py-2 text-xs font-mono text-white"
+                className="w-full rounded-xl border border-blue-200/12 bg-[#050b18] px-3 py-2 text-xs font-mono text-white"
               />
             </div>
             <div>
-              <label className="block text-[11px] text-zinc-400 mb-1">
+              <label className="block text-[11px] text-slate-400 mb-1">
                 Taxas / Gateway (%)
               </label>
               <input
                 type="text"
                 value={calcFeePct}
                 onChange={(e) => setCalcFeePct(e.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-[#08080a] px-3 py-2 text-xs font-mono text-white"
+                className="w-full rounded-xl border border-blue-200/12 bg-[#050b18] px-3 py-2 text-xs font-mono text-white"
               />
             </div>
             <div>
-              <label className="block text-[11px] text-zinc-400 mb-1">
+              <label className="block text-[11px] text-slate-400 mb-1">
                 Margem de lucro alvo (%)
               </label>
               <input
                 type="text"
                 value={calcMarginPct}
                 onChange={(e) => setCalcMarginPct(e.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-[#08080a] px-3 py-2 text-xs font-mono text-white"
+                className="w-full rounded-xl border border-blue-200/12 bg-[#050b18] px-3 py-2 text-xs font-mono text-white"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 pt-2">
-            <div className="rounded-xl border border-white/10 bg-[#08080a] p-3">
-              <div className="text-[10px] uppercase text-zinc-400">CPA Empate</div>
-              <div className="text-sm font-mono font-semibold text-zinc-200 mt-0.5">
+            <div className="rounded-xl border border-blue-200/12 bg-[#050b18] p-3">
+              <div className="text-[10px] uppercase text-slate-400">CPA Empate</div>
+              <div className="text-sm font-mono font-semibold text-slate-200 mt-0.5">
                 {formatBRL(calcResult.breakEvenCpa)}
               </div>
             </div>
-            <div className="rounded-xl border border-white/10 bg-[#08080a] p-3">
-              <div className="text-[10px] uppercase text-zinc-400">ROAS Empate</div>
-              <div className="text-sm font-mono font-semibold text-zinc-200 mt-0.5">
+            <div className="rounded-xl border border-blue-200/12 bg-[#050b18] p-3">
+              <div className="text-[10px] uppercase text-slate-400">ROAS Empate</div>
+              <div className="text-sm font-mono font-semibold text-slate-200 mt-0.5">
                 {calcResult.breakEvenRoas.toFixed(2)}x
               </div>
             </div>
@@ -1048,8 +1048,8 @@ export function MyMetricsView({
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-white/10">
-            <p className="text-xs text-zinc-300">{calcResult.note}</p>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-blue-200/12">
+            <p className="text-xs text-slate-300">{calcResult.note}</p>
             <button
               type="button"
               disabled={!calcResult.feasible}
@@ -1063,86 +1063,86 @@ export function MyMetricsView({
       )}
 
       {/* RESUMO VISUAL DA CAMPANHA (SEÇÃO 5) */}
-      <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <SpotlightCard className="p-4 bento-card">
-          <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
+      <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
+        <SpotlightCard className="p-4 sm:p-5">
+          <div className="text-[10px] font-semibold uppercase tracking-[0.07em] text-slate-400">
             Metas configuradas
           </div>
-          <div className="text-2xl font-mono font-semibold text-white mt-1.5">
+          <div className="dashfy-kpi-value text-2xl font-bold text-white mt-2">
             {summary.configuredCount}
           </div>
-          <div className="text-[11px] text-zinc-500 mt-1">
+          <div className="text-[11px] text-slate-400 mt-1">
             {selectedMetrics.length} cartões ativos
           </div>
         </SpotlightCard>
 
-        <SpotlightCard className="p-4 bento-card border-emerald-500/20">
-          <div className="text-[10px] font-semibold uppercase tracking-wider text-emerald-300 flex items-center gap-1">
+        <SpotlightCard className="p-4 sm:p-5 border-emerald-500/25">
+          <div className="text-[10px] font-semibold uppercase tracking-[0.07em] text-emerald-300 flex items-center gap-1">
             <CheckCircle2 className="w-3.5 h-3.5" />
             <span>Atingidas</span>
           </div>
-          <div className="text-2xl font-mono font-semibold text-emerald-400 mt-1.5">
+          <div className="dashfy-kpi-value text-2xl font-bold text-emerald-400 mt-2">
             {summary.achievedCount}
           </div>
-          <div className="text-[11px] text-zinc-400 mt-1">Dentro do objetivo</div>
+          <div className="text-[11px] text-slate-400 mt-1">Dentro do objetivo</div>
         </SpotlightCard>
 
-        <SpotlightCard className="p-4 bento-card border-amber-500/20">
-          <div className="text-[10px] font-semibold uppercase tracking-wider text-amber-300 flex items-center gap-1">
+        <SpotlightCard className="p-4 sm:p-5 border-amber-500/25">
+          <div className="text-[10px] font-semibold uppercase tracking-[0.07em] text-amber-300 flex items-center gap-1">
             <AlertTriangle className="w-3.5 h-3.5" />
             <span>Atenção</span>
           </div>
-          <div className="text-2xl font-mono font-semibold text-amber-300 mt-1.5">
+          <div className="dashfy-kpi-value text-2xl font-bold text-amber-300 mt-2">
             {summary.attentionCount}
           </div>
-          <div className="text-[11px] text-zinc-400 mt-1">Próximas do limite</div>
+          <div className="text-[11px] text-slate-400 mt-1">Próximas do limite</div>
         </SpotlightCard>
 
-        <SpotlightCard className="p-4 bento-card border-rose-500/20">
-          <div className="text-[10px] font-semibold uppercase tracking-wider text-rose-300 flex items-center gap-1">
+        <SpotlightCard className="p-4 sm:p-5 border-rose-500/25">
+          <div className="text-[10px] font-semibold uppercase tracking-[0.07em] text-rose-300 flex items-center gap-1">
             <XCircle className="w-3.5 h-3.5" />
             <span>Fora da meta</span>
           </div>
-          <div className="text-2xl font-mono font-semibold text-rose-400 mt-1.5">
+          <div className="dashfy-kpi-value text-2xl font-bold text-rose-400 mt-2">
             {summary.missedCount}
           </div>
-          <div className="text-[11px] text-zinc-400 mt-1">Requer investigação</div>
+          <div className="text-[11px] text-slate-400 mt-1">Requer investigação</div>
         </SpotlightCard>
 
-        <SpotlightCard className="p-4 bento-card">
-          <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1">
+        <SpotlightCard className="p-4 sm:p-5">
+          <div className="text-[10px] font-semibold uppercase tracking-[0.07em] text-slate-400 flex items-center gap-1">
             <HelpCircle className="w-3.5 h-3.5" />
             <span>Sem dados</span>
           </div>
-          <div className="text-2xl font-mono font-semibold text-zinc-300 mt-1.5">
+          <div className="dashfy-kpi-value text-2xl font-bold text-slate-300 mt-2">
             {summary.insufficientDataCount}
           </div>
-          <div className="text-[11px] text-zinc-500 mt-1">Amostra insuficiente</div>
+          <div className="text-[11px] text-slate-400 mt-1">Amostra insuficiente</div>
         </SpotlightCard>
 
-        <SpotlightCard className="p-4 bento-card">
-          <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
+        <SpotlightCard className="p-4 sm:p-5">
+          <div className="text-[10px] font-semibold uppercase tracking-[0.07em] text-slate-400">
             Tendência &amp; Financeiro
           </div>
-          <div className="flex items-center gap-1.5 mt-1.5">
+          <div className="flex items-center gap-1.5 mt-2">
             {summary.overallTrend === "improving" ? (
               <TrendingUp className="w-4 h-4 text-emerald-400 shrink-0" />
             ) : summary.overallTrend === "declining" ? (
               <TrendingDown className="w-4 h-4 text-rose-400 shrink-0" />
             ) : (
-              <Minus className="w-4 h-4 text-zinc-400 shrink-0" />
+              <Minus className="w-4 h-4 text-slate-400 shrink-0" />
             )}
             <span className="text-xs font-semibold text-white truncate">
               {summary.overallTrendLabel}
             </span>
           </div>
           <div
-            className={`text-[11px] font-mono mt-1 truncate ${
+            className={`text-[11px] tabular-nums font-medium mt-1 truncate ${
               summary.financialHealth === "profitable"
                 ? "text-emerald-400"
                 : summary.financialHealth === "losing"
                   ? "text-rose-400"
-                  : "text-zinc-400"
+                  : "text-slate-400"
             }`}
           >
             {summary.financialHealthLabel}
@@ -1164,7 +1164,7 @@ export function MyMetricsView({
           <h4 className="text-sm font-semibold text-white">
             Indicadores de {activeCampaignLabel}
           </h4>
-          <p className="text-xs text-zinc-400">
+          <p className="text-xs text-slate-400">
             Clique em qualquer cartão para ver o gráfico detalhado, quebrar por conjunto e ajustar a meta.
           </p>
         </div>
@@ -1173,7 +1173,7 @@ export function MyMetricsView({
           <button
             type="button"
             onClick={() => setShowSparklines((v) => !v)}
-            className="btn-pressable inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/10 bg-[#08080a] text-xs text-zinc-300 hover:text-white"
+            className="btn-pressable inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-blue-200/12 bg-[#050b18] text-xs text-slate-300 hover:text-white"
           >
             {showSparklines ? (
               <EyeOff className="w-3.5 h-3.5" />
@@ -1186,7 +1186,7 @@ export function MyMetricsView({
           <button
             type="button"
             onClick={() => setAddMetricOpen((v) => !v)}
-            className="btn-pressable inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white hover:bg-zinc-100 text-black text-xs font-semibold"
+            className="btn-pressable inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#1d74ff] hover:bg-[#2a80ff] text-white shadow-[0_8px_22px_-6px_rgba(29,116,255,0.52)] text-xs font-semibold"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Adicionar métrica</span>
@@ -1204,7 +1204,7 @@ export function MyMetricsView({
             <button
               type="button"
               onClick={() => setAddMetricOpen(false)}
-              className="text-zinc-400 hover:text-white"
+              className="text-slate-400 hover:text-white"
             >
               <X className="w-4 h-4" />
             </button>
@@ -1223,7 +1223,7 @@ export function MyMetricsView({
                   className={`text-left rounded-xl border p-3 transition flex items-start justify-between gap-2 ${
                     active
                       ? "border-[#1d74ff]/50 bg-[#1d74ff]/10"
-                      : "border-white/10 bg-[#08080a] hover:border-white/25"
+                      : "border-blue-200/12 bg-[#050b18] hover:border-[#3b8bff]/40"
                   }`}
                 >
                   <div className="min-w-0">
@@ -1231,19 +1231,19 @@ export function MyMetricsView({
                       <span className="text-xs font-semibold text-white truncate">
                         {def.shortLabel}
                       </span>
-                      <span className="px-1.5 py-0.5 rounded text-[9px] border border-white/10 bg-white/[0.04] text-zinc-400">
+                      <span className="px-1.5 py-0.5 rounded text-[9px] border border-blue-200/12 bg-white/[0.04] text-slate-400">
                         {METRIC_CATEGORY_LABELS[def.category]}
                       </span>
                     </div>
-                    <p className="text-[11px] text-zinc-400 mt-0.5 line-clamp-2">
+                    <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-2">
                       {def.description}
                     </p>
                   </div>
                   <span
                     className={`px-2 py-0.5 rounded-full text-[10px] font-semibold shrink-0 ${
                       active
-                        ? "bg-white text-black"
-                        : "border border-white/15 text-zinc-300"
+                        ? "bg-[#1d74ff] text-white shadow-[0_6px_16px_-5px_rgba(29,116,255,0.65)]"
+                        : "border border-blue-200/15 text-slate-300"
                     }`}
                   >
                     {active ? "Ativo" : "+ Add"}
@@ -1264,7 +1264,7 @@ export function MyMetricsView({
           return (
             <SpotlightCard
               key={def.id}
-              className="p-4 sm:p-5 bento-card flex flex-col justify-between gap-3.5 hover:border-white/25 transition"
+              className="p-4 sm:p-5 bento-card flex flex-col justify-between gap-3.5 hover:border-[#3b8bff]/40 transition"
             >
               {/* Topo do cartão: categoria + nome + reordenar/remover */}
               <div className="flex items-start justify-between gap-2">
@@ -1274,10 +1274,10 @@ export function MyMetricsView({
                   className="text-left min-w-0 flex-1 group"
                 >
                   <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase border border-white/10 bg-white/[0.04] text-zinc-400">
+                    <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase border border-blue-200/12 bg-white/[0.04] text-slate-400">
                       {METRIC_CATEGORY_LABELS[def.category]}
                     </span>
-                    <span className="text-[10px] text-zinc-500">
+                    <span className="text-[10px] text-slate-400">
                       {def.direction === "lower_is_better"
                         ? "Menor é melhor"
                         : "Maior é melhor"}
@@ -1293,7 +1293,7 @@ export function MyMetricsView({
                     type="button"
                     disabled={index === 0}
                     onClick={() => handleMoveMetric(index, -1)}
-                    className="p-1 rounded-lg text-zinc-500 hover:text-white hover:bg-white/[0.06] disabled:opacity-30"
+                    className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-[#1d74ff]/12 disabled:opacity-30"
                     aria-label={`Mover ${def.shortLabel} para esquerda`}
                     title="Mover para esquerda"
                   >
@@ -1303,7 +1303,7 @@ export function MyMetricsView({
                     type="button"
                     disabled={index === evaluatedCards.length - 1}
                     onClick={() => handleMoveMetric(index, 1)}
-                    className="p-1 rounded-lg text-zinc-500 hover:text-white hover:bg-white/[0.06] disabled:opacity-30"
+                    className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-[#1d74ff]/12 disabled:opacity-30"
                     aria-label={`Mover ${def.shortLabel} para direita`}
                     title="Mover para direita"
                   >
@@ -1312,7 +1312,7 @@ export function MyMetricsView({
                   <button
                     type="button"
                     onClick={() => handleRemoveMetric(def.id)}
-                    className="p-1 rounded-lg text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10"
+                    className="p-1 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10"
                     aria-label={`Remover ${def.shortLabel}`}
                     title="Remover cartão"
                   >
@@ -1328,11 +1328,11 @@ export function MyMetricsView({
                 className="text-left space-y-3 w-full"
               >
                 <div className="flex items-baseline justify-between gap-2">
-                  <span className="text-2xl font-mono font-bold text-white tabular-nums">
+                  <span className="dashfy-kpi-value text-2xl sm:text-[26px] font-bold text-white">
                     {card.formattedCurrent}
                   </span>
                   <span
-                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border shrink-0 ${style.pill}`}
+                    className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border shrink-0 ${style.pill}`}
                   >
                     <StatusIcon className="w-3 h-3" />
                     <span>{card.statusLabel}</span>
@@ -1340,19 +1340,19 @@ export function MyMetricsView({
                 </div>
 
                 {/* Meta configurada + Desvio absoluto e percentual */}
-                <div className="grid grid-cols-2 gap-2 text-[11px] rounded-xl border border-white/[0.06] bg-[#08080a] p-2.5">
+                <div className="grid grid-cols-2 gap-2 text-[11px] rounded-xl border border-blue-200/10 bg-[#050b18] p-2.5">
                   <div>
-                    <div className="text-zinc-500">Meta</div>
-                    <div className="font-mono font-semibold text-zinc-200 truncate">
+                    <div className="text-slate-400">Meta</div>
+                    <div className="font-mono font-semibold text-slate-200 truncate">
                       {card.formattedGoal}
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-zinc-500">Desvio</div>
-                    <div className="font-mono font-semibold text-zinc-200 truncate">
+                    <div className="text-slate-400">Desvio</div>
+                    <div className="font-mono font-semibold text-slate-200 truncate">
                       {card.formattedAbsDiff}{" "}
                       {card.formattedPctDiff !== "—" && (
-                        <span className="text-zinc-400">({card.formattedPctDiff})</span>
+                        <span className="text-slate-400">({card.formattedPctDiff})</span>
                       )}
                     </div>
                   </div>
@@ -1366,7 +1366,7 @@ export function MyMetricsView({
                       style={{ width: `${Math.max(4, Math.min(100, card.progressPct))}%` }}
                     />
                   </div>
-                  <div className="flex items-center justify-between text-[10px] text-zinc-400">
+                  <div className="flex items-center justify-between text-[10px] text-slate-400">
                     <span className="truncate pr-2">{card.statusReason}</span>
                     {card.trendDirection !== "unknown" && card.trendPct !== null && (
                       <span
@@ -1375,7 +1375,7 @@ export function MyMetricsView({
                             ? "text-emerald-400"
                             : card.trendIsFavorable === false
                               ? "text-rose-400"
-                              : "text-zinc-400"
+                              : "text-slate-400"
                         }`}
                       >
                         {card.trendDirection === "up" ? (
@@ -1402,8 +1402,8 @@ export function MyMetricsView({
               </button>
 
               {/* Rodapé do cartão */}
-              <div className="flex items-center justify-between pt-2 border-t border-white/[0.06] text-[11px]">
-                <span className="text-zinc-500">
+              <div className="flex items-center justify-between pt-2 border-t border-blue-200/10 text-[11px]">
+                <span className="text-slate-400">
                   {card.confidence === "low"
                     ? "Confiança baixa (poucos dados)"
                     : card.confidence === "high"
@@ -1436,7 +1436,7 @@ export function MyMetricsView({
                 <h4 className="text-sm font-semibold text-white">
                   Assistente Inteligente de Campanhas
                 </h4>
-                <p className="text-[11px] text-zinc-400">
+                <p className="text-[11px] text-slate-400">
                   Interpretação baseada nas suas metas, volume de dados e objetivo ({OBJECTIVE_LABELS[objective]})
                 </p>
               </div>
@@ -1455,7 +1455,7 @@ export function MyMetricsView({
                       ? "border-amber-500/30 bg-amber-500/10 text-amber-100"
                       : insight.severity === "positive"
                         ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-100"
-                        : "border-white/10 bg-[#08080a] text-zinc-200"
+                        : "border-blue-200/12 bg-[#050b18] text-slate-200"
                 }`}
               >
                 <div className="font-semibold flex items-center justify-between gap-2">
@@ -1488,7 +1488,7 @@ export function MyMetricsView({
                 <h4 className="text-sm font-semibold text-white">
                   Alertas Inteligentes de Metas
                 </h4>
-                <p className="text-[11px] text-zinc-400">
+                <p className="text-[11px] text-slate-400">
                   Cooldown: {alertSettings.cooldownHours}h • Mín. gasto:{" "}
                   {formatBRL(alertSettings.minSpendForAlerts)}
                 </p>
@@ -1504,7 +1504,7 @@ export function MyMetricsView({
           </div>
 
           {liveAlerts.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-white/10 p-6 text-center text-xs text-zinc-400">
+            <div className="rounded-xl border border-dashed border-blue-200/12 p-6 text-center text-xs text-slate-400">
               Nenhum alerta crítico ativo para esta campanha no momento (respeitando seus limites mínimos de dados).
             </div>
           ) : (
@@ -1528,17 +1528,17 @@ export function MyMetricsView({
           )}
 
           {alertLogs.length > 0 && (
-            <div className="pt-3 border-t border-white/10 space-y-1.5">
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+            <div className="pt-3 border-t border-blue-200/12 space-y-1.5">
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
                 Últimos alertas registrados
               </div>
               {alertLogs.slice(0, 3).map((lg) => (
                 <div
                   key={lg.id}
-                  className="flex items-center justify-between gap-2 text-[11px] text-zinc-400"
+                  className="flex items-center justify-between gap-2 text-[11px] text-slate-400"
                 >
                   <span className="truncate">{lg.title}</span>
-                  <span className="font-mono text-[10px] text-zinc-500 shrink-0">
+                  <span className="font-mono text-[10px] text-slate-400 shrink-0">
                     {formatDateTimeBR(lg.triggeredAt)}
                   </span>
                 </div>
@@ -1550,9 +1550,9 @@ export function MyMetricsView({
 
       {/* ==================== MODAL 1: GRÁFICO DETALHADO + EDITOR DE META ==================== */}
       {activeDetailCard && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="w-full max-w-2xl rounded-2xl border border-white/15 bg-[#0c0c0e] p-5 sm:p-6 shadow-2xl space-y-5 max-h-[92vh] overflow-y-auto">
-            <div className="flex items-start justify-between gap-3 border-b border-white/10 pb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#020612]/80 backdrop-blur-sm">
+          <div className="w-full max-w-2xl rounded-2xl border border-blue-200/15 bg-[#0a1529] p-5 sm:p-6 shadow-2xl space-y-5 max-h-[92vh] overflow-y-auto">
+            <div className="flex items-start justify-between gap-3 border-b border-blue-200/12 pb-3">
               <div>
                 <div className="text-[10px] font-semibold uppercase tracking-wider text-[#5ea1ff]">
                   {METRIC_CATEGORY_LABELS[activeDetailCard.definition.category]} •{" "}
@@ -1561,14 +1561,14 @@ export function MyMetricsView({
                 <h3 className="text-base font-semibold text-white mt-0.5">
                   {activeDetailCard.definition.label}
                 </h3>
-                <p className="text-xs text-zinc-400 mt-0.5">
+                <p className="text-xs text-slate-400 mt-0.5">
                   {activeDetailCard.definition.description}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setActiveDetailMetricId(null)}
-                className="p-1.5 text-zinc-400 hover:text-white"
+                className="p-1.5 text-slate-400 hover:text-white"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1584,12 +1584,12 @@ export function MyMetricsView({
             />
 
             {/* Configuração de Meta Individual (4 tipos de meta) */}
-            <div className="rounded-xl border border-white/10 bg-[#08080a] p-4 space-y-3.5">
+            <div className="rounded-xl border border-blue-200/12 bg-[#050b18] p-4 space-y-3.5">
               <div className="flex items-center justify-between gap-2">
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-white">
                   Configurar Meta Personalizada
                 </h4>
-                <label className="inline-flex items-center gap-2 text-xs text-zinc-300 cursor-pointer">
+                <label className="inline-flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={Boolean(activeDetailCard.goal?.enabled)}
@@ -1606,7 +1606,7 @@ export function MyMetricsView({
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-[11px] text-zinc-400 mb-1">
+                  <label className="block text-[11px] text-slate-400 mb-1">
                     Tipo de meta
                   </label>
                   <select
@@ -1619,7 +1619,7 @@ export function MyMetricsView({
                         goalType: e.target.value as MetricGoalType,
                       })
                     }
-                    className="w-full rounded-xl border border-white/10 bg-[#050507] px-3 py-2 text-xs text-white"
+                    className="w-full rounded-xl border border-blue-200/12 bg-[#050b18] px-3 py-2 text-xs text-white"
                   >
                     <option value="min">Valor mínimo desejado</option>
                     <option value="max">Valor máximo permitido</option>
@@ -1631,7 +1631,7 @@ export function MyMetricsView({
                 </div>
 
                 <div>
-                  <label className="block text-[11px] text-zinc-400 mb-1">
+                  <label className="block text-[11px] text-slate-400 mb-1">
                     {(activeDetailCard.goal?.goalType ||
                       activeDetailCard.definition.defaultGoalType) === "range"
                       ? "Limite mínimo ideal"
@@ -1652,14 +1652,14 @@ export function MyMetricsView({
                         targetValue: Number(e.target.value || 0),
                       })
                     }
-                    className="w-full rounded-xl border border-white/10 bg-[#050507] px-3 py-2 text-xs font-mono text-white"
+                    className="w-full rounded-xl border border-blue-200/12 bg-[#050b18] px-3 py-2 text-xs font-mono text-white"
                   />
                 </div>
 
                 {(activeDetailCard.goal?.goalType ||
                   activeDetailCard.definition.defaultGoalType) === "range" ? (
                   <div>
-                    <label className="block text-[11px] text-zinc-400 mb-1">
+                    <label className="block text-[11px] text-slate-400 mb-1">
                       Limite máximo ideal
                     </label>
                     <input
@@ -1675,12 +1675,12 @@ export function MyMetricsView({
                           maxValue: Number(e.target.value || 0),
                         })
                       }
-                      className="w-full rounded-xl border border-white/10 bg-[#050507] px-3 py-2 text-xs font-mono text-white"
+                      className="w-full rounded-xl border border-blue-200/12 bg-[#050b18] px-3 py-2 text-xs font-mono text-white"
                     />
                   </div>
                 ) : (
                   <div>
-                    <label className="block text-[11px] text-zinc-400 mb-1">
+                    <label className="block text-[11px] text-slate-400 mb-1">
                       Faixa de atenção (%)
                     </label>
                     <input
@@ -1693,13 +1693,13 @@ export function MyMetricsView({
                           attentionTolerancePct: Number(e.target.value || 15),
                         })
                       }
-                      className="w-full rounded-xl border border-white/10 bg-[#050507] px-3 py-2 text-xs font-mono text-white"
+                      className="w-full rounded-xl border border-blue-200/12 bg-[#050b18] px-3 py-2 text-xs font-mono text-white"
                     />
                   </div>
                 )}
               </div>
 
-              <label className="inline-flex items-center gap-2 text-xs text-zinc-300 cursor-pointer pt-1">
+              <label className="inline-flex items-center gap-2 text-xs text-slate-300 cursor-pointer pt-1">
                 <input
                   type="checkbox"
                   checked={activeDetailCard.goal?.alertEnabled !== false}
@@ -1717,12 +1717,12 @@ export function MyMetricsView({
             {/* Quebra por Grupo de Anúncios (para diagnosticar desvios rapidamente) */}
             {adgroupBreakdown.length > 0 && (
               <div className="space-y-2">
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
                   Desempenho por Grupo de Anúncios no Período
                 </h4>
-                <div className="overflow-x-auto rounded-xl border border-white/10">
+                <div className="overflow-x-auto rounded-xl border border-blue-200/12">
                   <table className="w-full text-left text-[11px]">
-                    <thead className="bg-[#08080a] text-zinc-400 uppercase">
+                    <thead className="bg-[#050b18] text-slate-400 uppercase">
                       <tr>
                         <th className="p-2.5">Conjunto</th>
                         <th className="p-2.5 text-right">Invest.</th>
@@ -1731,7 +1731,7 @@ export function MyMetricsView({
                         <th className="p-2.5 text-right">ROAS</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-white/[0.04]">
+                    <tbody className="divide-y divide-blue-200/[0.06]">
                       {adgroupBreakdown.slice(0, 6).map((ag) => {
                         const ctr =
                           ag.impressions > 0 ? (ag.clicks / ag.impressions) * 100 : 0;
@@ -1742,13 +1742,13 @@ export function MyMetricsView({
                             <td className="p-2.5 text-white font-medium truncate max-w-[180px]">
                               {ag.name}
                             </td>
-                            <td className="p-2.5 text-right font-mono text-zinc-300">
+                            <td className="p-2.5 text-right font-mono text-slate-300">
                               {formatBRL(ag.spend)}
                             </td>
-                            <td className="p-2.5 text-right font-mono text-zinc-300">
+                            <td className="p-2.5 text-right font-mono text-slate-300">
                               {ctr.toFixed(2)}%
                             </td>
-                            <td className="p-2.5 text-right font-mono text-zinc-200">
+                            <td className="p-2.5 text-right font-mono text-slate-200">
                               {cpa !== null ? formatBRL(cpa) : "—"}
                             </td>
                             <td className="p-2.5 text-right font-mono text-emerald-300">
@@ -1763,11 +1763,11 @@ export function MyMetricsView({
               </div>
             )}
 
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/10">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-blue-200/12">
               <button
                 type="button"
                 onClick={() => setActiveDetailMetricId(null)}
-                className="px-3.5 py-2 rounded-xl text-xs text-zinc-400 hover:text-white"
+                className="px-3.5 py-2 rounded-xl text-xs text-slate-400 hover:text-white"
               >
                 Fechar
               </button>
@@ -1778,7 +1778,7 @@ export function MyMetricsView({
                   setActiveDetailMetricId(null);
                 }}
                 disabled={saving}
-                className="btn-pressable px-4 py-2 rounded-xl bg-white hover:bg-zinc-100 text-black text-xs font-semibold disabled:opacity-50"
+                className="btn-pressable px-4 py-2 rounded-xl bg-[#1d74ff] hover:bg-[#2a80ff] text-white shadow-[0_8px_22px_-6px_rgba(29,116,255,0.52)] text-xs font-semibold disabled:opacity-50"
               >
                 {saving ? "Salvando..." : "Salvar meta"}
               </button>
@@ -1789,8 +1789,8 @@ export function MyMetricsView({
 
       {/* ==================== MODAL 2: NOVA VISUALIZAÇÃO ==================== */}
       {newViewModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-white/15 bg-[#0c0c0e] p-5 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#020612]/80 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl border border-blue-200/15 bg-[#0a1529] p-5 shadow-2xl space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-white">
                 Criar Nova Visualização
@@ -1798,12 +1798,12 @@ export function MyMetricsView({
               <button
                 type="button"
                 onClick={() => setNewViewModalOpen(false)}
-                className="text-zinc-400 hover:text-white"
+                className="text-slate-400 hover:text-white"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <p className="text-xs text-zinc-400">
+            <p className="text-xs text-slate-400">
               Salve um conjunto alternativo de cartões e metas para alternar rapidamente nesta campanha (ex.: &quot;Escala&quot;, &quot;Criativos&quot;, &quot;Financeiro&quot;).
             </p>
             <input
@@ -1811,13 +1811,13 @@ export function MyMetricsView({
               value={newViewInput}
               onChange={(e) => setNewViewInput(e.target.value)}
               placeholder="Nome da visualização..."
-              className="w-full rounded-xl border border-white/10 bg-[#08080a] px-3 py-2 text-xs text-white focus:border-white focus:outline-none"
+              className="w-full rounded-xl border border-blue-200/12 bg-[#050b18] px-3 py-2 text-xs text-white focus:border-[#3b8bff] focus:ring-2 focus:ring-[#1d74ff]/20 focus:outline-none"
             />
             <div className="flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setNewViewModalOpen(false)}
-                className="px-3 py-2 text-xs text-zinc-400 hover:text-white"
+                className="px-3 py-2 text-xs text-slate-400 hover:text-white"
               >
                 Cancelar
               </button>
@@ -1828,7 +1828,7 @@ export function MyMetricsView({
                   await handleSavePreferences(newViewInput.trim());
                   setNewViewModalOpen(false);
                 }}
-                className="btn-pressable px-4 py-2 rounded-xl bg-white text-black text-xs font-semibold disabled:opacity-50"
+                className="btn-pressable px-4 py-2 rounded-xl bg-[#1d74ff] text-white shadow-[0_6px_16px_-5px_rgba(29,116,255,0.65)] text-xs font-semibold disabled:opacity-50"
               >
                 Salvar visualização
               </button>
@@ -1839,14 +1839,14 @@ export function MyMetricsView({
 
       {/* ==================== MODAL 3: MODELOS DE MÉTRICAS (SEÇÃO 6) ==================== */}
       {templatesOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="w-full max-w-3xl rounded-2xl border border-white/15 bg-[#0c0c0e] p-5 sm:p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#020612]/80 backdrop-blur-sm">
+          <div className="w-full max-w-3xl rounded-2xl border border-blue-200/15 bg-[#0a1529] p-5 sm:p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-blue-200/12 pb-3">
               <div>
                 <h3 className="text-sm font-semibold text-white">
                   Modelos de Métricas e Metas
                 </h3>
-                <p className="text-xs text-zinc-400">
+                <p className="text-xs text-slate-400">
                   Aplique modelos prontos ou salve seus próprios presets reutilizáveis.
                 </p>
               </div>
@@ -1856,7 +1856,7 @@ export function MyMetricsView({
                   setTemplatesOpen(false);
                   setBulkTemplate(null);
                 }}
-                className="text-zinc-400 hover:text-white"
+                className="text-slate-400 hover:text-white"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1870,7 +1870,7 @@ export function MyMetricsView({
                 </div>
 
                 {campaignOptions.length === 0 ? (
-                  <p className="text-xs text-zinc-400">
+                  <p className="text-xs text-slate-400">
                     Nenhuma campanha cadastrada nesta operação ainda.
                   </p>
                 ) : (
@@ -1881,7 +1881,7 @@ export function MyMetricsView({
                       return (
                         <label
                           key={c.key}
-                          className="flex items-center justify-between gap-2 p-3 rounded-xl border border-white/10 bg-[#08080a] cursor-pointer text-xs"
+                          className="flex items-center justify-between gap-2 p-3 rounded-xl border border-blue-200/12 bg-[#050b18] cursor-pointer text-xs"
                         >
                           <span className="flex items-center gap-2 min-w-0">
                             <input
@@ -1921,11 +1921,11 @@ export function MyMetricsView({
                   </span>
                 </label>
 
-                <div className="flex justify-end gap-2 pt-2 border-t border-white/10">
+                <div className="flex justify-end gap-2 pt-2 border-t border-blue-200/12">
                   <button
                     type="button"
                     onClick={() => setBulkTemplate(null)}
-                    className="px-3.5 py-2 text-xs text-zinc-400 hover:text-white"
+                    className="px-3.5 py-2 text-xs text-slate-400 hover:text-white"
                   >
                     Voltar
                   </button>
@@ -1933,7 +1933,7 @@ export function MyMetricsView({
                     type="button"
                     disabled={bulkSelectedKeys.length === 0 || saving}
                     onClick={handleConfirmBulkApply}
-                    className="btn-pressable px-4 py-2 rounded-xl bg-white text-black text-xs font-semibold disabled:opacity-40"
+                    className="btn-pressable px-4 py-2 rounded-xl bg-[#1d74ff] text-white shadow-[0_6px_16px_-5px_rgba(29,116,255,0.65)] text-xs font-semibold disabled:opacity-40"
                   >
                     {saving
                       ? "Aplicando..."
@@ -1947,25 +1947,25 @@ export function MyMetricsView({
                   {allTemplates.map((tpl) => (
                     <div
                       key={tpl.id}
-                      className="rounded-xl border border-white/10 bg-[#08080a] p-4 flex flex-col justify-between gap-3"
+                      className="rounded-xl border border-blue-200/12 bg-[#050b18] p-4 flex flex-col justify-between gap-3"
                     >
                       <div>
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-xs font-semibold text-white">
                             {tpl.name}
                           </span>
-                          <span className="px-2 py-0.5 rounded-full text-[9px] border border-white/10 bg-white/[0.04] text-zinc-400">
+                          <span className="px-2 py-0.5 rounded-full text-[9px] border border-blue-200/12 bg-white/[0.04] text-slate-400">
                             {tpl.isBuiltIn ? "Dashfy" : "Meu modelo"}
                           </span>
                         </div>
-                        <p className="text-[11px] text-zinc-400 mt-1">
+                        <p className="text-[11px] text-slate-400 mt-1">
                           {tpl.description}
                         </p>
                         <div className="flex flex-wrap gap-1 mt-2">
                           {tpl.selectedMetrics.map((m) => (
                             <span
                               key={m}
-                              className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-white/[0.05] text-zinc-300"
+                              className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-white/[0.05] text-slate-300"
                             >
                               {METRIC_DEFINITIONS[m]?.shortLabel || m}
                             </span>
@@ -1973,11 +1973,11 @@ export function MyMetricsView({
                         </div>
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/[0.06]">
+                      <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-blue-200/10">
                         <button
                           type="button"
                           onClick={() => handleApplyTemplateHere(tpl)}
-                          className="btn-pressable flex-1 py-1.5 px-2.5 rounded-lg bg-white text-black text-[11px] font-semibold"
+                          className="btn-pressable flex-1 py-1.5 px-2.5 rounded-lg bg-[#1d74ff] text-white shadow-[0_6px_16px_-5px_rgba(29,116,255,0.65)] text-[11px] font-semibold"
                         >
                           Aplicar nesta campanha
                         </button>
@@ -1989,7 +1989,7 @@ export function MyMetricsView({
                               setBulkSelectedKeys(campaignOptions.map((c) => c.key));
                               setBulkOverwrite(false);
                             }}
-                            className="btn-pressable py-1.5 px-2.5 rounded-lg border border-white/15 bg-white/5 hover:bg-white/10 text-[11px] text-zinc-200"
+                            className="btn-pressable py-1.5 px-2.5 rounded-lg border border-blue-200/15 bg-white/5 hover:bg-white/10 text-[11px] text-slate-200"
                           >
                             Várias campanhas
                           </button>
@@ -1998,7 +1998,7 @@ export function MyMetricsView({
                           <button
                             type="button"
                             onClick={() => handleDeleteCustomTemplate(tpl.id)}
-                            className="p-1.5 rounded-lg text-zinc-500 hover:text-rose-400"
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400"
                             title="Excluir modelo"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -2012,7 +2012,7 @@ export function MyMetricsView({
                 {/* Salvar configuração atual como modelo personalizado */}
                 <form
                   onSubmit={handleCreateCustomTemplate}
-                  className="rounded-xl border border-white/10 bg-[#08080a] p-4 space-y-3"
+                  className="rounded-xl border border-blue-200/12 bg-[#050b18] p-4 space-y-3"
                 >
                   <div className="text-xs font-semibold text-white">
                     Salvar configuração atual como novo modelo pessoal
@@ -2023,20 +2023,20 @@ export function MyMetricsView({
                       value={newTemplateName}
                       onChange={(e) => setNewTemplateName(e.target.value)}
                       placeholder="Ex.: Minha Escala High Ticket"
-                      className="rounded-xl border border-white/10 bg-[#050507] px-3 py-2 text-xs text-white"
+                      className="rounded-xl border border-blue-200/12 bg-[#050b18] px-3 py-2 text-xs text-white"
                     />
                     <input
                       type="text"
                       value={newTemplateDesc}
                       onChange={(e) => setNewTemplateDesc(e.target.value)}
                       placeholder="Descrição curta (opcional)"
-                      className="rounded-xl border border-white/10 bg-[#050507] px-3 py-2 text-xs text-white"
+                      className="rounded-xl border border-blue-200/12 bg-[#050b18] px-3 py-2 text-xs text-white"
                     />
                   </div>
                   <button
                     type="submit"
                     disabled={!newTemplateName.trim() || saving}
-                    className="btn-pressable px-4 py-2 rounded-xl bg-white hover:bg-zinc-100 text-black text-xs font-semibold disabled:opacity-40"
+                    className="btn-pressable px-4 py-2 rounded-xl bg-[#1d74ff] hover:bg-[#2a80ff] text-white shadow-[0_8px_22px_-6px_rgba(29,116,255,0.52)] text-xs font-semibold disabled:opacity-40"
                   >
                     Salvar modelo personalizado
                   </button>
@@ -2049,21 +2049,21 @@ export function MyMetricsView({
 
       {/* ==================== MODAL 4: CONFIGURAÇÃO DE ALERTAS INTELIGENTES ==================== */}
       {alertsModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="w-full max-w-xl rounded-2xl border border-white/15 bg-[#0c0c0e] p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#020612]/80 backdrop-blur-sm">
+          <div className="w-full max-w-xl rounded-2xl border border-blue-200/15 bg-[#0a1529] p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-blue-200/12 pb-3">
               <div>
                 <h3 className="text-sm font-semibold text-white">
                   Configurar Alertas Inteligentes de Metas
                 </h3>
-                <p className="text-xs text-zinc-400">
+                <p className="text-xs text-slate-400">
                   Evite alertas falsos com limites mínimos de dados e intervalo de repetição (cooldown).
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setAlertsModalOpen(false)}
-                className="text-zinc-400 hover:text-white"
+                className="text-slate-400 hover:text-white"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -2086,7 +2086,7 @@ export function MyMetricsView({
               ).map((item) => (
                 <label
                   key={item.key}
-                  className="flex items-center justify-between p-3 rounded-xl border border-white/10 bg-[#08080a] cursor-pointer text-xs text-zinc-200"
+                  className="flex items-center justify-between p-3 rounded-xl border border-blue-200/12 bg-[#050b18] cursor-pointer text-xs text-slate-200"
                 >
                   <span>{item.label}</span>
                   <input
@@ -2105,9 +2105,9 @@ export function MyMetricsView({
               ))}
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2 border-t border-white/10">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2 border-t border-blue-200/12">
               <div>
-                <label className="block text-[11px] text-zinc-400 mb-1">
+                <label className="block text-[11px] text-slate-400 mb-1">
                   Gasto mín. p/ alertar (R$)
                 </label>
                 <input
@@ -2121,11 +2121,11 @@ export function MyMetricsView({
                     }));
                     setHasUnsavedChanges(true);
                   }}
-                  className="w-full rounded-xl border border-white/10 bg-[#08080a] px-3 py-2 text-xs font-mono text-white"
+                  className="w-full rounded-xl border border-blue-200/12 bg-[#050b18] px-3 py-2 text-xs font-mono text-white"
                 />
               </div>
               <div>
-                <label className="block text-[11px] text-zinc-400 mb-1">
+                <label className="block text-[11px] text-slate-400 mb-1">
                   Cliques mín. p/ CTR
                 </label>
                 <input
@@ -2139,11 +2139,11 @@ export function MyMetricsView({
                     }));
                     setHasUnsavedChanges(true);
                   }}
-                  className="w-full rounded-xl border border-white/10 bg-[#08080a] px-3 py-2 text-xs font-mono text-white"
+                  className="w-full rounded-xl border border-blue-200/12 bg-[#050b18] px-3 py-2 text-xs font-mono text-white"
                 />
               </div>
               <div>
-                <label className="block text-[11px] text-zinc-400 mb-1">
+                <label className="block text-[11px] text-slate-400 mb-1">
                   Compras mín. p/ CPA
                 </label>
                 <input
@@ -2157,11 +2157,11 @@ export function MyMetricsView({
                     }));
                     setHasUnsavedChanges(true);
                   }}
-                  className="w-full rounded-xl border border-white/10 bg-[#08080a] px-3 py-2 text-xs font-mono text-white"
+                  className="w-full rounded-xl border border-blue-200/12 bg-[#050b18] px-3 py-2 text-xs font-mono text-white"
                 />
               </div>
               <div>
-                <label className="block text-[11px] text-zinc-400 mb-1">
+                <label className="block text-[11px] text-slate-400 mb-1">
                   Queda mín. CTR (%)
                 </label>
                 <input
@@ -2176,11 +2176,11 @@ export function MyMetricsView({
                     }));
                     setHasUnsavedChanges(true);
                   }}
-                  className="w-full rounded-xl border border-white/10 bg-[#08080a] px-3 py-2 text-xs font-mono text-white"
+                  className="w-full rounded-xl border border-blue-200/12 bg-[#050b18] px-3 py-2 text-xs font-mono text-white"
                 />
               </div>
               <div>
-                <label className="block text-[11px] text-zinc-400 mb-1">
+                <label className="block text-[11px] text-slate-400 mb-1">
                   Gasto sem compras (R$)
                 </label>
                 <input
@@ -2194,11 +2194,11 @@ export function MyMetricsView({
                     }));
                     setHasUnsavedChanges(true);
                   }}
-                  className="w-full rounded-xl border border-white/10 bg-[#08080a] px-3 py-2 text-xs font-mono text-white"
+                  className="w-full rounded-xl border border-blue-200/12 bg-[#050b18] px-3 py-2 text-xs font-mono text-white"
                 />
               </div>
               <div>
-                <label className="block text-[11px] text-zinc-400 mb-1">
+                <label className="block text-[11px] text-slate-400 mb-1">
                   Intervalo cooldown (h)
                 </label>
                 <input
@@ -2213,16 +2213,16 @@ export function MyMetricsView({
                     }));
                     setHasUnsavedChanges(true);
                   }}
-                  className="w-full rounded-xl border border-white/10 bg-[#08080a] px-3 py-2 text-xs font-mono text-white"
+                  className="w-full rounded-xl border border-blue-200/12 bg-[#050b18] px-3 py-2 text-xs font-mono text-white"
                 />
               </div>
             </div>
 
-            <div className="flex justify-end gap-2 pt-2 border-t border-white/10">
+            <div className="flex justify-end gap-2 pt-2 border-t border-blue-200/12">
               <button
                 type="button"
                 onClick={() => setAlertsModalOpen(false)}
-                className="px-3.5 py-2 text-xs text-zinc-400 hover:text-white"
+                className="px-3.5 py-2 text-xs text-slate-400 hover:text-white"
               >
                 Fechar
               </button>
@@ -2233,7 +2233,7 @@ export function MyMetricsView({
                   await handleSavePreferences();
                   setAlertsModalOpen(false);
                 }}
-                className="btn-pressable px-4 py-2 rounded-xl bg-white text-black text-xs font-semibold disabled:opacity-50"
+                className="btn-pressable px-4 py-2 rounded-xl bg-[#1d74ff] text-white shadow-[0_6px_16px_-5px_rgba(29,116,255,0.65)] text-xs font-semibold disabled:opacity-50"
               >
                 Salvar alertas
               </button>

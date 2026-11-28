@@ -128,7 +128,7 @@ export default function CadastroPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 bg-[#050507] relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 bg-[#040914] relative overflow-hidden">
       {/* Subtle monochrome grid background */}
       <div
         className="pointer-events-none fixed inset-0 opacity-[0.03]"
@@ -146,7 +146,7 @@ export default function CadastroPage() {
           <Link href="/" aria-label="Voltar para a página inicial da Dashfy">
             <DashfyBrand size="lg" className="mb-3" />
           </Link>
-          <p className="text-xs text-zinc-400 mt-1">
+          <p className="text-xs text-slate-400 mt-1">
             Crie seu workspace exclusivo na Dashfy
           </p>
         </div>
@@ -161,12 +161,12 @@ export default function CadastroPage() {
                 <h1 className="text-base font-semibold text-white">
                   Confirme seu e-mail
                 </h1>
-                <p className="text-xs text-zinc-400 leading-relaxed">
+                <p className="text-xs text-slate-400 leading-relaxed">
                   {confirmationMessage}
                 </p>
-                <p className="text-[11px] text-zinc-500 pt-1">
+                <p className="text-[11px] text-slate-400 pt-1">
                   Enviado para{" "}
-                  <span className="text-zinc-200 font-mono">{email}</span>
+                  <span className="text-slate-200 font-mono">{email}</span>
                   <span className="block mt-1">
                     Remetente: naoresponda@auth.usedashfy.com.br (verifique também o spam).
                   </span>
@@ -174,7 +174,7 @@ export default function CadastroPage() {
               </div>
 
               {resendFeedback && (
-                <div className="rounded-xl border border-white/10 bg-[#08080a] p-2.5 text-[11px] text-zinc-300">
+                <div className="rounded-xl border border-blue-200/12 bg-[#050b18] p-2.5 text-[11px] text-slate-300">
                   {resendFeedback}
                 </div>
               )}
@@ -184,7 +184,7 @@ export default function CadastroPage() {
                   type="button"
                   onClick={handleResendEmail}
                   disabled={resending}
-                  className="btn-pressable w-full inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-[#08080a] hover:bg-white/[0.06] text-white font-medium text-xs py-2.5 px-4 disabled:opacity-50"
+                  className="btn-pressable w-full inline-flex items-center justify-center gap-2 rounded-xl border border-blue-200/15 bg-[#050b18] hover:bg-[#1d74ff]/12 text-white font-medium text-xs py-2.5 px-4 disabled:opacity-50"
                 >
                   <span>
                     {resending
@@ -195,7 +195,7 @@ export default function CadastroPage() {
 
                 <Link
                   href="/login"
-                  className="btn-pressable w-full inline-flex items-center justify-center gap-2 rounded-xl bg-white hover:bg-zinc-100 text-black font-semibold text-sm py-2.5 px-4"
+                  className="btn-pressable w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#1d74ff] hover:bg-[#2a80ff] text-white shadow-[0_8px_22px_-6px_rgba(29,116,255,0.52)] font-semibold text-sm py-2.5 px-4"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   <span>Voltar para o Login</span>
@@ -208,7 +208,7 @@ export default function CadastroPage() {
                 <h1 className="text-base font-semibold text-white tracking-tight">
                   Criar conta
                 </h1>
-                <p className="text-xs text-zinc-400 mt-0.5">
+                <p className="text-xs text-slate-400 mt-0.5">
                   Configure seu acesso para gerenciar suas próprias operações,
                   campanhas e integrações.
                 </p>
@@ -229,7 +229,7 @@ export default function CadastroPage() {
                   <div>
                     <label
                       htmlFor="signup-name"
-                      className="block text-xs font-medium text-zinc-300 mb-1.5"
+                      className="block text-xs font-medium text-slate-300 mb-1.5"
                     >
                       Seu nome
                     </label>
@@ -240,7 +240,7 @@ export default function CadastroPage() {
                       maxLength={80}
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
-                      className="w-full rounded-xl border border-white/10 bg-[#050507] px-3.5 py-2.5 text-sm text-white placeholder-zinc-500 focus:border-white focus:ring-1 focus:ring-white/20 focus:outline-none transition-all duration-200"
+                      className="w-full rounded-xl border border-blue-200/12 bg-[#050b18] px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-[#3b8bff] focus:ring-2 focus:ring-[#1d74ff]/20 focus:outline-none transition-all duration-200"
                       placeholder="Ex: Lucas Silva"
                     />
                   </div>
@@ -248,10 +248,10 @@ export default function CadastroPage() {
                   <div>
                     <label
                       htmlFor="signup-company"
-                      className="block text-xs font-medium text-zinc-300 mb-1.5"
+                      className="block text-xs font-medium text-slate-300 mb-1.5"
                     >
                       Workspace{" "}
-                      <span className="text-zinc-500 font-normal">(opcional)</span>
+                      <span className="text-slate-400 font-normal">(opcional)</span>
                     </label>
                     <input
                       id="signup-company"
@@ -259,7 +259,7 @@ export default function CadastroPage() {
                       maxLength={80}
                       value={companyName}
                       onChange={(e) => setCompanyName(e.target.value)}
-                      className="w-full rounded-xl border border-white/10 bg-[#050507] px-3.5 py-2.5 text-sm text-white placeholder-zinc-500 focus:border-white focus:ring-1 focus:ring-white/20 focus:outline-none transition-all duration-200"
+                      className="w-full rounded-xl border border-blue-200/12 bg-[#050b18] px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-[#3b8bff] focus:ring-2 focus:ring-[#1d74ff]/20 focus:outline-none transition-all duration-200"
                       placeholder="Ex: Minha Operação"
                     />
                   </div>
@@ -268,7 +268,7 @@ export default function CadastroPage() {
                 <div>
                   <label
                     htmlFor="signup-email"
-                    className="block text-xs font-medium text-zinc-300 mb-1.5"
+                    className="block text-xs font-medium text-slate-300 mb-1.5"
                   >
                     E-mail
                   </label>
@@ -279,7 +279,7 @@ export default function CadastroPage() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-[#050507] px-3.5 py-2.5 text-sm text-white placeholder-zinc-500 focus:border-white focus:ring-1 focus:ring-white/20 focus:outline-none transition-all duration-200"
+                    className="w-full rounded-xl border border-blue-200/12 bg-[#050b18] px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-[#3b8bff] focus:ring-2 focus:ring-[#1d74ff]/20 focus:outline-none transition-all duration-200"
                     placeholder="seu@email.com"
                   />
                 </div>
@@ -287,7 +287,7 @@ export default function CadastroPage() {
                 <div>
                   <label
                     htmlFor="signup-password"
-                    className="block text-xs font-medium text-zinc-300 mb-1.5"
+                    className="block text-xs font-medium text-slate-300 mb-1.5"
                   >
                     Senha
                   </label>
@@ -299,13 +299,13 @@ export default function CadastroPage() {
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full rounded-xl border border-white/10 bg-[#050507] pl-3.5 pr-10 py-2.5 text-sm text-white placeholder-zinc-500 focus:border-white focus:ring-1 focus:ring-white/20 focus:outline-none transition-all duration-200"
+                      className="w-full rounded-xl border border-blue-200/12 bg-[#050b18] pl-3.5 pr-10 py-2.5 text-sm text-white placeholder-slate-500 focus:border-[#3b8bff] focus:ring-2 focus:ring-[#1d74ff]/20 focus:outline-none transition-all duration-200"
                       placeholder="Mínimo 8 caracteres"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword((prev) => !prev)}
-                      className="absolute right-2.5 top-2.5 p-1 text-zinc-400 hover:text-white transition"
+                      className="absolute right-2.5 top-2.5 p-1 text-slate-400 hover:text-white transition"
                       aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
                     >
                       {showPassword ? (
@@ -327,7 +327,7 @@ export default function CadastroPage() {
                       <span
                         key={rule.label}
                         className={`flex items-center gap-1.5 ${
-                          rule.ok ? "text-emerald-400" : "text-zinc-500"
+                          rule.ok ? "text-emerald-400" : "text-slate-400"
                         }`}
                       >
                         <Check className="w-3 h-3 shrink-0" />
@@ -340,7 +340,7 @@ export default function CadastroPage() {
                 <div>
                   <label
                     htmlFor="signup-confirm"
-                    className="block text-xs font-medium text-zinc-300 mb-1.5"
+                    className="block text-xs font-medium text-slate-300 mb-1.5"
                   >
                     Confirmar senha
                   </label>
@@ -351,7 +351,7 @@ export default function CadastroPage() {
                     required
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-[#050507] px-3.5 py-2.5 text-sm text-white placeholder-zinc-500 focus:border-white focus:ring-1 focus:ring-white/20 focus:outline-none transition-all duration-200"
+                    className="w-full rounded-xl border border-blue-200/12 bg-[#050b18] px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-[#3b8bff] focus:ring-2 focus:ring-[#1d74ff]/20 focus:outline-none transition-all duration-200"
                     placeholder="Repita sua senha"
                   />
                   {confirmPassword.length > 0 && !passwordsMatch && (
@@ -369,7 +369,7 @@ export default function CadastroPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="btn-pressable w-full flex items-center justify-center gap-2 rounded-xl bg-white hover:bg-zinc-100 text-black font-semibold text-sm py-2.5 px-4 shadow-sm disabled:opacity-50 mt-2"
+                  className="btn-pressable w-full flex items-center justify-center gap-2 rounded-xl bg-[#1d74ff] hover:bg-[#2a80ff] text-white shadow-[0_8px_22px_-6px_rgba(29,116,255,0.52)] font-semibold text-sm py-2.5 px-4 shadow-sm disabled:opacity-50 mt-2"
                 >
                   {loading ? (
                     <span>Criando conta...</span>
@@ -382,8 +382,8 @@ export default function CadastroPage() {
                 </button>
               </form>
 
-              <div className="mt-5 pt-4 border-t border-white/[0.08] flex items-center justify-between text-xs">
-                <span className="text-zinc-400">Já possui conta?</span>
+              <div className="mt-5 pt-4 border-t border-blue-200/10 flex items-center justify-between text-xs">
+                <span className="text-slate-400">Já possui conta?</span>
                 <Link
                   href="/login"
                   className="inline-flex items-center gap-1 text-white font-medium hover:underline"
@@ -393,13 +393,13 @@ export default function CadastroPage() {
                 </Link>
               </div>
 
-              <div className="mt-4 pt-3 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-zinc-500">
+              <div className="mt-4 pt-3 border-t border-blue-200/10 flex items-center justify-between text-[11px] text-slate-400">
                 <span className="flex items-center gap-1.5">
-                  <Lock className="w-3.5 h-3.5 text-zinc-400" />
+                  <Lock className="w-3.5 h-3.5 text-slate-400" />
                   Criptografia Supabase Auth
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <ShieldCheck className="w-3.5 h-3.5 text-zinc-400" />
+                  <ShieldCheck className="w-3.5 h-3.5 text-slate-400" />
                   Ambiente Isolado
                 </span>
               </div>

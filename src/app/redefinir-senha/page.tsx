@@ -93,7 +93,7 @@ export default function RedefinirSenhaPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 bg-[#050507] relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 bg-[#040914] relative overflow-hidden">
       <div
         className="pointer-events-none fixed inset-0 opacity-[0.03]"
         style={{
@@ -109,7 +109,7 @@ export default function RedefinirSenhaPage() {
           <Link href="/" aria-label="Voltar para a página inicial da Dashfy">
             <DashfyBrand size="lg" className="mb-3" />
           </Link>
-          <p className="text-xs text-zinc-400 mt-1">
+          <p className="text-xs text-slate-400 mt-1">
             Defina uma nova senha de acesso
           </p>
         </div>
@@ -119,7 +119,7 @@ export default function RedefinirSenhaPage() {
             <h1 className="text-base font-semibold text-white tracking-tight">
               Redefinir senha
             </h1>
-            <p className="text-xs text-zinc-400 mt-0.5">
+            <p className="text-xs text-slate-400 mt-0.5">
               Escolha uma senha forte para proteger sua conta Dashfy.
             </p>
           </div>
@@ -147,7 +147,7 @@ export default function RedefinirSenhaPage() {
               </div>
               <Link
                 href="/dashboard"
-                className="btn-pressable w-full inline-flex items-center justify-center gap-2 rounded-xl bg-white hover:bg-zinc-100 text-black font-semibold text-sm py-2.5 px-4"
+                className="btn-pressable w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#1d74ff] hover:bg-[#2a80ff] text-white shadow-[0_8px_22px_-6px_rgba(29,116,255,0.52)] font-semibold text-sm py-2.5 px-4"
               >
                 <span>Acessar Dashfy</span>
               </Link>
@@ -157,7 +157,7 @@ export default function RedefinirSenhaPage() {
               <div>
                 <label
                   htmlFor="new-password"
-                  className="block text-xs font-medium text-zinc-300 mb-1.5"
+                  className="block text-xs font-medium text-slate-300 mb-1.5"
                 >
                   Nova senha
                 </label>
@@ -169,13 +169,13 @@ export default function RedefinirSenhaPage() {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-[#050507] pl-3.5 pr-10 py-2.5 text-sm text-white placeholder-zinc-500 focus:border-white focus:ring-1 focus:ring-white/20 focus:outline-none transition-all duration-200"
+                    className="w-full rounded-xl border border-blue-200/12 bg-[#050b18] pl-3.5 pr-10 py-2.5 text-sm text-white placeholder-slate-500 focus:border-[#3b8bff] focus:ring-2 focus:ring-[#1d74ff]/20 focus:outline-none transition-all duration-200"
                     placeholder="Mínimo 8 caracteres"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword((prev) => !prev)}
-                    className="absolute right-2.5 top-2.5 p-1 text-zinc-400 hover:text-white transition"
+                    className="absolute right-2.5 top-2.5 p-1 text-slate-400 hover:text-white transition"
                     aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
                   >
                     {showPassword ? (
@@ -196,7 +196,7 @@ export default function RedefinirSenhaPage() {
                     <span
                       key={rule.label}
                       className={`flex items-center gap-1.5 ${
-                        rule.ok ? "text-emerald-400" : "text-zinc-500"
+                        rule.ok ? "text-emerald-400" : "text-slate-400"
                       }`}
                     >
                       <Check className="w-3 h-3 shrink-0" />
@@ -209,7 +209,7 @@ export default function RedefinirSenhaPage() {
               <div>
                 <label
                   htmlFor="confirm-new-password"
-                  className="block text-xs font-medium text-zinc-300 mb-1.5"
+                  className="block text-xs font-medium text-slate-300 mb-1.5"
                 >
                   Confirmar nova senha
                 </label>
@@ -220,7 +220,7 @@ export default function RedefinirSenhaPage() {
                   required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-[#050507] px-3.5 py-2.5 text-sm text-white placeholder-zinc-500 focus:border-white focus:ring-1 focus:ring-white/20 focus:outline-none transition-all duration-200"
+                  className="w-full rounded-xl border border-blue-200/12 bg-[#050b18] px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-[#3b8bff] focus:ring-2 focus:ring-[#1d74ff]/20 focus:outline-none transition-all duration-200"
                   placeholder="Repita a nova senha"
                 />
               </div>
@@ -228,7 +228,7 @@ export default function RedefinirSenhaPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="btn-pressable w-full flex items-center justify-center gap-2 rounded-xl bg-white hover:bg-zinc-100 text-black font-semibold text-sm py-2.5 px-4 shadow-sm disabled:opacity-50"
+                className="btn-pressable w-full flex items-center justify-center gap-2 rounded-xl bg-[#1d74ff] hover:bg-[#2a80ff] text-white shadow-[0_8px_22px_-6px_rgba(29,116,255,0.52)] font-semibold text-sm py-2.5 px-4 shadow-sm disabled:opacity-50"
               >
                 <KeyRound className="w-4 h-4" />
                 <span>{loading ? "Salvando..." : "Salvar nova senha"}</span>
@@ -236,17 +236,17 @@ export default function RedefinirSenhaPage() {
             </form>
           )}
 
-          <div className="mt-5 pt-4 border-t border-white/[0.08] flex items-center justify-between text-xs">
+          <div className="mt-5 pt-4 border-t border-blue-200/10 flex items-center justify-between text-xs">
             <Link
               href="/login"
-              className="inline-flex items-center gap-1.5 text-zinc-400 hover:text-white transition"
+              className="inline-flex items-center gap-1.5 text-slate-400 hover:text-white transition"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Voltar ao login</span>
             </Link>
             <Link
               href="/recuperar-senha"
-              className="text-zinc-400 hover:text-white transition"
+              className="text-slate-400 hover:text-white transition"
             >
               Solicitar novo link
             </Link>

@@ -58,24 +58,24 @@ export function SummaryFiltersBar({
   };
 
   return (
-    <div className="rounded-2xl border border-white/[0.08] bg-[#0c0c0e] p-3.5 sm:p-4 space-y-3">
+    <div className="dashfy-surface p-4 sm:p-5 space-y-4">
       {/* Linha 1: Período + Mais filtros */}
-      <div className="flex flex-wrap items-center justify-between gap-2.5">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <div className="flex items-center gap-1.5 text-xs font-medium text-zinc-400 mr-1">
-            <Calendar className="w-3.5 h-3.5 text-zinc-300" />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-slate-400">
+            <Calendar className="w-3.5 h-3.5 text-[#5ea1ff]" />
             <span>Período:</span>
           </div>
-          <div className="flex flex-wrap items-center gap-1 bg-[#050507] border border-white/10 rounded-xl p-1 text-xs">
+          <div className="flex flex-wrap items-center gap-1 bg-[#050b18] border border-blue-200/10 rounded-xl p-1 text-xs">
             {PERIOD_PRESETS.map((p) => (
               <button
                 key={p.id}
                 type="button"
                 onClick={() => setField("period", p.id)}
-                className={`btn-pressable px-3 py-1 rounded-lg transition-all ${
+                className={`btn-pressable px-3 py-1.5 rounded-lg transition-all ${
                   filters.period === p.id
-                    ? "bg-white text-black font-semibold shadow-sm"
-                    : "text-zinc-400 hover:text-white"
+                    ? "bg-[#1d74ff] text-white font-semibold shadow-[0_6px_16px_-5px_rgba(29,116,255,0.75)]"
+                    : "text-slate-400 hover:text-white hover:bg-white/[0.04]"
                 }`}
               >
                 {p.label}
@@ -84,19 +84,19 @@ export function SummaryFiltersBar({
           </div>
 
           {filters.period === "custom" && (
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <input
                 type="date"
                 value={filters.customFrom}
                 onChange={(e) => setField("customFrom", e.target.value)}
-                className="rounded-lg border border-white/10 bg-[#050507] px-2.5 py-1 text-xs text-white focus:border-white focus:outline-none"
+                className="dashfy-input h-9 px-2.5 text-xs"
               />
-              <span className="text-zinc-500 text-xs">-</span>
+              <span className="text-slate-500 text-xs">até</span>
               <input
                 type="date"
                 value={filters.customTo}
                 onChange={(e) => setField("customTo", e.target.value)}
-                className="rounded-lg border border-white/10 bg-[#050507] px-2.5 py-1 text-xs text-white focus:border-white focus:outline-none"
+                className="dashfy-input h-9 px-2.5 text-xs"
               />
             </div>
           )}
@@ -107,19 +107,19 @@ export function SummaryFiltersBar({
             <button
               type="button"
               onClick={onReset}
-              className="btn-pressable inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-white/10 bg-white/5 text-xs text-zinc-300 hover:text-white transition"
+              className="btn-pressable dashfy-btn-secondary h-9 px-3 text-xs"
             >
-              <RotateCcw className="w-3.5 h-3.5" />
+              <RotateCcw className="w-3.5 h-3.5 text-[#5ea1ff]" />
               <span>Limpar ({activeExtraCount})</span>
             </button>
           )}
           <button
             type="button"
             onClick={() => setShowMore((s) => !s)}
-            className={`btn-pressable inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-medium transition ${
+            className={`btn-pressable h-9 inline-flex items-center gap-1.5 px-3.5 rounded-xl border text-xs font-medium transition ${
               showMore
-                ? "bg-white text-black border-white font-semibold"
-                : "border-white/10 bg-[#050507] text-zinc-300 hover:text-white"
+                ? "bg-[#1d74ff] text-white border-[#3b8bff] font-semibold shadow-[0_6px_16px_-5px_rgba(29,116,255,0.65)]"
+                : "border-blue-200/15 bg-[#050b18] text-slate-300 hover:text-white hover:border-[#3b8bff]/40"
             }`}
           >
             <SlidersHorizontal className="w-3.5 h-3.5" />
@@ -129,15 +129,15 @@ export function SummaryFiltersBar({
       </div>
 
       {/* Linha 2: Filtros horizontais */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 pt-2 border-t border-white/[0.06]">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 pt-3.5 border-t border-blue-200/10">
         <div>
-          <label className="block text-[10px] font-medium uppercase tracking-wider text-zinc-500 mb-1">
+          <label className="block text-[11px] font-medium text-slate-400 mb-1.5">
             Conta de Anúncio
           </label>
           <select
             value={filters.adAccount}
             onChange={(e) => setField("adAccount", e.target.value)}
-            className="w-full rounded-xl border border-white/10 bg-[#050507] px-2.5 py-1.5 text-xs text-white focus:border-white focus:outline-none"
+            className="dashfy-input w-full h-9 px-3 text-xs"
           >
             <option value="ALL">Todas as contas</option>
             {options.adAccounts.map((acc) => (
@@ -149,13 +149,13 @@ export function SummaryFiltersBar({
         </div>
 
         <div>
-          <label className="block text-[10px] font-medium uppercase tracking-wider text-zinc-500 mb-1">
+          <label className="block text-[11px] font-medium text-slate-400 mb-1.5">
             Campanha
           </label>
           <select
             value={filters.campaign}
             onChange={(e) => setField("campaign", e.target.value)}
-            className="w-full rounded-xl border border-white/10 bg-[#050507] px-2.5 py-1.5 text-xs text-white focus:border-white focus:outline-none"
+            className="dashfy-input w-full h-9 px-3 text-xs"
           >
             <option value="ALL">Todas as campanhas</option>
             {options.campaigns.map((c) => (
@@ -167,13 +167,13 @@ export function SummaryFiltersBar({
         </div>
 
         <div>
-          <label className="block text-[10px] font-medium uppercase tracking-wider text-zinc-500 mb-1">
+          <label className="block text-[11px] font-medium text-slate-400 mb-1.5">
             Fonte de Tráfego
           </label>
           <select
             value={filters.trafficSource}
             onChange={(e) => setField("trafficSource", e.target.value)}
-            className="w-full rounded-xl border border-white/10 bg-[#050507] px-2.5 py-1.5 text-xs text-white focus:border-white focus:outline-none"
+            className="dashfy-input w-full h-9 px-3 text-xs"
           >
             <option value="ALL">Todas as fontes</option>
             {options.trafficSources.map((src) => (
@@ -185,13 +185,13 @@ export function SummaryFiltersBar({
         </div>
 
         <div>
-          <label className="block text-[10px] font-medium uppercase tracking-wider text-zinc-500 mb-1">
+          <label className="block text-[11px] font-medium text-slate-400 mb-1.5">
             Produto
           </label>
           <select
             value={filters.product}
             onChange={(e) => setField("product", e.target.value)}
-            className="w-full rounded-xl border border-white/10 bg-[#050507] px-2.5 py-1.5 text-xs text-white focus:border-white focus:outline-none"
+            className="dashfy-input w-full h-9 px-3 text-xs"
           >
             <option value="ALL">Todos os produtos</option>
             {options.products.map((prod) => (
@@ -203,13 +203,13 @@ export function SummaryFiltersBar({
         </div>
 
         <div>
-          <label className="block text-[10px] font-medium uppercase tracking-wider text-zinc-500 mb-1">
+          <label className="block text-[11px] font-medium text-slate-400 mb-1.5">
             Plataforma
           </label>
           <select
             value={filters.platform}
             onChange={(e) => setField("platform", e.target.value)}
-            className="w-full rounded-xl border border-white/10 bg-[#050507] px-2.5 py-1.5 text-xs text-white focus:border-white focus:outline-none"
+            className="dashfy-input w-full h-9 px-3 text-xs"
           >
             <option value="ALL">
               {dashboardMode === "tiktok" ? "TikTok Ads" : "OmegaPay"}
@@ -225,18 +225,18 @@ export function SummaryFiltersBar({
 
       {/* Linha 3: Mais filtros */}
       {showMore && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 pt-2.5 border-t border-white/[0.06] animate-fade-in-up">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-3.5 border-t border-blue-200/10 animate-fade-in-up">
           <div>
-            <label className="block text-[10px] font-medium uppercase tracking-wider text-zinc-500 mb-1">
-              <span className="inline-flex items-center gap-1">
-                <Filter className="w-3 h-3 text-zinc-400" />
+            <label className="block text-[11px] font-medium text-slate-400 mb-1.5">
+              <span className="inline-flex items-center gap-1.5">
+                <Filter className="w-3 h-3 text-[#5ea1ff]" />
                 Status
               </span>
             </label>
             <select
               value={filters.status}
               onChange={(e) => setField("status", e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-[#050507] px-2.5 py-1.5 text-xs text-white focus:border-white focus:outline-none"
+              className="dashfy-input w-full h-9 px-3 text-xs"
             >
               <option value="ALL">Todos os status</option>
               {dashboardMode === "tiktok" ? (
@@ -258,13 +258,13 @@ export function SummaryFiltersBar({
 
           {dashboardMode === "omegapay" && (
             <div>
-              <label className="block text-[10px] font-medium uppercase tracking-wider text-zinc-500 mb-1">
+              <label className="block text-[11px] font-medium text-slate-400 mb-1.5">
                 Método de Pagamento
               </label>
               <select
                 value={filters.paymentMethod}
                 onChange={(e) => setField("paymentMethod", e.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-[#050507] px-2.5 py-1.5 text-xs text-white focus:border-white focus:outline-none"
+                className="dashfy-input w-full h-9 px-3 text-xs"
               >
                 <option value="ALL">Todos os métodos</option>
                 <option value="PIX">PIX</option>

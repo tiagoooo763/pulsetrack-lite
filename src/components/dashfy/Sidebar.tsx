@@ -196,19 +196,19 @@ export function Sidebar({
       {mobileOpen && (
         <div
           onClick={onCloseMobile}
-          className="fixed inset-0 bg-black/80 z-40 lg:hidden backdrop-blur-md transition-opacity duration-300"
+          className="fixed inset-0 bg-[#020612]/80 z-40 lg:hidden backdrop-blur-md transition-opacity duration-300"
           aria-hidden="true"
         />
       )}
 
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-50 border-r border-white/10 bg-[#08080a] flex flex-col justify-between transition-all duration-300 ease-in-out ${
+        className={`fixed top-0 bottom-0 left-0 z-50 border-r border-blue-200/10 bg-[#071022] flex flex-col justify-between transition-all duration-300 ease-in-out shadow-[8px_0_32px_-16px_rgba(2,6,18,0.85)] ${
           collapsed ? "w-[72px]" : "w-64"
         } ${mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}
       >
         {/* TOPO DA SIDEBAR: LOGO DASHFY */}
         <div
-          className={`p-5 border-b border-white/[0.08] flex items-center ${
+          className={`h-16 px-4 border-b border-blue-200/10 bg-gradient-to-b from-[#1d74ff]/[0.08] to-transparent flex items-center ${
             collapsed ? "justify-center px-3" : "justify-between"
           } shrink-0`}
         >
@@ -218,7 +218,7 @@ export function Sidebar({
               onSelectGeneral();
               onCloseMobile();
             }}
-            className="flex items-center focus:outline-none"
+            className="flex items-center focus:outline-none rounded-lg"
             aria-label="Ir para o Dash Geral"
           >
             <DashfyBrand collapsed={collapsed} size="md" />
@@ -229,7 +229,7 @@ export function Sidebar({
               <button
                 type="button"
                 onClick={onToggleCollapsed}
-                className="hidden lg:flex p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition"
+                className="hidden lg:flex p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#1d74ff]/15 transition"
                 title="Recolher menu lateral"
                 aria-label="Recolher menu lateral"
               >
@@ -238,7 +238,7 @@ export function Sidebar({
               <button
                 type="button"
                 onClick={onCloseMobile}
-                className="lg:hidden p-1 rounded-lg text-zinc-400 hover:text-white"
+                className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition"
                 aria-label="Fechar menu"
               >
                 <X className="w-5 h-5" />
@@ -248,11 +248,11 @@ export function Sidebar({
         </div>
 
         {collapsed && (
-          <div className="hidden lg:flex justify-center py-2 border-b border-white/[0.06]">
+          <div className="hidden lg:flex justify-center py-2.5 border-b border-blue-200/10">
             <button
               type="button"
               onClick={onToggleCollapsed}
-              className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#1d74ff]/15 transition"
               title="Expandir menu lateral"
               aria-label="Expandir menu lateral"
             >
@@ -262,9 +262,14 @@ export function Sidebar({
         )}
 
         {/* MENU PRINCIPAL */}
-        <nav className="flex-1 overflow-y-auto p-3 space-y-4">
+        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
           {/* ABA DASH GERAL — RESUMO DE TODAS AS OPERAÇÕES */}
           <div className="space-y-1">
+            {!collapsed && (
+              <div className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+                Visão Geral
+              </div>
+            )}
             <button
               type="button"
               onClick={() => {
@@ -274,10 +279,10 @@ export function Sidebar({
               title="Dash Geral (Todas as Operações)"
               className={`btn-pressable w-full flex items-center ${
                 collapsed ? "justify-center px-2 py-2.5" : "gap-2.5 px-3 py-2.5"
-              } rounded-xl text-xs font-medium transition-all ${
+              } rounded-xl text-[13px] font-medium transition-all ${
                 location.kind === "general"
-                  ? "bg-white text-black font-semibold shadow-sm"
-                  : "text-zinc-300 hover:text-white hover:bg-white/[0.04]"
+                  ? "bg-[#1d74ff] text-white font-semibold shadow-[0_8px_22px_-6px_rgba(29,116,255,0.58)]"
+                  : "text-slate-300 hover:text-white hover:bg-[#1d74ff]/10"
               }`}
             >
               <LayoutGrid className="w-4 h-4 shrink-0" />
@@ -285,31 +290,31 @@ export function Sidebar({
             </button>
           </div>
 
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             {!collapsed ? (
               <button
                 type="button"
                 onClick={() => setDashboardsGroupOpen((o) => !o)}
-                className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-zinc-300 hover:text-white hover:bg-white/[0.04] transition"
+                className="w-full flex items-center justify-between px-3 py-1.5 rounded-xl text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400 hover:text-slate-200 hover:bg-white/[0.03] transition"
               >
-                <span className="flex items-center gap-2.5">
-                  <Layers className="w-4 h-4 text-zinc-300" />
-                  <span>Dashboards</span>
+                <span className="flex items-center gap-2">
+                  <Layers className="w-3.5 h-3.5 text-[#5ea1ff]" />
+                  <span>Operações</span>
                 </span>
                 {dashboardsGroupOpen ? (
-                  <ChevronDown className="w-3.5 h-3.5 text-zinc-500" />
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
                 ) : (
-                  <ChevronRight className="w-3.5 h-3.5 text-zinc-500" />
+                  <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
                 )}
               </button>
             ) : (
-              <div className="px-1 py-1 text-[10px] text-center font-semibold uppercase tracking-wider text-zinc-500">
+              <div className="px-1 py-1 text-[10px] text-center font-semibold uppercase tracking-wider text-slate-500">
                 Ops
               </div>
             )}
 
             {(dashboardsGroupOpen || collapsed) && (
-              <div className={collapsed ? "space-y-1.5" : "space-y-1.5 pl-1"}>
+              <div className={collapsed ? "space-y-1.5" : "space-y-1.5"}>
                 {dashboards.map((dash) => {
                   const isDashActive = activeDashboardId === dash.id;
                   const isExpanded = Boolean(expandedDashboards[dash.id]);
@@ -317,13 +322,13 @@ export function Sidebar({
                   const tabs = getTabsForMode(dash.mode);
 
                   return (
-                    <div key={dash.id} className="space-y-0.5">
+                    <div key={dash.id} className="space-y-1">
                       {/* Cabeçalho da Aba (abre e fecha normalmente + botão renomear) */}
                       <div
                         className={`group flex items-center rounded-xl transition-all ${
                           isDashActive
-                            ? "bg-white/10 text-white border border-white/15"
-                            : "text-zinc-400 hover:text-white hover:bg-white/[0.04] border border-transparent"
+                            ? "bg-[#1d74ff]/[0.14] text-white border border-[#3b8bff]/30"
+                            : "text-slate-300 hover:text-white hover:bg-[#1d74ff]/[0.08] border border-transparent"
                         }`}
                       >
                         <button
@@ -331,13 +336,15 @@ export function Sidebar({
                           onClick={() => handleDashboardHeaderClick(dash.id)}
                           title={`${dash.name} (${dash.mode === "tiktok" ? "TikTok" : "OmegaPay"})`}
                           className={`flex-1 min-w-0 flex items-center ${
-                            collapsed ? "justify-center px-2 py-2.5" : "justify-between pl-3 pr-1.5 py-2"
-                          } text-xs font-medium text-left`}
+                            collapsed ? "justify-center px-2 py-2.5" : "justify-between pl-3 pr-1.5 py-2.5"
+                          } text-[13px] font-medium text-left`}
                         >
-                          <span className="flex items-center gap-2 min-w-0">
+                          <span className="flex items-center gap-2.5 min-w-0">
                             <span
-                              className={`w-2 h-2 rounded-full shrink-0 ${
-                                isDashActive ? "bg-white" : "bg-zinc-500"
+                              className={`w-2 h-2 rounded-full shrink-0 transition-all ${
+                                isDashActive
+                                  ? "bg-[#3b8bff] shadow-[0_0_8px_rgba(59,139,255,0.9)]"
+                                  : "bg-slate-500 group-hover:bg-[#5ea1ff]"
                               }`}
                             />
                             {!collapsed && (
@@ -346,9 +353,9 @@ export function Sidebar({
                           </span>
                           {!collapsed &&
                             (isExpanded ? (
-                              <ChevronDown className="w-3.5 h-3.5 text-zinc-400 shrink-0 ml-1" />
+                              <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
                             ) : (
-                              <ChevronRight className="w-3.5 h-3.5 text-zinc-500 shrink-0 ml-1" />
+                              <ChevronRight className="w-3.5 h-3.5 text-slate-500 shrink-0 ml-1" />
                             ))}
                         </button>
 
@@ -358,7 +365,7 @@ export function Sidebar({
                             onClick={(e) => startEditing(dash, e)}
                             title="Renomear operação ou escolher integração (TikTok / Gateway)"
                             aria-label={`Editar ${dash.name}`}
-                            className="p-1.5 mr-1 rounded-lg text-zinc-500 hover:text-white hover:bg-white/10 transition shrink-0"
+                            className="p-1.5 mr-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-[#1d74ff]/20 transition shrink-0"
                           >
                             <Pencil className="w-3 h-3" />
                           </button>
@@ -369,10 +376,10 @@ export function Sidebar({
                       {!collapsed && isEditing && (
                         <form
                           onSubmit={handleSaveEdit}
-                          className="mx-1 mt-1 p-2.5 rounded-xl border border-white/15 bg-[#0c0c0e] space-y-2 animate-fade-in-up"
+                          className="mx-1 mt-1 p-3 rounded-xl border border-[#3b8bff]/30 bg-[#0a1529] space-y-2.5 animate-fade-in-up shadow-lg"
                         >
                           <div>
-                            <label className="block text-[10px] uppercase tracking-wider text-zinc-400 mb-1">
+                            <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">
                               Nome da aba
                             </label>
                             <input
@@ -383,12 +390,12 @@ export function Sidebar({
                               onChange={(e) => setEditName(e.target.value)}
                               autoFocus
                               placeholder="Ex: TikTok Loja 01"
-                              className="w-full rounded-lg border border-white/15 bg-[#050507] px-2.5 py-1.5 text-xs text-white focus:border-white focus:outline-none"
+                              className="dashfy-input w-full px-2.5 py-1.5 text-xs"
                             />
                           </div>
 
                           <div>
-                            <label className="block text-[10px] uppercase tracking-wider text-zinc-400 mb-1">
+                            <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">
                               Integração principal
                             </label>
                             <select
@@ -396,7 +403,7 @@ export function Sidebar({
                               onChange={(e) =>
                                 setEditMode(e.target.value as DashboardOperationMode)
                               }
-                              className="w-full rounded-lg border border-white/15 bg-[#050507] px-2 py-1.5 text-xs text-white focus:border-white focus:outline-none"
+                              className="dashfy-input w-full px-2.5 py-1.5 text-xs"
                             >
                               <option value="tiktok">TikTok Ads</option>
                               <option value="omegapay">Gateway (OmegaPay / Nexus)</option>
@@ -407,14 +414,14 @@ export function Sidebar({
                             <button
                               type="button"
                               onClick={() => setEditingId(null)}
-                              className="px-2 py-1 rounded-lg text-[11px] text-zinc-400 hover:text-white"
+                              className="px-2.5 py-1 rounded-lg text-[11px] text-slate-400 hover:text-white transition"
                             >
                               Cancelar
                             </button>
                             <button
                               type="submit"
                               disabled={savingEdit}
-                              className="btn-pressable inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white text-black hover:bg-zinc-100 text-[11px] font-semibold disabled:opacity-50"
+                              className="btn-pressable dashfy-btn-primary px-2.5 py-1 text-[11px] disabled:opacity-50"
                             >
                               <Check className="w-3 h-3" />
                               <span>{savingEdit ? "..." : "Salvar"}</span>
@@ -425,7 +432,7 @@ export function Sidebar({
 
                       {/* Submenu lateral da aba */}
                       {!collapsed && isExpanded && (
-                        <div className="ml-3 pl-2.5 border-l border-white/[0.08] space-y-0.5 py-1">
+                        <div className="ml-3.5 pl-2.5 border-l border-blue-200/10 space-y-0.5 py-1">
                           {tabs.map((tab) => {
                             const Icon = getTabIcon(tab.iconName);
                             const isTabActive =
@@ -441,13 +448,17 @@ export function Sidebar({
                                   onSelectDashboardTab(dash.id, tab.id);
                                   onCloseMobile();
                                 }}
-                                className={`btn-pressable w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                                className={`btn-pressable w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-medium transition-all ${
                                   isTabActive
-                                    ? "bg-white text-black font-semibold shadow-sm"
-                                    : "text-zinc-400 hover:text-white hover:bg-white/[0.04]"
+                                    ? "bg-[#1d74ff] text-white font-semibold shadow-[0_6px_18px_-6px_rgba(29,116,255,0.65)]"
+                                    : "text-slate-400 hover:text-white hover:bg-[#1d74ff]/10"
                                 }`}
                               >
-                                <Icon className="w-3.5 h-3.5 shrink-0" />
+                                <Icon
+                                  className={`w-3.5 h-3.5 shrink-0 ${
+                                    isTabActive ? "text-white" : "text-slate-400"
+                                  }`}
+                                />
                                 <span className="truncate">{tab.label}</span>
                               </button>
                             );
@@ -462,9 +473,9 @@ export function Sidebar({
           </div>
 
           {/* ITENS GLOBAIS */}
-          <div className="pt-3 border-t border-white/[0.08] space-y-1">
+          <div className="pt-4 border-t border-blue-200/10 space-y-1">
             {!collapsed && (
-              <div className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+              <div className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500">
                 Conta &amp; Sistema
               </div>
             )}
@@ -483,10 +494,10 @@ export function Sidebar({
                   title={item.label}
                   className={`btn-pressable w-full flex items-center ${
                     collapsed ? "justify-center px-2 py-2.5" : "gap-2.5 px-3 py-2"
-                  } rounded-xl text-xs font-medium transition-all ${
+                  } rounded-xl text-[13px] font-medium transition-all ${
                     isActive
-                      ? "bg-white text-black font-semibold shadow-sm"
-                      : "text-zinc-400 hover:text-white hover:bg-white/[0.04]"
+                      ? "bg-[#1d74ff] text-white font-semibold shadow-[0_8px_22px_-6px_rgba(29,116,255,0.58)]"
+                      : "text-slate-400 hover:text-white hover:bg-[#1d74ff]/10"
                   }`}
                 >
                   <Icon className="w-4 h-4 shrink-0" />
@@ -498,7 +509,7 @@ export function Sidebar({
         </nav>
 
         {/* RODAPÉ: PERFIL + SAIR */}
-        <div className="p-4 border-t border-white/[0.08] bg-[#050507]/80 shrink-0">
+        <div className="p-3.5 border-t border-blue-200/10 bg-[#050b18]/90 shrink-0">
           <div
             className={`flex items-center ${
               collapsed ? "justify-center flex-col gap-2" : "justify-between gap-2"
@@ -510,18 +521,18 @@ export function Sidebar({
                 onSelectGlobalPage("minha_conta");
                 onCloseMobile();
               }}
-              className="flex items-center gap-2.5 min-w-0 text-left"
+              className="flex items-center gap-2.5 min-w-0 text-left group rounded-lg p-1 -m-1 hover:bg-[#1d74ff]/10 transition"
               title={`${userName} (${userEmail})`}
             >
-              <div className="w-8 h-8 rounded-full bg-zinc-800 border border-white/10 flex items-center justify-center text-xs font-semibold text-white shrink-0">
+              <div className="w-8 h-8 rounded-full bg-[#1d74ff]/20 border border-[#3b8bff]/40 flex items-center justify-center text-xs font-semibold text-sky-200 shrink-0">
                 {initials || "T"}
               </div>
               {!collapsed && (
                 <div className="truncate">
-                  <span className="text-xs font-medium text-white block truncate">
+                  <span className="text-xs font-semibold text-slate-100 block truncate group-hover:text-white">
                     {userEmail}
                   </span>
-                  <span className="text-[10px] text-zinc-400 block truncate">
+                  <span className="text-[11px] text-slate-400 block truncate">
                     {companyName || "Dashfy Workspace"}
                   </span>
                 </div>
@@ -531,7 +542,7 @@ export function Sidebar({
             <button
               type="button"
               onClick={onLogout}
-              className="btn-pressable p-1.5 text-zinc-400 hover:text-white rounded-lg hover:bg-white/5 transition shrink-0"
+              className="btn-pressable p-2 text-slate-400 hover:text-rose-300 rounded-lg hover:bg-rose-500/10 transition shrink-0"
               title="Sair"
               aria-label="Encerrar sessão"
             >

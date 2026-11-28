@@ -60,30 +60,30 @@ export function GeneralOverviewView({
   return (
     <div className="space-y-6">
       {/* Barra de Período do Dash Geral */}
-      <div className="rounded-2xl border border-white/[0.08] bg-[#0c0c0e] p-3.5 sm:p-4 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-sm font-semibold text-white tracking-tight">
+      <div className="dashfy-surface p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4">
+        <div className="space-y-0.5">
+          <h2 className="font-display text-base sm:text-lg font-semibold text-white tracking-tight">
             Resumo Consolidado de Todas as Operações
           </h2>
-          <p className="text-xs text-zinc-400">
-            Soma em tempo real de {summary.operations.length} operação(ões) configuradas no Dashfy
+          <p className="text-xs text-slate-400">
+            Soma em tempo real de {summary.operations.length} operação(ões) configuradas na Dashfy
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-1.5 text-xs text-zinc-400">
-            <Calendar className="w-3.5 h-3.5 text-zinc-300" />
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex items-center gap-1.5 text-xs text-slate-400">
+            <Calendar className="w-3.5 h-3.5 text-[#5ea1ff]" />
           </div>
-          <div className="flex flex-wrap items-center gap-1 bg-[#050507] border border-white/10 rounded-xl p-1 text-xs">
+          <div className="flex flex-wrap items-center gap-1 bg-[#050b18] border border-blue-200/10 rounded-xl p-1 text-xs">
             {PERIOD_PRESETS.map((p) => (
               <button
                 key={p.id}
                 type="button"
                 onClick={() => onFiltersChange({ ...filters, period: p.id })}
-                className={`btn-pressable px-3 py-1 rounded-lg transition-all ${
+                className={`btn-pressable px-3 py-1.5 rounded-lg transition-all ${
                   filters.period === p.id
-                    ? "bg-white text-black font-semibold shadow-sm"
-                    : "text-zinc-400 hover:text-white"
+                    ? "bg-[#1d74ff] text-white font-semibold shadow-[0_6px_16px_-5px_rgba(29,116,255,0.75)]"
+                    : "text-slate-400 hover:text-white hover:bg-white/[0.04]"
                 }`}
               >
                 {p.label}
@@ -92,23 +92,23 @@ export function GeneralOverviewView({
           </div>
 
           {filters.period === "custom" && (
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <input
                 type="date"
                 value={filters.customFrom}
                 onChange={(e) =>
                   onFiltersChange({ ...filters, customFrom: e.target.value })
                 }
-                className="rounded-lg border border-white/10 bg-[#050507] px-2.5 py-1 text-xs text-white focus:border-white focus:outline-none"
+                className="dashfy-input h-9 px-2.5 text-xs"
               />
-              <span className="text-zinc-500 text-xs">-</span>
+              <span className="text-slate-500 text-xs">até</span>
               <input
                 type="date"
                 value={filters.customTo}
                 onChange={(e) =>
                   onFiltersChange({ ...filters, customTo: e.target.value })
                 }
-                className="rounded-lg border border-white/10 bg-[#050507] px-2.5 py-1 text-xs text-white focus:border-white focus:outline-none"
+                className="dashfy-input h-9 px-2.5 text-xs"
               />
             </div>
           )}
@@ -117,101 +117,109 @@ export function GeneralOverviewView({
 
       {/* LINHA 1 — 4 CARDS CONSOLIDADOS MESTRES */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <SpotlightCard className="p-5 flex flex-col justify-between bento-card">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium uppercase tracking-wider text-zinc-400">
+        <SpotlightCard className="p-5 sm:p-6 flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.07em] text-slate-400">
               Faturamento Total
             </span>
-            <div className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
-              <DollarSign className="w-3.5 h-3.5 text-white" />
+            <div className="w-8 h-8 rounded-xl bg-[#1d74ff]/12 border border-[#3b8bff]/25 flex items-center justify-center shrink-0">
+              <DollarSign className="w-4 h-4 text-[#5ea1ff]" />
             </div>
           </div>
-          <div className="my-3">
-            <div className="text-2xl sm:text-3xl font-semibold text-white font-mono tabular-nums tracking-tight">
+          <div className="my-3.5">
+            <div className="dashfy-kpi-value text-2xl sm:text-[28px] font-bold text-white leading-tight">
               {formatBRL(summary.grossRevenue)}
             </div>
           </div>
-          <div className="text-[11px] text-zinc-400 pt-2 border-t border-white/[0.06] flex items-center justify-between">
+          <div className="text-xs text-slate-400 pt-3 border-t border-blue-200/10 flex items-center justify-between gap-2">
             <span>Todas as operações</span>
-            <span className="font-mono text-zinc-300">
+            <span className="tabular-nums font-medium text-slate-200">
               {summary.totalApprovedOrders} vendas/conv.
             </span>
           </div>
         </SpotlightCard>
 
-        <SpotlightCard className="p-5 flex flex-col justify-between bento-card">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium uppercase tracking-wider text-zinc-400">
+        <SpotlightCard className="p-5 sm:p-6 flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.07em] text-slate-400">
               Receita Líquida Total
             </span>
-            <div className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
-              <Banknote className="w-3.5 h-3.5 text-white" />
+            <div className="w-8 h-8 rounded-xl bg-[#1d74ff]/12 border border-[#3b8bff]/25 flex items-center justify-center shrink-0">
+              <Banknote className="w-4 h-4 text-[#5ea1ff]" />
             </div>
           </div>
-          <div className="my-3">
-            <div className="text-2xl sm:text-3xl font-semibold text-white font-mono tabular-nums tracking-tight">
+          <div className="my-3.5">
+            <div className="dashfy-kpi-value text-2xl sm:text-[28px] font-bold text-white leading-tight">
               {formatBRL(summary.netRevenue)}
             </div>
           </div>
-          <div className="text-[11px] text-zinc-400 pt-2 border-t border-white/[0.06] flex items-center justify-between">
-            <span>Taxas: {formatBRL(summary.totalFees)}</span>
-            <span className="text-zinc-300">Pós-taxas</span>
+          <div className="text-xs text-slate-400 pt-3 border-t border-blue-200/10 flex items-center justify-between gap-2">
+            <span className="tabular-nums">Taxas: {formatBRL(summary.totalFees)}</span>
+            <span className="font-medium text-slate-300">Pós-taxas</span>
           </div>
         </SpotlightCard>
 
-        <SpotlightCard className="p-5 flex flex-col justify-between bento-card">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium uppercase tracking-wider text-zinc-400">
+        <SpotlightCard className="p-5 sm:p-6 flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.07em] text-slate-400">
               Anúncios &amp; Despesas
             </span>
-            <div className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
-              <Megaphone className="w-3.5 h-3.5 text-white" />
+            <div className="w-8 h-8 rounded-xl bg-[#1d74ff]/12 border border-[#3b8bff]/25 flex items-center justify-center shrink-0">
+              <Megaphone className="w-4 h-4 text-[#5ea1ff]" />
             </div>
           </div>
-          <div className="my-3">
-            <div className="text-2xl sm:text-3xl font-semibold text-white font-mono tabular-nums tracking-tight">
+          <div className="my-3.5">
+            <div className="dashfy-kpi-value text-2xl sm:text-[28px] font-bold text-white leading-tight">
               {formatBRL(summary.adExpenses + summary.otherExpenses)}
             </div>
           </div>
-          <div className="text-[11px] text-zinc-400 pt-2 border-t border-white/[0.06] flex items-center justify-between">
-            <span>Ads: {formatBRL(summary.adExpenses)}</span>
-            <span className="font-mono text-zinc-300">
+          <div className="text-xs text-slate-400 pt-3 border-t border-blue-200/10 flex items-center justify-between gap-2">
+            <span className="tabular-nums">Ads: {formatBRL(summary.adExpenses)}</span>
+            <span className="tabular-nums font-medium text-slate-200">
               Outros: {formatBRL(summary.otherExpenses)}
             </span>
           </div>
         </SpotlightCard>
 
-        <SpotlightCard className="p-5 flex flex-col justify-between bento-card">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium uppercase tracking-wider text-zinc-400">
+        <SpotlightCard className="p-5 sm:p-6 flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.07em] text-slate-400">
               Lucro Consolidado
             </span>
-            <div className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
-              <TrendingUp className="w-3.5 h-3.5 text-zinc-300" />
+            <div
+              className={`w-8 h-8 rounded-xl border flex items-center justify-center shrink-0 ${
+                summary.profit > 0
+                  ? "bg-emerald-500/12 border-emerald-400/25 text-emerald-400"
+                  : summary.profit < 0
+                    ? "bg-rose-500/12 border-rose-400/25 text-rose-400"
+                    : "bg-[#1d74ff]/12 border-[#3b8bff]/25 text-[#5ea1ff]"
+              }`}
+            >
+              <TrendingUp className="w-4 h-4" />
             </div>
           </div>
-          <div className="my-3">
+          <div className="my-3.5">
             <div
-              className={`text-2xl sm:text-3xl font-semibold font-mono tabular-nums tracking-tight ${
+              className={`dashfy-kpi-value text-2xl sm:text-[28px] font-bold leading-tight ${
                 summary.profit > 0
                   ? "text-emerald-400"
                   : summary.profit < 0
                     ? "text-rose-400"
-                    : "text-zinc-300"
+                    : "text-slate-200"
               }`}
             >
               {formatBRL(summary.profit)}
             </div>
           </div>
-          <div className="text-[11px] text-zinc-400 pt-2 border-t border-white/[0.06] flex items-center justify-between">
+          <div className="text-xs text-slate-400 pt-3 border-t border-blue-200/10 flex items-center justify-between gap-2">
             <span>Resultado geral</span>
             <span
-              className={`font-mono ${
+              className={`tabular-nums font-semibold ${
                 summary.marginPct > 0
                   ? "text-emerald-400"
                   : summary.marginPct < 0
                     ? "text-rose-400"
-                    : "text-zinc-300"
+                    : "text-slate-300"
               }`}
             >
               Margem: {summary.marginPct.toFixed(1)}%
@@ -222,48 +230,48 @@ export function GeneralOverviewView({
 
       {/* LINHA 2 — 4 CARDS DE EFICIÊNCIA GERAL */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <SpotlightCard className="p-5 flex flex-col justify-between bento-card">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium uppercase tracking-wider text-zinc-400">
+        <SpotlightCard className="p-5 flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.07em] text-slate-400">
               ROAS Geral
             </span>
-            <div className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
-              <Target className="w-3.5 h-3.5 text-white" />
+            <div className="w-8 h-8 rounded-xl bg-[#1d74ff]/10 border border-blue-200/15 flex items-center justify-center shrink-0">
+              <Target className="w-4 h-4 text-[#5ea1ff]" />
             </div>
           </div>
           <div
-            className={`my-2.5 text-2xl font-semibold font-mono tabular-nums ${
+            className={`dashfy-kpi-value my-3 text-2xl font-bold ${
               summary.roas !== null
                 ? summary.roas >= 1
                   ? "text-emerald-400"
                   : "text-rose-400"
-                : "text-zinc-400"
+                : "text-slate-400"
             }`}
           >
             {summary.roas !== null ? `${summary.roas.toFixed(2)}x` : "—"}
           </div>
-          <div className="text-[11px] text-zinc-400 pt-2 border-t border-white/[0.06]">
+          <div className="text-xs text-slate-400 pt-2.5 border-t border-blue-200/10">
             Faturamento total / Ads
           </div>
         </SpotlightCard>
 
-        <SpotlightCard className="p-5 flex flex-col justify-between bento-card">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium uppercase tracking-wider text-zinc-400">
+        <SpotlightCard className="p-5 flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.07em] text-slate-400">
               ROI Geral
             </span>
-            <div className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
-              <TrendingUp className="w-3.5 h-3.5 text-white" />
+            <div className="w-8 h-8 rounded-xl bg-[#1d74ff]/10 border border-blue-200/15 flex items-center justify-center shrink-0">
+              <TrendingUp className="w-4 h-4 text-[#5ea1ff]" />
             </div>
           </div>
-          <div className="my-2.5 flex items-baseline gap-2">
+          <div className="my-3 flex items-baseline gap-2">
             <span
-              className={`text-2xl font-semibold font-mono tabular-nums ${
+              className={`dashfy-kpi-value text-2xl font-bold ${
                 summary.roiPct !== null
                   ? summary.roiPct >= 0
                     ? "text-emerald-400"
                     : "text-rose-400"
-                  : "text-zinc-400"
+                  : "text-slate-400"
               }`}
             >
               {summary.roiPct !== null
@@ -271,52 +279,52 @@ export function GeneralOverviewView({
                 : "—"}
             </span>
             {summary.roiMultiplier !== null && (
-              <span className="text-xs font-mono text-zinc-400">
+              <span className="text-xs tabular-nums text-slate-400 font-medium">
                 ({summary.roiMultiplier.toFixed(2)}x)
               </span>
             )}
           </div>
-          <div className="text-[11px] text-zinc-400 pt-2 border-t border-white/[0.06]">
+          <div className="text-xs text-slate-400 pt-2.5 border-t border-blue-200/10">
             Retorno líquido consolidado
           </div>
         </SpotlightCard>
 
-        <SpotlightCard className="p-5 flex flex-col justify-between bento-card">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium uppercase tracking-wider text-zinc-400">
+        <SpotlightCard className="p-5 flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.07em] text-slate-400">
               Saldo em Caixa
             </span>
-            <div className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
-              <Wallet className="w-3.5 h-3.5 text-white" />
+            <div className="w-8 h-8 rounded-xl bg-[#1d74ff]/10 border border-blue-200/15 flex items-center justify-center shrink-0">
+              <Wallet className="w-4 h-4 text-[#5ea1ff]" />
             </div>
           </div>
-          <div className="my-2.5 text-2xl font-semibold text-white font-mono tabular-nums">
+          <div className="dashfy-kpi-value my-3 text-2xl font-bold text-white">
             {formatBRL(omegaTotal)}
           </div>
-          <div className="text-[11px] text-zinc-400 pt-2 border-t border-white/[0.06] flex items-center justify-between">
-            <span>Disp: {formatBRL(omegaAvailable)}</span>
-            <span className="font-mono text-zinc-300">
+          <div className="text-xs text-slate-400 pt-2.5 border-t border-blue-200/10 flex items-center justify-between gap-2">
+            <span className="tabular-nums">Disp: {formatBRL(omegaAvailable)}</span>
+            <span className="tabular-nums font-medium text-slate-300">
               Pend: {formatBRL(omegaPending)}
             </span>
           </div>
         </SpotlightCard>
 
-        <SpotlightCard className="p-5 flex flex-col justify-between bento-card">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium uppercase tracking-wider text-zinc-400">
+        <SpotlightCard className="p-5 flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.07em] text-slate-400">
               Vendas &amp; Conversões
             </span>
-            <div className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
-              <CheckCircle2 className="w-3.5 h-3.5 text-white" />
+            <div className="w-8 h-8 rounded-xl bg-[#1d74ff]/10 border border-blue-200/15 flex items-center justify-center shrink-0">
+              <CheckCircle2 className="w-4 h-4 text-[#5ea1ff]" />
             </div>
           </div>
-          <div className="my-2.5 text-2xl font-semibold text-white font-mono tabular-nums">
+          <div className="dashfy-kpi-value my-3 text-2xl font-bold text-white">
             {summary.totalApprovedOrders}
           </div>
-          <div className="text-[11px] text-zinc-400 pt-2 border-t border-white/[0.06] flex items-center justify-between">
+          <div className="text-xs text-slate-400 pt-2.5 border-t border-blue-200/10 flex items-center justify-between gap-2">
             <span>{summary.operations.length} abas ativas</span>
             {summary.totalPendingCount > 0 && (
-              <span className="font-mono text-zinc-300">
+              <span className="tabular-nums font-medium text-amber-300">
                 +{summary.totalPendingCount} pend.
               </span>
             )}
@@ -325,37 +333,39 @@ export function GeneralOverviewView({
       </section>
 
       {/* COMPARATIVO DE TODAS AS OPERAÇÕES */}
-      <SpotlightCard className="p-5 sm:p-6 bento-card space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Layers className="w-4 h-4 text-zinc-300" />
+      <SpotlightCard className="p-5 sm:p-6 space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-[#1d74ff]/15 border border-[#3b8bff]/30 flex items-center justify-center shrink-0">
+              <Layers className="w-4 h-4 text-[#5ea1ff]" />
+            </div>
             <div>
-              <h3 className="text-sm font-semibold text-white tracking-tight">
+              <h3 className="font-display text-sm sm:text-base font-semibold text-white tracking-tight">
                 Resumo por Operação
               </h3>
-              <p className="text-xs text-zinc-400">
+              <p className="text-xs text-slate-400">
                 Desempenho individual de cada aba no período selecionado
               </p>
             </div>
           </div>
         </div>
 
-        <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
+        <div className="overflow-x-auto rounded-xl border border-blue-200/10">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="border-b border-white/10 bg-[#08080a] text-zinc-400 uppercase tracking-wider text-[10px]">
-                <th className="py-2.5 px-3 font-medium">Operação / Aba</th>
-                <th className="py-2.5 px-3 font-medium">Modo</th>
-                <th className="py-2.5 px-3 font-medium text-right">Faturamento</th>
-                <th className="py-2.5 px-3 font-medium text-right">Despesas / Ads</th>
-                <th className="py-2.5 px-3 font-medium text-right">Taxas</th>
-                <th className="py-2.5 px-3 font-medium text-right">ROAS</th>
-                <th className="py-2.5 px-3 font-medium text-right">ROI</th>
-                <th className="py-2.5 px-3 font-medium text-right">Lucro</th>
-                <th className="py-2.5 px-3 font-medium text-right">Acesso</th>
+              <tr className="border-b border-blue-200/10 bg-[#050b18] text-slate-400 uppercase tracking-[0.06em] text-[10px]">
+                <th className="py-3 px-4 font-semibold">Operação / Aba</th>
+                <th className="py-3 px-4 font-semibold">Modo</th>
+                <th className="py-3 px-4 font-semibold text-right">Faturamento</th>
+                <th className="py-3 px-4 font-semibold text-right">Despesas / Ads</th>
+                <th className="py-3 px-4 font-semibold text-right">Taxas</th>
+                <th className="py-3 px-4 font-semibold text-right">ROAS</th>
+                <th className="py-3 px-4 font-semibold text-right">ROI</th>
+                <th className="py-3 px-4 font-semibold text-right">Lucro</th>
+                <th className="py-3 px-4 font-semibold text-right">Acesso</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/[0.04] bg-[#0c0c0e]">
+            <tbody className="divide-y divide-blue-200/[0.06] bg-[#0a1529]">
               {summary.operations.map((op) => {
                 const totalOpCosts = op.metrics.adExpenses + op.metrics.otherExpenses;
                 const totalOpFees =
@@ -363,41 +373,46 @@ export function GeneralOverviewView({
                 return (
                   <tr
                     key={op.dashboardId}
-                    className="hover:bg-white/[0.03] transition-colors"
+                    className="hover:bg-[#1d74ff]/[0.06] transition-colors"
                   >
-                    <td className="py-3 px-3">
+                    <td className="py-3.5 px-4">
                       <div className="font-semibold text-white">{op.name}</div>
-                      <div className="mt-1 w-28 h-1 rounded-full bg-white/10 overflow-hidden">
+                      <div className="mt-1.5 w-28 h-1.5 rounded-full bg-blue-200/10 overflow-hidden">
                         <div
-                          className="h-full rounded-full bg-white"
-                          style={{ width: `${Math.max(op.metrics.grossRevenue > 0 ? 6 : 0, op.revenueSharePct)}%` }}
+                          className="h-full rounded-full bg-gradient-to-r from-[#1d74ff] to-[#5ea1ff]"
+                          style={{
+                            width: `${Math.max(
+                              op.metrics.grossRevenue > 0 ? 6 : 0,
+                              op.revenueSharePct
+                            )}%`,
+                          }}
                         />
                       </div>
                     </td>
-                    <td className="py-3 px-3 whitespace-nowrap">
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-medium border border-white/10 bg-white/[0.04] text-zinc-300">
+                    <td className="py-3.5 px-4 whitespace-nowrap">
+                      <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold border border-[#3b8bff]/25 bg-[#1d74ff]/12 text-sky-200">
                         {op.mode === "tiktok" ? "TikTok Ads" : "OmegaPay"}
                       </span>
                     </td>
-                    <td className="py-3 px-3 text-right font-mono text-white font-medium whitespace-nowrap">
+                    <td className="py-3.5 px-4 text-right tabular-nums text-white font-semibold whitespace-nowrap">
                       {formatBRL(op.metrics.grossRevenue)}
                     </td>
-                    <td className="py-3 px-3 text-right font-mono text-zinc-300 whitespace-nowrap">
+                    <td className="py-3.5 px-4 text-right tabular-nums text-slate-300 whitespace-nowrap">
                       {formatBRL(totalOpCosts)}
                     </td>
-                    <td className="py-3 px-3 text-right font-mono text-zinc-400 whitespace-nowrap">
+                    <td className="py-3.5 px-4 text-right tabular-nums text-slate-400 whitespace-nowrap">
                       {formatBRL(totalOpFees)}
                     </td>
-                    <td className="py-3 px-3 text-right font-mono text-zinc-300 whitespace-nowrap">
+                    <td className="py-3.5 px-4 text-right tabular-nums text-slate-200 font-medium whitespace-nowrap">
                       {op.metrics.roas !== null ? `${op.metrics.roas.toFixed(2)}x` : "—"}
                     </td>
                     <td
-                      className={`py-3 px-3 text-right font-mono whitespace-nowrap ${
+                      className={`py-3.5 px-4 text-right tabular-nums font-medium whitespace-nowrap ${
                         op.metrics.roiPct !== null
                           ? op.metrics.roiPct >= 0
                             ? "text-emerald-400"
                             : "text-rose-400"
-                          : "text-zinc-500"
+                          : "text-slate-500"
                       }`}
                     >
                       {op.metrics.roiPct !== null
@@ -405,21 +420,21 @@ export function GeneralOverviewView({
                         : "—"}
                     </td>
                     <td
-                      className={`py-3 px-3 text-right font-mono font-semibold whitespace-nowrap ${
+                      className={`py-3.5 px-4 text-right tabular-nums font-semibold whitespace-nowrap ${
                         op.metrics.profit > 0
                           ? "text-emerald-400"
                           : op.metrics.profit < 0
                             ? "text-rose-400"
-                            : "text-zinc-400"
+                            : "text-slate-400"
                       }`}
                     >
                       {formatBRL(op.metrics.profit)}
                     </td>
-                    <td className="py-3 px-3 text-right whitespace-nowrap">
+                    <td className="py-3.5 px-4 text-right whitespace-nowrap">
                       <button
                         type="button"
                         onClick={() => onOpenOperation(op.dashboardId, "resumo")}
-                        className="btn-pressable inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-white/10 bg-white/5 hover:bg-white hover:text-black text-[11px] font-medium text-white transition"
+                        className="btn-pressable inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#3b8bff]/25 bg-[#1d74ff]/10 hover:bg-[#1d74ff] hover:border-[#1d74ff] text-[11px] font-semibold text-sky-200 hover:text-white transition"
                       >
                         <span>Abrir</span>
                         <ArrowRight className="w-3 h-3" />
@@ -435,7 +450,7 @@ export function GeneralOverviewView({
 
       {/* GRÁFICOS CONSOLIDADOS: EVOLUÇÃO DIÁRIA (CURVA/BARRAS) + COMPOSIÇÃO FINANCEIRA (DONUT) */}
       <section className="grid grid-cols-1 xl:grid-cols-12 gap-5">
-        <SpotlightCard className="xl:col-span-8 p-5 sm:p-6 bento-card">
+        <SpotlightCard className="xl:col-span-8 p-5 sm:p-6">
           <RevenueTrendChart
             series={summary.dailySeries}
             title="Evolução Diária Consolidada"
@@ -444,7 +459,7 @@ export function GeneralOverviewView({
           />
         </SpotlightCard>
 
-        <SpotlightCard className="xl:col-span-4 p-5 sm:p-6 bento-card flex flex-col justify-between">
+        <SpotlightCard className="xl:col-span-4 p-5 sm:p-6 flex flex-col justify-between">
           <FinancialBreakdownDonut
             profit={summary.profit}
             adExpenses={summary.adExpenses}

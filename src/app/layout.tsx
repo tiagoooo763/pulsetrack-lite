@@ -1,10 +1,17 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-sans",
+  display: "swap",
+});
+
+const plusJakartaSans = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  weight: ["500", "600", "700", "800"],
+  variable: "--font-display",
   display: "swap",
 });
 
@@ -79,9 +86,9 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
-      className={`dark scroll-smooth ${inter.variable} ${jetbrainsMono.variable}`}
+      className={`dark scroll-smooth ${inter.variable} ${plusJakartaSans.variable} ${jetbrainsMono.variable}`}
     >
-      <body className="min-h-screen bg-[#050507] text-zinc-100 font-sans antialiased selection:bg-[#1d74ff]/30 selection:text-white">
+      <body className="min-h-screen bg-[#040914] text-slate-100 font-sans antialiased selection:bg-[#1d74ff]/30 selection:text-white">
         {children}
       </body>
     </html>
