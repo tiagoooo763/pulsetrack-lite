@@ -345,7 +345,7 @@ export function TikTokOAuthPanel({ dashboardId, onSynced }: TikTokOAuthPanelProp
               value={connectionLabel}
               onChange={(e) => setConnectionLabel(e.target.value)}
               maxLength={60}
-              placeholder="Rótulo opcional (ex: BC Principal)"
+              placeholder="Rótulo (ex: BC Principal)"
               className="rounded-xl border border-blue-200/12 bg-[#050b18] px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-[#3b8bff] focus:ring-2 focus:ring-[#1d74ff]/20 focus:outline-none sm:w-52"
             />
             <button

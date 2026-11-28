@@ -830,7 +830,7 @@ export function MyMetricsView({
             <select
               value={selectedCampaignKey}
               onChange={(e) => setSelectedCampaignKey(e.target.value)}
-              className="w-full rounded-xl border border-blue-200/12 bg-[#050b18] px-3 py-2 text-xs text-white focus:border-[#3b8bff] focus:ring-2 focus:ring-[#1d74ff]/20 focus:outline-none"
+              className="dashfy-input w-full h-9 px-3 text-xs truncate"
             >
               <option value={OPERATION_DEFAULT_KEY}>
                 ★ Padrão da Operação ({dashboardName})
@@ -853,7 +853,7 @@ export function MyMetricsView({
                 setPeriod(e.target.value as PeriodPreset);
                 setHasUnsavedChanges(true);
               }}
-              className="w-full rounded-xl border border-blue-200/12 bg-[#050b18] px-3 py-2 text-xs text-white focus:border-[#3b8bff] focus:ring-2 focus:ring-[#1d74ff]/20 focus:outline-none"
+              className="dashfy-input w-full h-9 px-3 text-xs"
             >
               <option value="today">Hoje</option>
               <option value="7d">Últimos 7 dias</option>
@@ -873,7 +873,7 @@ export function MyMetricsView({
                 setObjective(e.target.value as CampaignObjective);
                 setHasUnsavedChanges(true);
               }}
-              className="w-full rounded-xl border border-blue-200/12 bg-[#050b18] px-3 py-2 text-xs text-white focus:border-[#3b8bff] focus:ring-2 focus:ring-[#1d74ff]/20 focus:outline-none"
+              className="dashfy-input w-full h-9 px-3 text-xs"
             >
               {(Object.keys(OBJECTIVE_LABELS) as CampaignObjective[]).map((obj) => (
                 <option key={obj} value={obj}>
@@ -895,7 +895,7 @@ export function MyMetricsView({
                   if (chosen) applyConfigToEditor(chosen);
                   else setViewName(e.target.value);
                 }}
-                className="flex-1 min-w-0 rounded-xl border border-blue-200/12 bg-[#050b18] px-3 py-2 text-xs text-white focus:border-[#3b8bff] focus:ring-2 focus:ring-[#1d74ff]/20 focus:outline-none"
+                className="dashfy-input flex-1 min-w-0 h-9 px-3 text-xs"
               >
                 {campaignViews.length === 0 && <option value="Padrão">Padrão</option>}
                 {campaignViews.map((v) => (
@@ -1132,12 +1132,12 @@ export function MyMetricsView({
             ) : (
               <Minus className="w-4 h-4 text-slate-400 shrink-0" />
             )}
-            <span className="text-xs font-semibold text-white truncate">
+            <span className="text-xs font-semibold text-white leading-snug">
               {summary.overallTrendLabel}
             </span>
           </div>
           <div
-            className={`text-[11px] tabular-nums font-medium mt-1 truncate ${
+            className={`text-[11px] tabular-nums font-medium mt-1 leading-snug ${
               summary.financialHealth === "profitable"
                 ? "text-emerald-400"
                 : summary.financialHealth === "losing"

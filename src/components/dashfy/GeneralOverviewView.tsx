@@ -131,10 +131,10 @@ export function GeneralOverviewView({
               {formatBRL(summary.grossRevenue)}
             </div>
           </div>
-          <div className="text-xs text-slate-400 pt-3 border-t border-blue-200/10 flex items-center justify-between gap-2">
-            <span>Todas as operações</span>
-            <span className="tabular-nums font-medium text-slate-200">
-              {summary.totalApprovedOrders} vendas/conv.
+          <div className="text-[11px] text-slate-400 pt-3 border-t border-blue-200/10 flex items-center justify-between gap-2">
+            <span className="truncate">Todas as operações</span>
+            <span className="tabular-nums font-medium text-slate-200 shrink-0 whitespace-nowrap">
+              {summary.totalApprovedOrders} vendas
             </span>
           </div>
         </SpotlightCard>

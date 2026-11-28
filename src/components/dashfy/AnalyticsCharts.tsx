@@ -438,8 +438,8 @@ export function FinancialBreakdownDonut({
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row items-center gap-5">
-        <div className="relative w-36 h-36 shrink-0">
+      <div className="flex flex-col sm:flex-row xl:flex-col 2xl:flex-row items-center gap-5">
+        <div className="relative w-32 h-32 shrink-0">
           <svg viewBox="0 0 140 140" className="w-full h-full -rotate-90">
             <circle
               cx="70"
@@ -490,20 +490,20 @@ export function FinancialBreakdownDonut({
           </div>
         </div>
 
-        <div className="flex-1 w-full space-y-2.5">
+        <div className="flex-1 w-full min-w-0 space-y-2.5">
           {segments.items.map((seg) => {
             const pct = segments.total > 0 ? (seg.value / segments.total) * 100 : 0;
             return (
               <div key={seg.label} className="space-y-1">
-                <div className="flex items-center justify-between text-xs gap-2">
-                  <span className="flex items-center gap-2 text-slate-300 truncate">
+                <div className="flex items-center justify-between text-xs gap-2 min-w-0">
+                  <span className="flex items-center gap-2 text-slate-300 min-w-0">
                     <span
                       className="w-2.5 h-2.5 rounded-full shrink-0"
                       style={{ backgroundColor: seg.color }}
                     />
                     <span className="truncate">{seg.label}</span>
                   </span>
-                  <span className="tabular-nums font-semibold text-white shrink-0">
+                  <span className="tabular-nums font-semibold text-white shrink-0 whitespace-nowrap">
                     {formatBRL(seg.value)}{" "}
                     <span className="text-[10px] text-slate-400 font-normal">
                       ({pct.toFixed(0)}%)
