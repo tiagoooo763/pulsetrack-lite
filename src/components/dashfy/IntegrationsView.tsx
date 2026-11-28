@@ -374,7 +374,7 @@ export function IntegrationsView({
             </div>
           </SpotlightCard>
 
-          <TikTokOAuthPanel dashboardId={dashboardId} />
+          <TikTokOAuthPanel dashboardId={dashboardId} onSynced={onRefresh} />
         </div>
       ) : (
         <div className="space-y-5">

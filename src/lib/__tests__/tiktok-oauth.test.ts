@@ -357,4 +357,125 @@ describe("Dashfy — Integração OAuth TikTok Marketing API (Segurança, Leitur
     expect(await deleteTikTokConnection(connA1.id, USER_A)).toBe(true);
     expect(await listTikTokConnections(USER_A)).toHaveLength(1);
   });
+
+  it("extrai compras, CPA, ROAS, lucro estimado, métricas de otimização (IC, Hook 2s, Frequência) e faz fallback seguro", async () => {
+    const mockRichFetch: typeof fetch = async () =>
+      new Response(
+        JSON.stringify({
+          code: 0,
+          message: "OK",
+          data: {
+            list: [
+              {
+                dimensions: { campaign_id: "c_scale", stat_time_day: "2026-11-27" },
+                metrics: {
+                  campaign_name: "Escala Vencedora",
+                  spend: "200.00",
+                  impressions: "12000",
+                  reach: "8000",
+                  frequency: "1.50",
+                  clicks: "360",
+                  ctr: "3.00",
+                  cpc: "0.56",
+                  cpm: "16.67",
+                  conversion: "10",
+                  complete_payment: "10",
+                  cost_per_complete_payment: "20.00",
+                  value_per_complete_payment: "97.00",
+                  complete_payment_roas: "4.85",
+                  initiate_checkout: "22",
+                  cost_per_initiate_checkout: "9.09",
+                  video_watched_2s: "4200",
+                  video_watched_6s: "2100",
+                },
+              },
+              {
+                dimensions: { campaign_id: "c_checkout", stat_time_day: "2026-11-27" },
+                metrics: {
+                  campaign_name: "Checkout Travado",
+                  spend: "90.00",
+                  impressions: "5000",
+                  reach: "3500",
+                  clicks: "140",
+                  complete_payment: "0",
+                  conversion: "0",
+                  initiate_checkout: "8",
+                  video_watched_2s: "1500",
+                  video_watched_6s: "600",
+                },
+              },
+            ],
+          },
+        }),
+        { status: 200 }
+      );
+
+    const rich = await fetchTikTokReadOnlyReport(
+      {
+        accessToken: "tok_rich",
+        advertiserId: "7001",
+        startDate: "2026-11-21",
+        endDate: "2026-11-27",
+      },
+      mockRichFetch
+    );
+
+    expect(rich.totals.spend).toBe(290);
+    expect(rich.totals.purchases).toBe(10);
+    expect(rich.totals.cpa).toBe(29);
+    expect(rich.totals.attributedRevenue).toBe(970);
+    expect(rich.totals.estimatedProfit).toBe(680);
+    expect(rich.totals.roas).toBeCloseTo(3.34, 1);
+    expect(rich.totals.initiateCheckout).toBe(30);
+    expect(rich.rows[0].optimization.status).toBe("SCALE");
+    expect(rich.rows[0].hookRate2s).toBe(35);
+    expect(rich.rows[1].optimization.status).toBe("OPTIMIZE_CHECKOUT");
+
+    // Simula conta sem métricas avançadas (code 40002 na 1ª tentativa -> fallback automático na 2ª)
+    let attempt = 0;
+    const mockFallbackFetch: typeof fetch = async () => {
+      attempt += 1;
+      if (attempt === 1) {
+        return new Response(
+          JSON.stringify({ code: 40002, message: "Invalid metric complete_payment_roas" }),
+          { status: 200 }
+        );
+      }
+      return new Response(
+        JSON.stringify({
+          code: 0,
+          message: "OK",
+          data: {
+            list: [
+              {
+                dimensions: { campaign_id: "c_base", stat_time_day: "2026-11-27" },
+                metrics: {
+                  campaign_name: "Campanha Base",
+                  spend: "100.00",
+                  impressions: "6000",
+                  clicks: "150",
+                  conversion: "4",
+                  cost_per_conversion: "25.00",
+                },
+              },
+            ],
+          },
+        }),
+        { status: 200 }
+      );
+    };
+
+    const fb = await fetchTikTokReadOnlyReport(
+      {
+        accessToken: "tok_fb",
+        advertiserId: "7002",
+        startDate: "2026-11-21",
+        endDate: "2026-11-27",
+      },
+      mockFallbackFetch
+    );
+    expect(fb.metricsFallbackUsed).toBe(true);
+    expect(fb.totals.purchases).toBe(4);
+    expect(fb.totals.cpa).toBe(25);
+  });
 });

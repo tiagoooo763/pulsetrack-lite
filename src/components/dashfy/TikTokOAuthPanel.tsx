@@ -14,12 +14,45 @@ import {
   Trash2,
 } from "lucide-react";
 import type { TikTokConnectionPublicRecord } from "@/lib/db";
-import type { TikTokReadOnlyReportResult } from "@/lib/tiktok-client";
+import type {
+  TikTokOptimizationSignalStatus,
+  TikTokReadOnlyReportResult,
+  TikTokReportDataLevel,
+} from "@/lib/tiktok-client";
 import { formatBRL, formatDateTimeBR } from "@/lib/format";
 import { SpotlightCard } from "@/components/SpotlightCard";
 
 interface TikTokOAuthPanelProps {
   dashboardId: string;
+  onSynced?: () => Promise<void>;
+}
+
+interface FinancialCrossCheck {
+  gatewayGrossRevenue: number;
+  gatewayNetRevenue: number;
+  gatewayFees: number;
+  gatewayApprovedSales: number;
+  tiktokSpend: number;
+  realProfit: number;
+  realRoas: number;
+  realCpa: number;
+}
+
+function getOptimizationBadgeClass(status: TikTokOptimizationSignalStatus): string {
+  switch (status) {
+    case "SCALE":
+      return "border-emerald-500/35 bg-emerald-500/15 text-emerald-300";
+    case "CONTROL_CPA":
+      return "border-rose-500/35 bg-rose-500/15 text-rose-300";
+    case "OPTIMIZE_CREATIVE":
+    case "OPTIMIZE_CHECKOUT":
+    case "FATIGUE":
+      return "border-amber-500/35 bg-amber-500/15 text-amber-200";
+    case "LEARNING":
+      return "border-sky-500/35 bg-sky-500/15 text-sky-300";
+    default:
+      return "border-white/15 bg-white/[0.05] text-zinc-300";
+  }
 }
 
 interface ConnectionsApiResponse {
@@ -38,7 +71,7 @@ function getDefaultDateRange(): { startDate: string; endDate: string } {
   return { startDate: fmt(start), endDate: fmt(end) };
 }
 
-export function TikTokOAuthPanel({ dashboardId }: TikTokOAuthPanelProps) {
+export function TikTokOAuthPanel({ dashboardId, onSynced }: TikTokOAuthPanelProps) {
   const [loading, setLoading] = useState(true);
   const [configured, setConfigured] = useState(false);
   const [callbackUrl, setCallbackUrl] = useState(
@@ -55,15 +88,20 @@ export function TikTokOAuthPanel({ dashboardId }: TikTokOAuthPanelProps) {
     text: string;
   } | null>(null);
 
-  // Estado da consulta somente-leitura de relatórios
+  // Estado da consulta somente-leitura de relatórios e otimização
   const defaultDates = useMemo(() => getDefaultDateRange(), []);
   const [selectedTarget, setSelectedTarget] = useState("");
+  const [dataLevel, setDataLevel] =
+    useState<TikTokReportDataLevel>("AUCTION_CAMPAIGN");
   const [startDate, setStartDate] = useState(defaultDates.startDate);
   const [endDate, setEndDate] = useState(defaultDates.endDate);
   const [loadingReport, setLoadingReport] = useState(false);
+  const [syncingReport, setSyncingReport] = useState(false);
   const [reportError, setReportError] = useState<string | null>(null);
+  const [reportNotice, setReportNotice] = useState<string | null>(null);
   const [reportData, setReportData] =
     useState<TikTokReadOnlyReportResult | null>(null);
+  const [crossCheck, setCrossCheck] = useState<FinancialCrossCheck | null>(null);
 
   const loadConnections = useCallback(async () => {
     try {
@@ -189,10 +227,9 @@ export function TikTokOAuthPanel({ dashboardId }: TikTokOAuthPanelProps) {
     }
   }
 
-  async function handleFetchReport(e: React.FormEvent) {
-    e.preventDefault();
+  async function runReportQuery(syncToDashboard: boolean) {
     setReportError(null);
-    setReportData(null);
+    setReportNotice(null);
 
     const chosen = authorizedAccountOptions.find(
       (o) => o.value === selectedTarget
@@ -202,7 +239,13 @@ export function TikTokOAuthPanel({ dashboardId }: TikTokOAuthPanelProps) {
       return;
     }
 
-    setLoadingReport(true);
+    if (syncToDashboard) setSyncingReport(true);
+    else {
+      setLoadingReport(true);
+      setReportData(null);
+      setCrossCheck(null);
+    }
+
     try {
       const res = await fetch("/api/integrations/tiktok/reports", {
         method: "POST",
@@ -212,12 +255,17 @@ export function TikTokOAuthPanel({ dashboardId }: TikTokOAuthPanelProps) {
           advertiserId: chosen.advertiserId,
           startDate,
           endDate,
+          dataLevel,
+          syncToDashboard,
+          dashboardId,
         }),
       });
       const json = (await res.json()) as {
         ok?: boolean;
         error?: string;
         report?: TikTokReadOnlyReportResult;
+        financialCrossCheck?: FinancialCrossCheck;
+        syncedCount?: number;
       };
       if (!res.ok || !json.ok || !json.report) {
         setReportError(
@@ -226,12 +274,29 @@ export function TikTokOAuthPanel({ dashboardId }: TikTokOAuthPanelProps) {
         );
       } else {
         setReportData(json.report);
+        if (json.financialCrossCheck) {
+          setCrossCheck(json.financialCrossCheck);
+        }
+        if (syncToDashboard) {
+          setReportNotice(
+            json.syncedCount && json.syncedCount > 0
+              ? `${json.syncedCount} registro(s) sincronizado(s) para o Resumo, TikTok Ads e Minhas Métricas!`
+              : "Dados já estavam sincronizados para este período (nenhum registro duplicado)."
+          );
+          if (onSynced) await onSynced();
+        }
       }
     } catch {
       setReportError("Erro de comunicação ao consultar relatórios do TikTok.");
     } finally {
       setLoadingReport(false);
+      setSyncingReport(false);
     }
+  }
+
+  async function handleFetchReport(e: React.FormEvent) {
+    e.preventDefault();
+    await runReportQuery(false);
   }
 
   const activeCount = connections.filter((c) => c.status === "ACTIVE").length;
@@ -498,30 +563,42 @@ export function TikTokOAuthPanel({ dashboardId }: TikTokOAuthPanelProps) {
         )}
       </SpotlightCard>
 
-      {/* CONSULTA SOMENTE-LEITURA DE GASTOS E RELATÓRIOS */}
+      {/* CONSULTA SOMENTE-LEITURA DE GASTOS, COMPRAS, CPA, LUCRO E OTIMIZAÇÃO */}
       {authorizedAccountOptions.length > 0 && (
         <SpotlightCard className="p-5 sm:p-6 bento-card space-y-4">
-          <div className="flex items-start gap-3">
-            <div className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
-              <BarChart3 className="w-4 h-4 text-white" />
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
+                <BarChart3 className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-white">
+                  Relatórios, Compras, CPA, Lucro &amp; Otimização (TikTok API)
+                </h3>
+                <p className="text-xs text-zinc-400 mt-0.5">
+                  Puxa gasto, compras, CPA, ROAS, lucro estimado, CTR, checkout (IC), frequência e retenção de vídeo (Hook 2s / Hold 6s) em modo somente-leitura, cruzando com o valor líquido real do seu gateway.
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-sm font-semibold text-white">
-                Consultar Gastos &amp; Relatórios (Somente Leitura)
-              </h3>
-              <p className="text-xs text-zinc-400 mt-0.5">
-                Consulta diretamente a TikTok Marketing API para a conta
-                autorizada selecionada, sem modificar anúncios nem registros
-                financeiros existentes.
-              </p>
-            </div>
+
+            <button
+              type="button"
+              onClick={() => runReportQuery(true)}
+              disabled={syncingReport || loadingReport}
+              className="btn-pressable inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl border border-emerald-500/35 bg-emerald-500/15 hover:bg-emerald-500/25 text-xs font-semibold text-emerald-200 shrink-0 disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${syncingReport ? "animate-spin" : ""}`} />
+              <span>
+                {syncingReport ? "Sincronizando..." : "Sincronizar p/ Operação"}
+              </span>
+            </button>
           </div>
 
           <form
             onSubmit={handleFetchReport}
             className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end"
           >
-            <div className="sm:col-span-5">
+            <div className="sm:col-span-4">
               <label className="block text-[11px] text-zinc-400 mb-1">
                 Conta de Anúncios Autorizada
               </label>
@@ -536,6 +613,23 @@ export function TikTokOAuthPanel({ dashboardId }: TikTokOAuthPanelProps) {
                     {opt.connectionLabel}
                   </option>
                 ))}
+              </select>
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="block text-[11px] text-zinc-400 mb-1">
+                Nível de Otimização
+              </label>
+              <select
+                value={dataLevel}
+                onChange={(e) =>
+                  setDataLevel(e.target.value as TikTokReportDataLevel)
+                }
+                className="w-full rounded-xl border border-white/10 bg-[#08080a] px-2.5 py-2 text-xs text-white focus:border-white focus:outline-none"
+              >
+                <option value="AUCTION_CAMPAIGN">Campanhas</option>
+                <option value="AUCTION_ADGROUP">Conjuntos</option>
+                <option value="AUCTION_AD">Anúncios</option>
               </select>
             </div>
 
@@ -563,16 +657,23 @@ export function TikTokOAuthPanel({ dashboardId }: TikTokOAuthPanelProps) {
               />
             </div>
 
-            <div className="sm:col-span-3">
+            <div className="sm:col-span-2">
               <button
                 type="submit"
-                disabled={loadingReport}
+                disabled={loadingReport || syncingReport}
                 className="btn-pressable w-full py-2.5 px-3 rounded-xl bg-white hover:bg-zinc-100 text-black text-xs font-semibold disabled:opacity-50"
               >
-                {loadingReport ? "Consultando..." : "Consultar Relatório"}
+                {loadingReport ? "Consultando..." : "Consultar"}
               </button>
             </div>
           </form>
+
+          {reportNotice && (
+            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-300 flex items-start gap-2">
+              <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{reportNotice}</span>
+            </div>
+          )}
 
           {reportError && (
             <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300 flex items-start gap-2">
@@ -583,31 +684,143 @@ export function TikTokOAuthPanel({ dashboardId }: TikTokOAuthPanelProps) {
 
           {reportData && (
             <div className="space-y-4 pt-2">
+              {/* CRUZAMENTO REAL: QUANTO CAIU NO GATEWAY vs QUANTO GASTOU NO TIKTOK */}
+              {crossCheck && (
+                <div className="rounded-xl border border-emerald-500/25 bg-gradient-to-r from-[#071510] via-[#080b10] to-[#08080a] p-4 space-y-2.5">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-300">
+                      Cruzamento Real: Gateway (Quanto Caiu) vs TikTok Ads (Quanto Gastou)
+                    </span>
+                    <span className="text-[10px] font-mono text-zinc-400">
+                      {startDate} até {endDate}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                    <div className="rounded-lg border border-white/10 bg-black/30 p-2.5">
+                      <span className="text-[10px] text-zinc-400 block">
+                        Caiu Líquido (Gateway)
+                      </span>
+                      <span className="text-sm font-mono font-semibold text-white">
+                        {formatBRL(crossCheck.gatewayNetRevenue)}
+                      </span>
+                    </div>
+                    <div className="rounded-lg border border-white/10 bg-black/30 p-2.5">
+                      <span className="text-[10px] text-zinc-400 block">
+                        Vendas Aprovadas (GW)
+                      </span>
+                      <span className="text-sm font-mono font-semibold text-white">
+                        {crossCheck.gatewayApprovedSales}
+                      </span>
+                    </div>
+                    <div className="rounded-lg border border-white/10 bg-black/30 p-2.5">
+                      <span className="text-[10px] text-zinc-400 block">
+                        Gasto TikTok Ads
+                      </span>
+                      <span className="text-sm font-mono font-semibold text-amber-200">
+                        {formatBRL(crossCheck.tiktokSpend)}
+                      </span>
+                    </div>
+                    <div className="rounded-lg border border-white/10 bg-black/30 p-2.5">
+                      <span className="text-[10px] text-zinc-400 block">
+                        Lucro Real (GW − Ads)
+                      </span>
+                      <span
+                        className={`text-sm font-mono font-bold ${
+                          crossCheck.realProfit >= 0
+                            ? "text-emerald-400"
+                            : "text-rose-400"
+                        }`}
+                      >
+                        {formatBRL(crossCheck.realProfit)}
+                      </span>
+                    </div>
+                    <div className="rounded-lg border border-white/10 bg-black/30 p-2.5">
+                      <span className="text-[10px] text-zinc-400 block">
+                        CPA Real (GW)
+                      </span>
+                      <span className="text-sm font-mono font-semibold text-white">
+                        {crossCheck.realCpa > 0
+                          ? formatBRL(crossCheck.realCpa)
+                          : "—"}
+                      </span>
+                    </div>
+                    <div className="rounded-lg border border-white/10 bg-black/30 p-2.5">
+                      <span className="text-[10px] text-zinc-400 block">
+                        ROAS Real (GW)
+                      </span>
+                      <span className="text-sm font-mono font-semibold text-white">
+                        {crossCheck.realRoas > 0
+                          ? `${crossCheck.realRoas.toFixed(2)}x`
+                          : "—"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* KPIs DE OTIMIZAÇÃO DA TIKTOK MARKETING API */}
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
                 {[
                   {
-                    label: "Gasto Total",
+                    label: "Gasto TikTok",
                     value: formatBRL(reportData.totals.spend),
                   },
                   {
-                    label: "Impressões",
-                    value: reportData.totals.impressions.toLocaleString("pt-BR"),
+                    label: "Compras (Pixel)",
+                    value: reportData.totals.purchases.toLocaleString("pt-BR"),
                   },
                   {
-                    label: "Cliques",
-                    value: reportData.totals.clicks.toLocaleString("pt-BR"),
+                    label: "CPA (TikTok)",
+                    value:
+                      reportData.totals.cpa > 0
+                        ? formatBRL(reportData.totals.cpa)
+                        : "—",
                   },
                   {
-                    label: "CPC Médio",
-                    value: formatBRL(reportData.totals.cpc),
+                    label: "Receita Atrib.",
+                    value: formatBRL(reportData.totals.attributedRevenue),
+                  },
+                  {
+                    label: "ROAS (TikTok)",
+                    value:
+                      reportData.totals.roas > 0
+                        ? `${reportData.totals.roas.toFixed(2)}x`
+                        : "—",
+                  },
+                  {
+                    label: "Lucro Estimado",
+                    value: formatBRL(reportData.totals.estimatedProfit),
+                    tone:
+                      reportData.totals.estimatedProfit >= 0
+                        ? "text-emerald-400"
+                        : "text-rose-400",
+                  },
+                  {
+                    label: "CTR / CPC",
+                    value: `${reportData.totals.ctr.toFixed(2)}% • ${formatBRL(reportData.totals.cpc)}`,
                   },
                   {
                     label: "CPM Médio",
                     value: formatBRL(reportData.totals.cpm),
                   },
                   {
-                    label: "Conversões",
-                    value: reportData.totals.conversions.toLocaleString("pt-BR"),
+                    label: "Taxa Conv. (CVR)",
+                    value: `${reportData.totals.conversionRate.toFixed(2)}%`,
+                  },
+                  {
+                    label: "Checkouts (IC)",
+                    value: `${reportData.totals.initiateCheckout} (${reportData.totals.checkoutToPurchaseRate.toFixed(0)}%)`,
+                  },
+                  {
+                    label: "Hook 2s / Hold 6s",
+                    value: `${reportData.totals.hookRate2s.toFixed(1)}% / ${reportData.totals.holdRate6s.toFixed(1)}%`,
+                  },
+                  {
+                    label: "Frequência",
+                    value:
+                      reportData.totals.frequency > 0
+                        ? reportData.totals.frequency.toFixed(2)
+                        : "—",
                   },
                 ].map((kpi) => (
                   <div
@@ -617,7 +830,11 @@ export function TikTokOAuthPanel({ dashboardId }: TikTokOAuthPanelProps) {
                     <span className="text-[10px] text-zinc-500 block">
                       {kpi.label}
                     </span>
-                    <span className="text-sm font-semibold font-mono tabular-nums text-white mt-0.5 block">
+                    <span
+                      className={`text-xs sm:text-sm font-semibold font-mono tabular-nums mt-0.5 block truncate ${
+                        kpi.tone || "text-white"
+                      }`}
+                    >
                       {kpi.value}
                     </span>
                   </div>
@@ -635,36 +852,83 @@ export function TikTokOAuthPanel({ dashboardId }: TikTokOAuthPanelProps) {
                     <thead className="bg-white/[0.03] text-[10px] uppercase tracking-wider text-zinc-400">
                       <tr>
                         <th className="px-3 py-2.5">Data</th>
-                        <th className="px-3 py-2.5">Campanha</th>
+                        <th className="px-3 py-2.5">Campanha / Item</th>
+                        <th className="px-3 py-2.5">Otimização</th>
                         <th className="px-3 py-2.5 text-right">Gasto</th>
-                        <th className="px-3 py-2.5 text-right">Impressões</th>
-                        <th className="px-3 py-2.5 text-right">Cliques</th>
-                        <th className="px-3 py-2.5 text-right">Conversões</th>
+                        <th className="px-3 py-2.5 text-right">Compras</th>
+                        <th className="px-3 py-2.5 text-right">CPA</th>
+                        <th className="px-3 py-2.5 text-right">ROAS</th>
+                        <th className="px-3 py-2.5 text-right">Lucro Est.</th>
+                        <th className="px-3 py-2.5 text-right">CTR</th>
+                        <th className="px-3 py-2.5 text-right">Hook 2s</th>
+                        <th className="px-3 py-2.5 text-right">Freq.</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/[0.06]">
-                      {reportData.rows.slice(0, 30).map((row, idx) => (
+                      {reportData.rows.slice(0, 40).map((row, idx) => (
                         <tr
                           key={`${row.campaignId}-${row.statDate}-${idx}`}
                           className="hover:bg-white/[0.02]"
                         >
-                          <td className="px-3 py-2 font-mono text-zinc-400">
+                          <td className="px-3 py-2 font-mono text-zinc-400 whitespace-nowrap">
                             {row.statDate}
                           </td>
-                          <td className="px-3 py-2 text-white font-medium">
-                            {row.campaignName}
+                          <td className="px-3 py-2 max-w-[210px]">
+                            <div className="text-white font-medium truncate">
+                              {row.adName || row.adgroupName || row.campaignName}
+                            </div>
+                            {(row.adName || row.adgroupName) && (
+                              <div className="text-[10px] text-zinc-500 truncate">
+                                {row.campaignName}
+                              </div>
+                            )}
                           </td>
-                          <td className="px-3 py-2 text-right font-mono tabular-nums text-white">
+                          <td className="px-3 py-2 max-w-[220px]">
+                            <span
+                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${getOptimizationBadgeClass(
+                                row.optimization.status
+                              )}`}
+                              title={row.optimization.action}
+                            >
+                              {row.optimization.label}
+                            </span>
+                            <div className="text-[10px] text-zinc-400 mt-0.5 line-clamp-1">
+                              {row.optimization.action}
+                            </div>
+                          </td>
+                          <td className="px-3 py-2 text-right font-mono tabular-nums text-white whitespace-nowrap">
                             {formatBRL(row.spend)}
                           </td>
-                          <td className="px-3 py-2 text-right font-mono tabular-nums text-zinc-300">
-                            {row.impressions.toLocaleString("pt-BR")}
+                          <td className="px-3 py-2 text-right font-mono tabular-nums text-zinc-200">
+                            {row.purchases}
+                          </td>
+                          <td className="px-3 py-2 text-right font-mono tabular-nums text-zinc-200 whitespace-nowrap">
+                            {row.cpa > 0 ? formatBRL(row.cpa) : "—"}
+                          </td>
+                          <td className="px-3 py-2 text-right font-mono tabular-nums text-zinc-200 whitespace-nowrap">
+                            {row.roas > 0 ? `${row.roas.toFixed(2)}x` : "—"}
+                          </td>
+                          <td
+                            className={`px-3 py-2 text-right font-mono tabular-nums font-semibold whitespace-nowrap ${
+                              row.estimatedProfit >= 0
+                                ? "text-emerald-400"
+                                : "text-rose-400"
+                            }`}
+                          >
+                            {formatBRL(row.estimatedProfit)}
                           </td>
                           <td className="px-3 py-2 text-right font-mono tabular-nums text-zinc-300">
-                            {row.clicks.toLocaleString("pt-BR")}
+                            {row.ctr.toFixed(2)}%
                           </td>
                           <td className="px-3 py-2 text-right font-mono tabular-nums text-zinc-300">
-                            {row.conversions.toLocaleString("pt-BR")}
+                            {row.hookRate2s > 0
+                              ? `${row.hookRate2s.toFixed(1)}%`
+                              : "—"}
+                          </td>
+                          <td className="px-3 py-2 text-right font-mono tabular-nums text-zinc-300">
+                            {row.frequency > 0
+                              ? row.frequency.toFixed(2)
+                              : "—"}
                           </td>
                         </tr>
                       ))}

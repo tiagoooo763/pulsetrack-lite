@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getAuthenticatedUser } from "@/lib/auth";
 import {
+  createTikTokCampaign,
   getTikTokConnectionWithToken,
+  listTikTokCampaigns,
+  listTransactions,
   updateTikTokConnectionStatus,
 } from "@/lib/db";
 import {
@@ -21,6 +24,12 @@ const reportRequestSchema = z.object({
   endDate: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Data final inválida (YYYY-MM-DD)."),
+  dataLevel: z
+    .enum(["AUCTION_CAMPAIGN", "AUCTION_ADGROUP", "AUCTION_AD"])
+    .optional()
+    .default("AUCTION_CAMPAIGN"),
+  syncToDashboard: z.boolean().optional().default(false),
+  dashboardId: z.string().min(1).max(60).optional().default("tiktok"),
 });
 
 /**
@@ -50,7 +59,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { connectionId, advertiserId, startDate, endDate } = parsed.data;
+    const {
+      connectionId,
+      advertiserId,
+      startDate,
+      endDate,
+      dataLevel,
+      syncToDashboard,
+      dashboardId,
+    } = parsed.data;
     if (startDate > endDate) {
       return NextResponse.json(
         { ok: false, error: "A data inicial não pode ser maior que a data final." },
@@ -117,6 +134,7 @@ export async function POST(request: NextRequest) {
       advertiserId,
       startDate,
       endDate,
+      dataLevel,
     });
 
     await updateTikTokConnectionStatus(conn.id, user.id, {
@@ -125,14 +143,100 @@ export async function POST(request: NextRequest) {
       lastSyncAt: new Date().toISOString(),
     });
 
+    // Cruzamento real: quanto caiu líquido no Gateway do usuário vs quanto gastou no TikTok Ads no mesmo período
+    const allTx = await listTransactions(user.id, 1000);
+    const periodApprovedTx = allTx.filter((tx) => {
+      if (tx.status !== "COMPLETED") return false;
+      const day = (tx.paidAt || tx.createdAt || "").slice(0, 10);
+      return day >= startDate && day <= endDate;
+    });
+    const gatewayGrossRevenue = Number(
+      periodApprovedTx.reduce((acc, tx) => acc + tx.grossAmount, 0).toFixed(2)
+    );
+    const gatewayFees = Number(
+      periodApprovedTx.reduce((acc, tx) => acc + tx.feeAmount, 0).toFixed(2)
+    );
+    const gatewayNetRevenue = Number(
+      periodApprovedTx.reduce((acc, tx) => acc + tx.netAmount, 0).toFixed(2)
+    );
+    const gatewayApprovedSales = periodApprovedTx.length;
+    const tiktokSpend = report.totals.spend;
+    const realProfit = Number((gatewayNetRevenue - tiktokSpend).toFixed(2));
+    const realRoas =
+      tiktokSpend > 0
+        ? Number((gatewayGrossRevenue / tiktokSpend).toFixed(2))
+        : 0;
+    const realCpa =
+      gatewayApprovedSales > 0
+        ? Number((tiktokSpend / gatewayApprovedSales).toFixed(2))
+        : 0;
+
+    // Opcional: sincroniza as linhas da API para a operação Dashfy (evitando duplicatas por dia/campanha/anúncio)
+    let syncedCount = 0;
+    if (syncToDashboard && report.rows.length > 0) {
+      const advObj = conn.advertisers.find((a) => a.advertiserId === advertiserId);
+      const adAccountLabel = advObj?.advertiserName || `TikTok ${advertiserId}`;
+      const existingRows = await listTikTokCampaigns(user.id);
+      const existingSig = new Set(
+        existingRows
+          .filter((r) => (r.dashboardId || "tiktok") === dashboardId)
+          .map(
+            (r) =>
+              `${r.adAccount}::${r.campaignName}::${r.adgroupName}::${r.adName}::${r.statDate}`
+          )
+      );
+
+      for (const row of report.rows.slice(0, 200)) {
+        const adgroupName = row.adgroupName || "Conjunto API TikTok";
+        const adName = row.adName || "Relatório API TikTok";
+        const sig = `${adAccountLabel}::${row.campaignName}::${adgroupName}::${adName}::${row.statDate}`;
+        if (existingSig.has(sig)) continue;
+        await createTikTokCampaign({
+          userId: user.id,
+          dashboardId,
+          adAccount: adAccountLabel,
+          campaignName: row.campaignName,
+          adgroupName,
+          adName,
+          productName: row.campaignName,
+          utmSource: "tiktok",
+          utmMedium: "paid",
+          utmCampaign: row.campaignName,
+          utmContent: adName,
+          statDate: row.statDate,
+          spend: row.spend,
+          impressions: row.impressions,
+          clicks: row.clicks,
+          conversions: row.purchases,
+          attributedRevenue: row.attributedRevenue,
+          status: "ACTIVE",
+        });
+        existingSig.add(sig);
+        syncedCount += 1;
+      }
+    }
+
     safeLog("info", "Relatório somente-leitura TikTok consultado com sucesso.", {
       advertiserId,
+      dataLevel,
       rowsCount: report.rows.length,
+      syncedCount,
     });
 
     return NextResponse.json({
       ok: true,
       report,
+      syncedCount,
+      financialCrossCheck: {
+        gatewayGrossRevenue,
+        gatewayNetRevenue,
+        gatewayFees,
+        gatewayApprovedSales,
+        tiktokSpend,
+        realProfit,
+        realRoas,
+        realCpa,
+      },
     });
   } catch (err) {
     if (err instanceof TikTokApiError) {
