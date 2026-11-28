@@ -25,6 +25,7 @@ export type PeriodPreset = "today" | "7d" | "30d" | "month" | "all" | "custom";
 export type TikTokTabId =
   | "resumo"
   | "tiktok_ads"
+  | "minhas_metricas"
   | "utms"
   | "integracoes"
   | "regras"
@@ -157,12 +158,14 @@ export interface TabMenuItem {
     | "bell"
     | "dollar"
     | "landmark"
-    | "wallet";
+    | "wallet"
+    | "target";
 }
 
 export const TIKTOK_MODE_TABS: TabMenuItem[] = [
   { id: "resumo", label: "Resumo", iconName: "layout" },
   { id: "tiktok_ads", label: "TikTok Ads", iconName: "megaphone" },
+  { id: "minhas_metricas", label: "Minhas Métricas", iconName: "target" },
   { id: "utms", label: "UTMs", iconName: "link" },
   { id: "integracoes", label: "Integrações", iconName: "plug" },
   { id: "regras", label: "Regras", iconName: "sliders" },

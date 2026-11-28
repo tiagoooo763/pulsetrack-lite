@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import {
   CheckCircle2,
   Download,
@@ -9,6 +10,7 @@ import {
   Play,
   Plus,
   Search,
+  Target,
   Trash2,
   Upload,
   X,
@@ -23,14 +25,24 @@ import {
 import { formatBRL, formatDateBR } from "@/lib/format";
 import { SpotlightCard } from "@/components/SpotlightCard";
 
+const MyMetricsView = dynamic(
+  () => import("./MyMetricsView").then((m) => m.MyMetricsView),
+  {
+    loading: () => (
+      <div className="h-64 rounded-2xl border border-white/10 bg-[#0c0c0e] animate-pulse" />
+    ),
+  }
+);
+
 interface TikTokAdsViewProps {
   dashboardId: string;
   dashboardName: string;
   campaigns: TikTokCampaignRecord[];
+  allDashboardCampaigns?: TikTokCampaignRecord[];
   onRefresh: () => Promise<void>;
 }
 
-type HierarchyLevel = "campaigns" | "adgroups" | "ads";
+type HierarchyLevel = "campaigns" | "adgroups" | "ads" | "minhas_metricas";
 
 interface AggregatedRow {
   key: string;
@@ -51,9 +63,13 @@ export function TikTokAdsView({
   dashboardId,
   dashboardName,
   campaigns,
+  allDashboardCampaigns,
   onRefresh,
 }: TikTokAdsViewProps) {
   const [level, setLevel] = useState<HierarchyLevel>("campaigns");
+  const [selectedMetricsCampaignKey, setSelectedMetricsCampaignKey] = useState<
+    string | null
+  >(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "ACTIVE" | "PAUSED">("ALL");
 
@@ -392,25 +408,27 @@ export function TikTokAdsView({
       {/* Abas de Nível Hierárquico (Campanhas / Conjuntos / Anúncios) + Busca */}
       <SpotlightCard className="p-5 sm:p-6 bento-card space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-          <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-[#08080a] border border-white/10 self-start">
+          <div className="inline-flex flex-wrap items-center gap-1 p-1 rounded-xl bg-[#08080a] border border-white/10 self-start">
             {(
               [
                 { id: "campaigns", label: "Campanhas" },
                 { id: "adgroups", label: "Conjuntos" },
                 { id: "ads", label: "Anúncios" },
+                { id: "minhas_metricas", label: "Minhas Métricas" },
               ] as Array<{ id: HierarchyLevel; label: string }>
             ).map((tab) => (
               <button
                 key={tab.id}
                 type="button"
                 onClick={() => setLevel(tab.id)}
-                className={`btn-pressable px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
+                className={`btn-pressable inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
                   level === tab.id
                     ? "bg-white text-black shadow-sm"
                     : "text-zinc-400 hover:text-white"
                 }`}
               >
-                {tab.label}
+                {tab.id === "minhas_metricas" && <Target className="w-3.5 h-3.5" />}
+                <span>{tab.label}</span>
               </button>
             ))}
           </div>
@@ -438,8 +456,15 @@ export function TikTokAdsView({
           </div>
         </div>
 
-        {/* Tabela de Performance */}
-        {aggregatedRows.length === 0 ? (
+        {/* Subaba Minhas Métricas dentro da campanha ou Tabela de Performance */}
+        {level === "minhas_metricas" ? (
+          <MyMetricsView
+            dashboardId={dashboardId}
+            dashboardName={dashboardName}
+            campaigns={allDashboardCampaigns ?? campaigns}
+            initialCampaignKey={selectedMetricsCampaignKey}
+          />
+        ) : aggregatedRows.length === 0 ? (
           <div className="py-12 text-center rounded-xl border border-dashed border-white/10 bg-white/[0.01] space-y-2">
             <FileSpreadsheet className="w-7 h-7 text-zinc-600 mx-auto" />
             <p className="text-xs text-zinc-400">
@@ -475,8 +500,10 @@ export function TikTokAdsView({
                   <th className="py-2.5 px-3 font-semibold text-right text-emerald-400">
                     Lucro Est.
                   </th>
-                  {level === "ads" && (
-                    <th className="py-2.5 px-3 font-semibold text-center">Ações</th>
+                  {(level === "ads" || level === "campaigns") && (
+                    <th className="py-2.5 px-3 font-semibold text-center">
+                      {level === "campaigns" ? "Metas" : "Ações"}
+                    </th>
                   )}
                 </tr>
               </thead>
@@ -548,6 +575,21 @@ export function TikTokAdsView({
                       >
                         {formatBRL(profit)}
                       </td>
+                      {level === "campaigns" && (
+                        <td className="py-2.5 px-3 text-center whitespace-nowrap">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedMetricsCampaignKey(row.key);
+                              setLevel("minhas_metricas");
+                            }}
+                            className="btn-pressable inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[#1d74ff]/40 bg-[#1d74ff]/10 hover:bg-[#1d74ff]/20 text-[11px] font-semibold text-[#7db5ff]"
+                          >
+                            <Target className="w-3 h-3" />
+                            <span>Minhas Métricas</span>
+                          </button>
+                        </td>
+                      )}
                       {level === "ads" && row.rawId && (
                         <td className="py-2.5 px-3 text-center whitespace-nowrap">
                           <div className="inline-flex items-center gap-1">
@@ -605,7 +647,7 @@ export function TikTokAdsView({
                   >
                     {formatBRL(totals.profit)}
                   </td>
-                  {level === "ads" && <td />}
+                  {(level === "ads" || level === "campaigns") && <td />}
                 </tr>
               </tfoot>
             </table>

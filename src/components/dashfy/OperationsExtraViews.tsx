@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Activity,
   AlertTriangle,
@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import type {
   AutomationRuleRecord,
+  MetricAlertLogRecord,
   TikTokCampaignRecord,
   TransactionRecord,
   WebhookEventRecord,
@@ -468,6 +469,7 @@ export function EventsView({
 
 /* ==================== 4. NOTIFICAÇÕES ==================== */
 interface NotificationsViewProps {
+  dashboardId?: string;
   dashboardMode: DashboardOperationMode;
   integrationStatus: IntegrationStatusPayload;
   transactions: TransactionRecord[];
@@ -475,9 +477,11 @@ interface NotificationsViewProps {
   prefs: NotificationPrefs;
   onRefresh: () => Promise<void>;
   onOpenSoundSettings?: () => void;
+  onOpenMyMetrics?: () => void;
 }
 
 export function NotificationsView({
+  dashboardId = "tiktok",
   dashboardMode,
   integrationStatus,
   transactions,
@@ -485,12 +489,32 @@ export function NotificationsView({
   prefs,
   onRefresh,
   onOpenSoundSettings,
+  onOpenMyMetrics,
 }: NotificationsViewProps) {
   const [localPrefs, setLocalPrefs] = useState<NotificationPrefs>(prefs);
   const [saving, setSaving] = useState(false);
   const [savedNotice, setSavedNotice] = useState(false);
+  const [metricAlerts, setMetricAlerts] = useState<MetricAlertLogRecord[]>([]);
 
   const isTikTok = dashboardMode === "tiktok";
+
+  useEffect(() => {
+    if (!isTikTok) return;
+    let active = true;
+    fetch(`/api/metrics/alerts?dashboardId=${encodeURIComponent(dashboardId)}`, {
+      cache: "no-store",
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (active && j?.ok && Array.isArray(j.logs)) {
+          setMetricAlerts(j.logs);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [isTikTok, dashboardId]);
   const refunds = transactions.filter(
     (t) => t.status === "REFUNDED" || t.status === "CHARGED_BACK"
   );
@@ -522,9 +546,16 @@ export function NotificationsView({
     const activeRules = rules.filter((r) => r.enabled).length;
     alerts.push({
       title: `${activeRules} regra(s) de monitoramento ativa(s)`,
-      detail: "Acompanhe alertas de ROAS, CPA e CPC diretamente na aba Regras.",
+      detail: "Acompanhe alertas de ROAS, CPA e CPC diretamente na aba Regras ou em Minhas Métricas.",
       level: "ok",
     });
+    for (const ma of metricAlerts.slice(0, 6)) {
+      alerts.push({
+        title: ma.title,
+        detail: `${ma.message} (${formatDateTimeBR(ma.triggeredAt)})`,
+        level: ma.severity === "positive" ? "ok" : "warn",
+      });
+    }
   }
 
   if (alerts.length === 0) {
@@ -648,13 +679,24 @@ export function NotificationsView({
             <div className="text-[11px] text-zinc-400">
               Personalize o som, volume ou envie seu áudio de venda aprovada.
             </div>
-            <button
-              type="button"
-              onClick={onOpenSoundSettings}
-              className="btn-pressable px-3.5 py-2 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 text-xs font-semibold text-white shrink-0"
-            >
-              Sons de vendas &rarr;
-            </button>
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              {onOpenMyMetrics && (
+                <button
+                  type="button"
+                  onClick={onOpenMyMetrics}
+                  className="btn-pressable px-3.5 py-2 rounded-xl border border-[#1d74ff]/40 bg-[#1d74ff]/15 hover:bg-[#1d74ff]/25 text-xs font-semibold text-[#7db5ff]"
+                >
+                  Alertas de Metas &rarr;
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={onOpenSoundSettings}
+                className="btn-pressable px-3.5 py-2 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 text-xs font-semibold text-white"
+              >
+                Sons de vendas &rarr;
+              </button>
+            </div>
           </div>
         )}
       </SpotlightCard>

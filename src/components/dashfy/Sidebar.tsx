@@ -26,6 +26,7 @@ import {
   Settings,
   ShoppingBag,
   Sliders,
+  Target,
   UserCircle2,
   Wallet,
   X,
@@ -92,6 +93,8 @@ function getTabIcon(iconName: TabMenuItem["iconName"]) {
       return Landmark;
     case "wallet":
       return Wallet;
+    case "target":
+      return Target;
     default:
       return LayoutDashboard;
   }

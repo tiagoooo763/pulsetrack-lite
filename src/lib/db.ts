@@ -360,7 +360,10 @@ export async function getDb(): Promise<DbExecutor> {
               to_regclass('public.user_notification_sound_preferences') AS sound_tbl,
               to_regclass('public.sale_notifications') AS sales_tbl,
               to_regclass('public.gateway_integrations') AS gw_int_tbl,
-              to_regclass('public.transaction_status_history') AS tx_hist_tbl`
+              to_regclass('public.transaction_status_history') AS tx_hist_tbl,
+              to_regclass('public.campaign_metric_configs') AS metrics_cfg_tbl,
+              to_regclass('public.metric_templates') AS metrics_tpl_tbl,
+              to_regclass('public.metric_alert_logs') AS metrics_alert_tbl`
           );
           const row = check[0];
           if (
@@ -371,7 +374,10 @@ export async function getDb(): Promise<DbExecutor> {
             row.sound_tbl &&
             row.sales_tbl &&
             row.gw_int_tbl &&
-            row.tx_hist_tbl
+            row.tx_hist_tbl &&
+            row.metrics_cfg_tbl &&
+            row.metrics_tpl_tbl &&
+            row.metrics_alert_tbl
           ) {
             return db;
           }
@@ -633,6 +639,58 @@ export async function getDb(): Promise<DbExecutor> {
           event_type TEXT NOT NULL,
           source TEXT NOT NULL DEFAULT 'webhook',
           created_at TEXT NOT NULL
+        )
+      `);
+
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS campaign_metric_configs (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL,
+          dashboard_id TEXT NOT NULL DEFAULT 'tiktok',
+          ad_account TEXT NOT NULL DEFAULT '',
+          campaign_key TEXT NOT NULL,
+          campaign_name TEXT NOT NULL DEFAULT 'Padrão da Operação',
+          view_name TEXT NOT NULL DEFAULT 'Padrão',
+          is_active INTEGER NOT NULL DEFAULT 1,
+          objective TEXT NOT NULL DEFAULT 'conversion',
+          period_preset TEXT NOT NULL DEFAULT '30d',
+          selected_metrics_json TEXT NOT NULL DEFAULT '[]',
+          goals_json TEXT NOT NULL DEFAULT '{}',
+          alert_settings_json TEXT NOT NULL DEFAULT '{}',
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          UNIQUE (user_id, dashboard_id, campaign_key, view_name)
+        )
+      `);
+
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS metric_templates (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL,
+          name TEXT NOT NULL,
+          description TEXT NOT NULL DEFAULT '',
+          objective TEXT NOT NULL DEFAULT 'conversion',
+          selected_metrics_json TEXT NOT NULL DEFAULT '[]',
+          goals_json TEXT NOT NULL DEFAULT '{}',
+          alert_settings_json TEXT NOT NULL DEFAULT '{}',
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        )
+      `);
+
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS metric_alert_logs (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL,
+          dashboard_id TEXT NOT NULL DEFAULT 'tiktok',
+          campaign_key TEXT NOT NULL,
+          metric_id TEXT NOT NULL,
+          alert_type TEXT NOT NULL,
+          dedupe_key TEXT NOT NULL,
+          severity TEXT NOT NULL DEFAULT 'warning',
+          title TEXT NOT NULL,
+          message TEXT NOT NULL,
+          triggered_at TEXT NOT NULL
         )
       `);
 
@@ -2896,4 +2954,463 @@ export async function listRecentWebhookEventsByGateway(
     sanitizedPayload: String(row.sanitized_payload),
     receivedAt: toIsoTimestamp(row.received_at),
   }));
+}
+
+// ============================================================
+// MINHAS MÉTRICAS — CONFIGURAÇÕES, MODELOS E ALERTAS POR USUÁRIO
+// ============================================================
+
+export interface CampaignMetricConfigRecord {
+  id: string;
+  userId: string;
+  dashboardId: string;
+  adAccount: string;
+  campaignKey: string;
+  campaignName: string;
+  viewName: string;
+  isActive: boolean;
+  objective: "conversion" | "traffic" | "awareness" | "financial" | "creatives";
+  periodPreset: string;
+  selectedMetrics: string[];
+  goals: Record<string, unknown>;
+  alertSettings: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UserMetricTemplateRecord {
+  id: string;
+  userId: string;
+  name: string;
+  description: string;
+  objective: "conversion" | "traffic" | "awareness" | "financial" | "creatives";
+  selectedMetrics: string[];
+  goals: Record<string, unknown>;
+  alertSettings: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MetricAlertLogRecord {
+  id: string;
+  userId: string;
+  dashboardId: string;
+  campaignKey: string;
+  metricId: string;
+  alertType: string;
+  dedupeKey: string;
+  severity: "critical" | "warning" | "positive";
+  title: string;
+  message: string;
+  triggeredAt: string;
+}
+
+function safeParseJson<T>(raw: unknown, fallback: T): T {
+  if (typeof raw !== "string" || !raw.trim()) return fallback;
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+function normalizeObjective(
+  raw: unknown
+): "conversion" | "traffic" | "awareness" | "financial" | "creatives" {
+  const v = String(raw || "conversion").toLowerCase();
+  if (
+    v === "traffic" ||
+    v === "awareness" ||
+    v === "financial" ||
+    v === "creatives"
+  ) {
+    return v;
+  }
+  return "conversion";
+}
+
+function mapCampaignMetricConfigRow(
+  row: Record<string, unknown>
+): CampaignMetricConfigRecord {
+  const isAct = row.is_active;
+  const isActive =
+    isAct === true || isAct === 1 || isAct === "1" || isAct === "true";
+
+  return {
+    id: String(row.id),
+    userId: String(row.user_id),
+    dashboardId: String(row.dashboard_id || "tiktok"),
+    adAccount: String(row.ad_account || ""),
+    campaignKey: String(row.campaign_key),
+    campaignName: String(row.campaign_name || ""),
+    viewName: String(row.view_name || "Padrão"),
+    isActive,
+    objective: normalizeObjective(row.objective),
+    periodPreset: String(row.period_preset || "30d"),
+    selectedMetrics: safeParseJson<string[]>(row.selected_metrics_json, []),
+    goals: safeParseJson<Record<string, unknown>>(row.goals_json, {}),
+    alertSettings: safeParseJson<Record<string, unknown>>(
+      row.alert_settings_json,
+      {}
+    ),
+    createdAt: toIsoTimestamp(row.created_at),
+    updatedAt: toIsoTimestamp(row.updated_at),
+  };
+}
+
+export async function listCampaignMetricConfigs(
+  userId: string,
+  dashboardId?: string
+): Promise<CampaignMetricConfigRecord[]> {
+  const db = await getDb();
+  const rows = dashboardId
+    ? await db.query(
+        `SELECT * FROM campaign_metric_configs
+         WHERE user_id = ? AND dashboard_id = ?
+         ORDER BY updated_at DESC`,
+        [userId, dashboardId]
+      )
+    : await db.query(
+        `SELECT * FROM campaign_metric_configs
+         WHERE user_id = ?
+         ORDER BY updated_at DESC`,
+        [userId]
+      );
+  return rows.map(mapCampaignMetricConfigRow);
+}
+
+export async function upsertCampaignMetricConfig(input: {
+  userId: string;
+  dashboardId: string;
+  adAccount?: string;
+  campaignKey: string;
+  campaignName?: string;
+  viewName?: string;
+  isActive?: boolean;
+  objective?: string;
+  periodPreset?: string;
+  selectedMetrics: string[];
+  goals: Record<string, unknown>;
+  alertSettings: Record<string, unknown>;
+}): Promise<CampaignMetricConfigRecord> {
+  const db = await getDb();
+  const now = new Date().toISOString();
+  const viewName = (input.viewName || "Padrão").trim().slice(0, 60) || "Padrão";
+  const dashboardId = input.dashboardId.trim().slice(0, 60) || "tiktok";
+  const campaignKey = input.campaignKey.trim().slice(0, 200);
+  const campaignName =
+    (input.campaignName || campaignKey).trim().slice(0, 160) || "Campanha";
+  const adAccount = (input.adAccount || "").trim().slice(0, 120);
+  const objective = normalizeObjective(input.objective);
+  const periodPreset = (input.periodPreset || "30d").trim().slice(0, 20);
+  const activeFlag = input.isActive !== false;
+  const activeDbVal = db.dialect === "postgres" ? activeFlag : activeFlag ? 1 : 0;
+  const inactiveDbVal = db.dialect === "postgres" ? false : 0;
+
+  // Se esta visualização ficará ativa, desativa as outras visualizações da mesma campanha
+  if (activeFlag) {
+    await db.execute(
+      `UPDATE campaign_metric_configs
+       SET is_active = ?
+       WHERE user_id = ? AND dashboard_id = ? AND campaign_key = ?`,
+      [inactiveDbVal, input.userId, dashboardId, campaignKey]
+    );
+  }
+
+  const existing = await db.query(
+    `SELECT id FROM campaign_metric_configs
+     WHERE user_id = ? AND dashboard_id = ? AND campaign_key = ? AND view_name = ?
+     LIMIT 1`,
+    [input.userId, dashboardId, campaignKey, viewName]
+  );
+
+  const selectedJson = JSON.stringify(input.selectedMetrics || []);
+  const goalsJson = JSON.stringify(input.goals || {});
+  const alertsJson = JSON.stringify(input.alertSettings || {});
+
+  let recordId = "";
+  if (existing.length > 0) {
+    recordId = String(existing[0].id);
+    await db.execute(
+      `UPDATE campaign_metric_configs
+       SET ad_account = ?,
+           campaign_name = ?,
+           is_active = ?,
+           objective = ?,
+           period_preset = ?,
+           selected_metrics_json = ?,
+           goals_json = ?,
+           alert_settings_json = ?,
+           updated_at = ?
+       WHERE id = ? AND user_id = ?`,
+      [
+        adAccount,
+        campaignName,
+        activeDbVal,
+        objective,
+        periodPreset,
+        selectedJson,
+        goalsJson,
+        alertsJson,
+        now,
+        recordId,
+        input.userId,
+      ]
+    );
+  } else {
+    recordId = crypto.randomUUID();
+    await db.execute(
+      `INSERT INTO campaign_metric_configs (
+        id, user_id, dashboard_id, ad_account, campaign_key, campaign_name,
+        view_name, is_active, objective, period_preset,
+        selected_metrics_json, goals_json, alert_settings_json,
+        created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        recordId,
+        input.userId,
+        dashboardId,
+        adAccount,
+        campaignKey,
+        campaignName,
+        viewName,
+        activeDbVal,
+        objective,
+        periodPreset,
+        selectedJson,
+        goalsJson,
+        alertsJson,
+        now,
+        now,
+      ]
+    );
+  }
+
+  const rows = await db.query(
+    `SELECT * FROM campaign_metric_configs WHERE id = ? AND user_id = ? LIMIT 1`,
+    [recordId, input.userId]
+  );
+  return mapCampaignMetricConfigRow(rows[0]);
+}
+
+export async function deleteCampaignMetricConfig(
+  userId: string,
+  id: string
+): Promise<boolean> {
+  const db = await getDb();
+  const existing = await db.query(
+    `SELECT id FROM campaign_metric_configs WHERE id = ? AND user_id = ? LIMIT 1`,
+    [id, userId]
+  );
+  if (existing.length === 0) return false;
+  await db.execute(
+    `DELETE FROM campaign_metric_configs WHERE id = ? AND user_id = ?`,
+    [id, userId]
+  );
+  return true;
+}
+
+export async function listUserMetricTemplates(
+  userId: string
+): Promise<UserMetricTemplateRecord[]> {
+  const db = await getDb();
+  const rows = await db.query(
+    `SELECT * FROM metric_templates WHERE user_id = ? ORDER BY updated_at DESC`,
+    [userId]
+  );
+  return rows.map((row) => ({
+    id: String(row.id),
+    userId: String(row.user_id),
+    name: String(row.name),
+    description: String(row.description || ""),
+    objective: normalizeObjective(row.objective),
+    selectedMetrics: safeParseJson<string[]>(row.selected_metrics_json, []),
+    goals: safeParseJson<Record<string, unknown>>(row.goals_json, {}),
+    alertSettings: safeParseJson<Record<string, unknown>>(
+      row.alert_settings_json,
+      {}
+    ),
+    createdAt: toIsoTimestamp(row.created_at),
+    updatedAt: toIsoTimestamp(row.updated_at),
+  }));
+}
+
+export async function createUserMetricTemplate(input: {
+  userId: string;
+  name: string;
+  description?: string;
+  objective?: string;
+  selectedMetrics: string[];
+  goals: Record<string, unknown>;
+  alertSettings: Record<string, unknown>;
+}): Promise<UserMetricTemplateRecord> {
+  const db = await getDb();
+  const id = crypto.randomUUID();
+  const now = new Date().toISOString();
+  const name = input.name.trim().slice(0, 80);
+  const description = (input.description || "").trim().slice(0, 240);
+  const objective = normalizeObjective(input.objective);
+
+  await db.execute(
+    `INSERT INTO metric_templates (
+      id, user_id, name, description, objective,
+      selected_metrics_json, goals_json, alert_settings_json,
+      created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      id,
+      input.userId,
+      name,
+      description,
+      objective,
+      JSON.stringify(input.selectedMetrics || []),
+      JSON.stringify(input.goals || {}),
+      JSON.stringify(input.alertSettings || {}),
+      now,
+      now,
+    ]
+  );
+
+  return {
+    id,
+    userId: input.userId,
+    name,
+    description,
+    objective,
+    selectedMetrics: input.selectedMetrics || [],
+    goals: input.goals || {},
+    alertSettings: input.alertSettings || {},
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
+export async function deleteUserMetricTemplate(
+  userId: string,
+  id: string
+): Promise<boolean> {
+  const db = await getDb();
+  const existing = await db.query(
+    `SELECT id FROM metric_templates WHERE id = ? AND user_id = ? LIMIT 1`,
+    [id, userId]
+  );
+  if (existing.length === 0) return false;
+  await db.execute(
+    `DELETE FROM metric_templates WHERE id = ? AND user_id = ?`,
+    [id, userId]
+  );
+  return true;
+}
+
+/**
+ * Grava um alerta inteligente de métrica respeitando o cooldown configurado (evita alertas repetidos).
+ */
+export async function recordMetricAlertWithCooldown(input: {
+  userId: string;
+  dashboardId: string;
+  campaignKey: string;
+  metricId: string;
+  alertType: string;
+  dedupeKey: string;
+  severity: "critical" | "warning" | "positive";
+  title: string;
+  message: string;
+  cooldownHours?: number;
+}): Promise<{ created: boolean; log?: MetricAlertLogRecord }> {
+  const db = await getDb();
+  const cooldownMs = Math.max(1, Number(input.cooldownHours ?? 12)) * 3600 * 1000;
+  const cutoffIso = new Date(Date.now() - cooldownMs).toISOString();
+
+  const recent = await db.query(
+    `SELECT id FROM metric_alert_logs
+     WHERE user_id = ? AND dedupe_key = ? AND triggered_at > ?
+     LIMIT 1`,
+    [input.userId, input.dedupeKey, cutoffIso]
+  );
+  if (recent.length > 0) {
+    return { created: false };
+  }
+
+  const id = crypto.randomUUID();
+  const now = new Date().toISOString();
+
+  await db.execute(
+    `INSERT INTO metric_alert_logs (
+      id, user_id, dashboard_id, campaign_key, metric_id, alert_type,
+      dedupe_key, severity, title, message, triggered_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      id,
+      input.userId,
+      input.dashboardId,
+      input.campaignKey,
+      input.metricId,
+      input.alertType,
+      input.dedupeKey,
+      input.severity,
+      input.title.slice(0, 160),
+      input.message.slice(0, 400),
+      now,
+    ]
+  );
+
+  return {
+    created: true,
+    log: {
+      id,
+      userId: input.userId,
+      dashboardId: input.dashboardId,
+      campaignKey: input.campaignKey,
+      metricId: input.metricId,
+      alertType: input.alertType,
+      dedupeKey: input.dedupeKey,
+      severity: input.severity,
+      title: input.title.slice(0, 160),
+      message: input.message.slice(0, 400),
+      triggeredAt: now,
+    },
+  };
+}
+
+export async function listRecentMetricAlertLogs(
+  userId: string,
+  dashboardId?: string,
+  limit = 25
+): Promise<MetricAlertLogRecord[]> {
+  const db = await getDb();
+  const safeLimit = Math.max(1, Math.min(100, Math.round(limit)));
+  const rows = dashboardId
+    ? await db.query(
+        `SELECT * FROM metric_alert_logs
+         WHERE user_id = ? AND dashboard_id = ?
+         ORDER BY triggered_at DESC
+         LIMIT ?`,
+        [userId, dashboardId, safeLimit]
+      )
+    : await db.query(
+        `SELECT * FROM metric_alert_logs
+         WHERE user_id = ?
+         ORDER BY triggered_at DESC
+         LIMIT ?`,
+        [userId, safeLimit]
+      );
+
+  return rows.map((row) => {
+    const rawSev = String(row.severity || "warning").toLowerCase();
+    const severity: "critical" | "warning" | "positive" =
+      rawSev === "critical" || rawSev === "positive" ? rawSev : "warning";
+    return {
+      id: String(row.id),
+      userId: String(row.user_id),
+      dashboardId: String(row.dashboard_id || "tiktok"),
+      campaignKey: String(row.campaign_key),
+      metricId: String(row.metric_id),
+      alertType: String(row.alert_type),
+      dedupeKey: String(row.dedupe_key),
+      severity,
+      title: String(row.title),
+      message: String(row.message),
+      triggeredAt: toIsoTimestamp(row.triggered_at),
+    };
+  });
 }

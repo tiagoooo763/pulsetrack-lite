@@ -60,6 +60,10 @@ const TikTokAdsView = dynamic(
   () => import("./dashfy/TikTokAdsView").then((m) => m.TikTokAdsView),
   { loading: () => <TabPanelSkeleton /> }
 );
+const MyMetricsView = dynamic(
+  () => import("./dashfy/MyMetricsView").then((m) => m.MyMetricsView),
+  { loading: () => <TabPanelSkeleton /> }
+);
 const UtmsView = dynamic(
   () => import("./dashfy/UtmsView").then((m) => m.UtmsView),
   { loading: () => <TabPanelSkeleton /> }
@@ -1140,7 +1144,22 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
                 dashboardId={activeDashboard.id}
                 dashboardName={activeDashboard.name}
                 campaigns={activeTikTokCampaigns}
+                allDashboardCampaigns={(data.tiktokCampaigns || []).filter(
+                  (c) => (c.dashboardId || "tiktok") === activeDashboard.id
+                )}
                 onRefresh={() => fetchDashboard(false)}
+              />
+            )}
+
+          {location.kind === "dashboard" &&
+            activeMode === "tiktok" &&
+            location.tabId === "minhas_metricas" && (
+              <MyMetricsView
+                dashboardId={activeDashboard.id}
+                dashboardName={activeDashboard.name}
+                campaigns={(data.tiktokCampaigns || []).filter(
+                  (c) => (c.dashboardId || "tiktok") === activeDashboard.id
+                )}
               />
             )}
 
@@ -1270,6 +1289,7 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
 
           {location.kind === "dashboard" && location.tabId === "notificacoes" && (
             <NotificationsView
+              dashboardId={activeDashboard.id}
               dashboardMode={activeMode}
               integrationStatus={data.integrationStatus}
               transactions={omegaTransactions}
@@ -1278,6 +1298,16 @@ export function DashboardApp({ onLogout }: DashboardAppProps) {
               onRefresh={() => fetchDashboard(false)}
               onOpenSoundSettings={() =>
                 setLocation({ kind: "global", pageId: "configuracoes" })
+              }
+              onOpenMyMetrics={
+                activeMode === "tiktok"
+                  ? () =>
+                      setLocation({
+                        kind: "dashboard",
+                        dashboardId: activeDashboard.id,
+                        tabId: "minhas_metricas",
+                      })
+                  : undefined
               }
             />
           )}
